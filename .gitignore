@@ -1,3 +1,10 @@
+# Keep only these paths versioned in Git.
+*
+!/.gitignore
+!/README.md
+!/lib/
+!/lib/**
+
 # Miscellaneous
 *.class
 *.log

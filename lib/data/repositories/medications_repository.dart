@@ -235,10 +235,19 @@ class MedicationsRepository {
     DateTime? confirmedAt,
     String? note,
   }) async {
-    if (!SupabaseService.isReady) return null;
-
     final existing = await fetchDoseById(doseId);
     if (existing == null) return null;
+
+    if (!SupabaseService.isReady) {
+      final updated = existing.copyWith(
+        estado: EstadoToma.confirmada,
+        fechaConfirmacion: confirmedAt ?? DateTime.now(),
+        nota: note ?? existing.nota,
+      );
+      _upsertDoseCache(updated);
+      _decrementMockStock(existing.idMedicamento);
+      return updated;
+    }
 
     final response = await SupabaseService.client
         .from('tomas')
@@ -263,12 +272,20 @@ class MedicationsRepository {
     String doseId, {
     Duration delay = const Duration(minutes: 10),
   }) async {
-    if (!SupabaseService.isReady) return null;
-
     final existing = await fetchDoseById(doseId);
     if (existing == null) return null;
 
     final snoozedAt = DateTime.now().add(delay);
+    if (!SupabaseService.isReady) {
+      final updated = existing.copyWith(
+        estado: EstadoToma.pospuesta,
+        fechaProgramada: snoozedAt,
+        nota: 'Pospuesta ${delay.inMinutes} minutos',
+      );
+      _upsertDoseCache(updated);
+      return updated;
+    }
+
     final response = await SupabaseService.client
         .from('tomas')
         .update({
@@ -286,11 +303,18 @@ class MedicationsRepository {
   }
 
   Future<Toma?> expireDose(String doseId, {String? note}) async {
-    if (!SupabaseService.isReady) return null;
-
     final existing = await fetchDoseById(doseId);
     if (existing == null || existing.estado == EstadoToma.confirmada) {
       return existing;
+    }
+
+    if (!SupabaseService.isReady) {
+      final updated = existing.copyWith(
+        estado: EstadoToma.expirada,
+        nota: note ?? 'Caducada por falta de respuesta',
+      );
+      _upsertDoseCache(updated);
+      return updated;
     }
 
     final response = await SupabaseService.client
@@ -510,6 +534,17 @@ class MedicationsRepository {
     }
     mutable.sort((a, b) => a.fechaCreacion.compareTo(b.fechaCreacion));
     _cachedMedications = List.unmodifiable(mutable);
+  }
+
+  void _decrementMockStock(String medicationId) {
+    final medication = getById(medicationId);
+    if (medication == null || medication.stockActual <= 0) return;
+    _upsertCache(
+      medication.copyWith(
+        stockActual: medication.stockActual - 1,
+        ultimaEdicion: DateTime.now(),
+      ),
+    );
   }
 
   void _upsertDoseCache(Toma dose) {

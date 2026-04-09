@@ -506,7 +506,20 @@ class Cita {
         fecha.day == now.day;
   }
 
-  bool get esPasada => fecha.isBefore(DateTime.now());
+  DateTime get fechaHora {
+    final parts = hora.split(':');
+    final parsedHour = int.tryParse(parts.isNotEmpty ? parts.first : '');
+    final parsedMinute = int.tryParse(parts.length > 1 ? parts[1] : '');
+    return DateTime(
+      fecha.year,
+      fecha.month,
+      fecha.day,
+      parsedHour ?? fecha.hour,
+      parsedMinute ?? fecha.minute,
+    );
+  }
+
+  bool get esPasada => fechaHora.isBefore(DateTime.now());
 
   Cita copyWith({
     String? id,

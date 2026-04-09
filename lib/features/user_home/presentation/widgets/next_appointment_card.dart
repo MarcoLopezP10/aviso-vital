@@ -6,11 +6,7 @@ class NextAppointmentCard extends StatelessWidget {
   final Cita? appointment;
   final VoidCallback? onTap;
 
-  const NextAppointmentCard({
-    super.key,
-    required this.appointment,
-    this.onTap,
-  });
+  const NextAppointmentCard({super.key, required this.appointment, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -47,6 +43,11 @@ class NextAppointmentCard extends StatelessWidget {
         ),
       );
     }
+
+    final statusLabel = appointment!.esHoy ? 'Hoy' : 'Próxima';
+    final secondaryLabel = appointment!.esHoy
+        ? appointment!.lugar
+        : '${appointment!.lugar} · ${appointment!.fecha.day}/${appointment!.fecha.month}';
 
     return GestureDetector(
       onTap: onTap,
@@ -92,7 +93,7 @@ class NextAppointmentCard extends StatelessWidget {
                   Text(appointment!.especialidad, style: AppTextStyles.h4),
                   const SizedBox(height: 3),
                   Text(
-                    appointment!.lugar,
+                    secondaryLabel,
                     style: AppTextStyles.bodySmall,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -117,7 +118,7 @@ class NextAppointmentCard extends StatelessWidget {
                     borderRadius: AppRadius.chip,
                   ),
                   child: Text(
-                    'Hoy',
+                    statusLabel,
                     style: AppTextStyles.caption.copyWith(
                       color: AppColors.orange,
                       fontWeight: FontWeight.w600,

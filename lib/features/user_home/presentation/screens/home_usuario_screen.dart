@@ -145,10 +145,15 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
                       const SizedBox(height: 10),
                       NextAppointmentCard(
                         appointment: data.todayAppointment,
-                        onTap: () => Navigator.pushNamed(
-                          context,
-                          AlertaCitaScreen.routeName,
-                        ),
+                        onTap: data.todayAppointment == null
+                            ? null
+                            : () => Navigator.pushNamed(
+                                context,
+                                AlertaCitaScreen.routeName,
+                                arguments: {
+                                  'appointmentId': data.todayAppointment!.id,
+                                },
+                              ),
                       ),
                       SizedBox(height: screenH * 0.04),
                       PrimaryButton.large(
@@ -182,9 +187,10 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
     final appointments = await _appointmentsRepository.fetchAll(
       userId: ownerId,
     );
-    final todayAppointment = appointments
-        .where((item) => item.esHoy)
-        .firstOrNull;
+    final sortedUpcomingAppointments =
+        appointments.where((item) => !item.esPasada).toList(growable: false)
+          ..sort((a, b) => a.fechaHora.compareTo(b.fechaHora));
+    final todayAppointment = sortedUpcomingAppointments.firstOrNull;
     final pendingToday = await _medicationsRepository.fetchPendingTodayCount(
       userId: ownerId,
     );

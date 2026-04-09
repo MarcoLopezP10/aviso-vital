@@ -59,6 +59,7 @@ class AppRouter {
       AppRoutes.alertaCita => AlertaCitaScreen(
         alertId: args?['alertId'] as String?,
         appointmentId: args?['appointmentId'] as String?,
+        reminderKind: args?['reminderKind'] as String?,
       ),
       _ => const RoleSelectionScreen(),
     };

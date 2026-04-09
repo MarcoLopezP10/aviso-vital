@@ -12,8 +12,14 @@ class AlertaCitaScreen extends StatefulWidget {
   static const String routeName = AppRoutes.alertaCita;
   final String? alertId;
   final String? appointmentId;
+  final String? reminderKind;
 
-  const AlertaCitaScreen({super.key, this.alertId, this.appointmentId});
+  const AlertaCitaScreen({
+    super.key,
+    this.alertId,
+    this.appointmentId,
+    this.reminderKind,
+  });
 
   @override
   State<AlertaCitaScreen> createState() => _AlertaCitaScreenState();
@@ -47,6 +53,15 @@ class _AlertaCitaScreenState extends State<AlertaCitaScreen> {
     setState(() => _isSubmitting = true);
     if (data.alertId != null) {
       await _alertsRepository.confirmAlert(data.alertId!);
+    }
+    if (widget.appointmentId != null &&
+        widget.appointmentId!.isNotEmpty &&
+        widget.reminderKind != null &&
+        widget.reminderKind!.isNotEmpty) {
+      _alertsRepository.markAppointmentReminderHandled(
+        appointmentId: widget.appointmentId!,
+        reminderKind: widget.reminderKind!,
+      );
     }
     setState(() {
       _confirmado = true;

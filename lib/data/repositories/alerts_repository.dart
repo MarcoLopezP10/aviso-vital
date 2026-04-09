@@ -2,6 +2,7 @@ import 'package:aviso_vital_2/core/services/supabase_service.dart';
 import 'package:aviso_vital_2/data/mock/mock_data.dart';
 import 'package:aviso_vital_2/data/models/models.dart';
 import 'package:aviso_vital_2/data/repositories/user_repository.dart';
+import 'package:aviso_vital_2/shared/utils/alert_formatters.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AlertsRepository {
@@ -10,6 +11,10 @@ class AlertsRepository {
   static const _userRepository = UserRepository();
   static List<Alerta> _cachedAlerts = const [];
   static ResumenAdherencia? _cachedAdherenceSummary;
+  static final Set<String> _handledAppointmentReminders = <String>{};
+
+  String _appointmentReminderKey(String appointmentId, String reminderKind) =>
+      '$appointmentId|$reminderKind';
 
   Future<List<Alerta>> fetchRecent({String? userId}) async {
     if (!SupabaseService.isReady) return getRecent();
@@ -52,7 +57,7 @@ class AlertsRepository {
 
     final alertsResponse = await SupabaseService.client
         .from('alertas')
-        .select('titulo,fecha_alerta,tipo,id_usuario')
+        .select('titulo,fecha_alerta,tipo,id_usuario,id_cita')
         .eq('id_usuario', userId)
         .eq('tipo', TipoAlerta.cita.name);
 
@@ -102,6 +107,7 @@ class AlertsRepository {
           'tipo': TipoAlerta.cita.name,
           'titulo': reminder.title,
           'mensaje': reminder.message,
+          'id_cita': appointment.id,
           'leida': false,
           'fecha_alerta': scheduled,
           'created_at': DateTime.now().toUtc().toIso8601String(),
@@ -116,7 +122,13 @@ class AlertsRepository {
   }
 
   Future<Alerta?> confirmAlert(String id) async {
-    if (!SupabaseService.isReady) return null;
+    if (!SupabaseService.isReady) {
+      final existing = getById(id);
+      if (existing == null) return null;
+      final updated = existing.copyWith(estado: EstadoAlerta.confirmada);
+      _upsertAlertCache(updated);
+      return updated;
+    }
 
     final response = await SupabaseService.client
         .from('alertas')
@@ -131,6 +143,28 @@ class AlertsRepository {
     );
     _upsertAlertCache(alert);
     return alert;
+  }
+
+  void markAppointmentReminderHandled({
+    required String appointmentId,
+    required String reminderKind,
+  }) {
+    if (appointmentId.trim().isEmpty || reminderKind.trim().isEmpty) return;
+    _handledAppointmentReminders.add(
+      _appointmentReminderKey(appointmentId, reminderKind),
+    );
+  }
+
+  bool isAppointmentReminderHandled({
+    required String appointmentId,
+    required String reminderKind,
+  }) {
+    if (appointmentId.trim().isEmpty || reminderKind.trim().isEmpty) {
+      return false;
+    }
+    return _handledAppointmentReminders.contains(
+      _appointmentReminderKey(appointmentId, reminderKind),
+    );
   }
 
   Future<List<Alerta>> fetchHistoryTimeline({String? userId}) async {
@@ -400,7 +434,7 @@ class AlertsRepository {
     if (appointment.recordatorio24h) {
       reminders.add(
         _AppointmentReminder(
-          when: appointmentAt.subtract(const Duration(hours: 24)),
+          when: subtractOneLocalDayPreservingClock(appointmentAt),
           title: 'Cita mañana: ${appointment.especialidad}',
           message:
               'Recordatorio 24h · ${appointment.lugar} a las ${appointment.hora}',

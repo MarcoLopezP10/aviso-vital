@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:aviso_vital_2/app/router/app_routes.dart';
 import 'package:aviso_vital_2/core/services/realtime_simulation_service.dart';
+import 'package:aviso_vital_2/features/alerts/presentation/widgets/simulation_notification_widgets.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
+import 'package:aviso_vital_2/shared/utils/alert_formatters.dart';
 import 'package:aviso_vital_2/shared/widgets/shared_widgets.dart';
 
 class SimulacionAlertasScreen extends StatefulWidget {
@@ -22,6 +24,7 @@ class _SimulacionAlertasScreenState extends State<SimulacionAlertasScreen> {
   LiveSimulationSnapshot? _snapshot;
   bool _isLoading = true;
   bool _isRefreshing = false;
+  String? _loadError;
   int _tick = 0;
   DateTime _now = DateTime.now();
   Timer? _timer;
@@ -53,16 +56,27 @@ class _SimulacionAlertasScreenState extends State<SimulacionAlertasScreen> {
     setState(() {
       _isRefreshing = true;
       if (initial) _isLoading = true;
+      if (initial) _loadError = null;
     });
 
-    final snapshot = await _simulationService.loadSnapshot();
-    if (!mounted) return;
-    setState(() {
-      _snapshot = snapshot;
-      _isRefreshing = false;
-      _isLoading = false;
-      _now = DateTime.now();
-    });
+    try {
+      final snapshot = await _simulationService.loadSnapshot();
+      if (!mounted) return;
+      setState(() {
+        _snapshot = snapshot;
+        _isRefreshing = false;
+        _isLoading = false;
+        _loadError = null;
+        _now = DateTime.now();
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _isRefreshing = false;
+        _isLoading = false;
+        _loadError = error.toString();
+      });
+    }
   }
 
   Future<void> _openNotification(LiveNotificationItem item) async {
@@ -79,6 +93,7 @@ class _SimulacionAlertasScreenState extends State<SimulacionAlertasScreen> {
         arguments: {
           'alertId': item.alert?.id,
           'appointmentId': item.appointment?.id,
+          'reminderKind': item.reminderKind,
         },
       );
     }
@@ -107,6 +122,11 @@ class _SimulacionAlertasScreenState extends State<SimulacionAlertasScreen> {
       body: SafeArea(
         child: _isLoading
             ? const Center(child: CircularProgressIndicator())
+            : _loadError != null
+            ? _SimulationErrorState(
+                message: _loadError!,
+                onRetry: () => _refreshSnapshot(initial: true),
+              )
             : RefreshIndicator(
                 onRefresh: _refreshSnapshot,
                 child: ListView(
@@ -136,6 +156,62 @@ class _SimulacionAlertasScreenState extends State<SimulacionAlertasScreen> {
                   ],
                 ),
               ),
+      ),
+    );
+  }
+}
+
+class _SimulationErrorState extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+
+  const _SimulationErrorState({required this.message, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: AppColors.warningSubtle,
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.warningBorder),
+              ),
+              child: const Icon(
+                Icons.sync_problem_rounded,
+                color: AppColors.warning,
+                size: 32,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Text(
+              'No se pudo cargar la simulación',
+              textAlign: TextAlign.center,
+              style: AppTextStyles.h2,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              'La pantalla ya no se queda bloqueada cargando. Puede reintentar ahora.\n\nDetalle: $message',
+              textAlign: TextAlign.center,
+              style: AppTextStyles.body.copyWith(
+                color: AppColors.textSecondary,
+                height: 1.45,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            PrimaryButton(
+              label: 'Reintentar',
+              icon: Icons.refresh_rounded,
+              onPressed: onRetry,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -213,6 +289,7 @@ class _PhoneFrame extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dateLabel = _formatDate(now);
+    final hasManyNotifications = visibleNotifications.length > 2;
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -261,34 +338,55 @@ class _PhoneFrame extends StatelessWidget {
             Text(
               dateLabel,
               style: AppTextStyles.body.copyWith(
-                color: Colors.white70,
+                color: const Color(0xFFABABAB),
                 fontSize: 17,
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
             Container(
               width: double.infinity,
-              constraints: const BoxConstraints(minHeight: 420),
-              padding: const EdgeInsets.fromLTRB(14, 10, 14, 18),
+              height: 420,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(24),
                 color: Colors.white.withValues(alpha: 0.04),
                 border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
               ),
+              clipBehavior: Clip.antiAlias,
               child: visibleNotifications.isEmpty
-                  ? _WaitingState(nextNotification: nextNotification)
-                  : Column(
-                      children: [
-                        for (final item in visibleNotifications) ...[
-                          _LockNotificationCard(
-                            item: item,
-                            now: now,
-                            onTap: () => onTapNotification(item),
-                          ),
-                          if (item != visibleNotifications.last)
-                            const SizedBox(height: 12),
-                        ],
-                      ],
+                  ? Padding(
+                      padding: const EdgeInsets.fromLTRB(14, 10, 14, 18),
+                      child: _WaitingState(nextNotification: nextNotification),
+                    )
+                  : Scrollbar(
+                      thumbVisibility: hasManyNotifications,
+                      child: SingleChildScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        padding: const EdgeInsets.fromLTRB(14, 10, 14, 18),
+                        child: Column(
+                          children: [
+                            if (hasManyNotifications)
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 10),
+                                child: Text(
+                                  'Deslice para ver más notificaciones',
+                                  textAlign: TextAlign.center,
+                                  style: AppTextStyles.label.copyWith(
+                                    color: AppColors.textSecondary,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
+                            for (final item in visibleNotifications) ...[
+                              SimulationNotificationCard(
+                                item: item,
+                                onTap: () => onTapNotification(item),
+                              ),
+                              if (item != visibleNotifications.last)
+                                const SizedBox(height: 10),
+                            ],
+                          ],
+                        ),
+                      ),
                     ),
             ),
             const SizedBox(height: 18),
@@ -368,175 +466,15 @@ class _WaitingState extends StatelessWidget {
           Text(
             nextNotification == null
                 ? 'Cuando llegue la hora de una toma o cita programada, aparecerá aquí automáticamente.'
-                : 'Siguiente aviso previsto a las ${_formatTime(nextNotification!.scheduledAt)}.',
+                : 'Siguiente aviso previsto a las ${formatAlertHour(nextNotification!.scheduledAt)}.',
             textAlign: TextAlign.center,
             style: AppTextStyles.body.copyWith(
-              color: Colors.white70,
+              color: const Color(0xFFABABAB),
+              fontSize: 16,
               height: 1.45,
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  String _formatTime(DateTime value) =>
-      '${value.hour.toString().padLeft(2, '0')}:${value.minute.toString().padLeft(2, '0')}';
-}
-
-class _LockNotificationCard extends StatelessWidget {
-  final LiveNotificationItem item;
-  final DateTime now;
-  final VoidCallback onTap;
-
-  const _LockNotificationCard({
-    required this.item,
-    required this.now,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final accent = item.type == LiveNotificationType.medication
-        ? AppColors.amber
-        : AppColors.orange;
-    final icon = item.type == LiveNotificationType.medication
-        ? Icons.medication_rounded
-        : Icons.event_rounded;
-    final remaining = item.expiresAt.difference(now);
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(22),
-        child: Ink(
-          padding: EdgeInsets.all(item.compactReminder ? 12 : 16),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.9),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.7)),
-          ),
-          child: item.compactReminder
-              ? Row(
-                  children: [
-                    Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: accent.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(icon, color: accent, size: 18),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'Recordatorio de cita · ${item.appointment?.especialidad ?? ''} · ${item.appointment?.hora ?? ''}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: AppColors.textSecondary,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      item.appointment?.hora ?? item.leadingLabel,
-                      style: AppTextStyles.caption.copyWith(
-                        color: AppColors.textTertiary,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                )
-              : Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: accent.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          child: Icon(icon, color: accent, size: 20),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            item.type == LiveNotificationType.medication
-                                ? 'Aviso Vital · Medicación'
-                                : 'Aviso Vital · Cita médica',
-                            style: AppTextStyles.label.copyWith(
-                              color: AppColors.textSecondary,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                        Text(
-                          item.leadingLabel,
-                          style: AppTextStyles.caption.copyWith(
-                            color: AppColors.textTertiary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      item.title,
-                      style: AppTextStyles.h4.copyWith(
-                        fontSize: 22,
-                        height: 1.15,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      item.subtitle,
-                      style: AppTextStyles.body.copyWith(
-                        color: AppColors.textSecondary,
-                        height: 1.35,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: accent.withValues(alpha: 0.08),
-                            borderRadius: AppRadius.chip,
-                            border: Border.all(
-                              color: accent.withValues(alpha: 0.18),
-                            ),
-                          ),
-                          child: Text(
-                            'Pulse para abrir',
-                            style: AppTextStyles.caption.copyWith(
-                              color: accent,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                        const Spacer(),
-                        Text(
-                          'Disponible ${remaining.inMinutes}:${(remaining.inSeconds % 60).toString().padLeft(2, '0')}',
-                          style: AppTextStyles.caption.copyWith(
-                            color: AppColors.textTertiary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-        ),
       ),
     );
   }

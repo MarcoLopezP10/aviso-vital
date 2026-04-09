@@ -3,6 +3,7 @@ import 'package:aviso_vital_2/data/models/models.dart';
 import 'package:aviso_vital_2/data/repositories/alerts_repository.dart';
 import 'package:aviso_vital_2/data/repositories/appointments_repository.dart';
 import 'package:aviso_vital_2/data/repositories/medications_repository.dart';
+import 'package:aviso_vital_2/shared/utils/alert_formatters.dart';
 
 enum LiveNotificationType { medication, appointment }
 
@@ -19,6 +20,9 @@ class LiveNotificationItem {
   final Cita? appointment;
   final Alerta? alert;
   final bool compactReminder;
+  final String actionLabel;
+  final String? keyValue;
+  final String? reminderKind;
 
   const LiveNotificationItem({
     required this.id,
@@ -33,6 +37,9 @@ class LiveNotificationItem {
     this.appointment,
     this.alert,
     this.compactReminder = false,
+    required this.actionLabel,
+    this.keyValue,
+    this.reminderKind,
   });
 
   bool isVisibleAt(DateTime now) =>
@@ -90,21 +97,28 @@ class RealtimeSimulationService {
     }
 
     final ownerId = context.ownerUserId!;
-    await alertsRepository.ensureAppointmentReminders(userId: ownerId);
-    await _expireOverdueDoses(ownerId);
+    try {
+      await alertsRepository.ensureAppointmentReminders(userId: ownerId);
+    } catch (_) {}
+    try {
+      await _expireOverdueDoses(ownerId);
+    } catch (_) {}
 
-    final medications = await medicationsRepository.fetchAll(userId: ownerId);
-    final appointments = await appointmentsRepository.fetchAll(userId: ownerId);
-    final doses = await medicationsRepository.fetchTodayDoses(userId: ownerId);
-    final alerts = await alertsRepository.fetchRecent(userId: ownerId);
+    final medications = await _safeLoad(
+      () => medicationsRepository.fetchAll(userId: ownerId),
+    );
+    final appointments = await _safeLoad(
+      () => appointmentsRepository.fetchAll(userId: ownerId),
+    );
+    final doses = await _safeLoad(
+      () => medicationsRepository.fetchTodayDoses(userId: ownerId),
+    );
+    final alerts = await _safeLoad(
+      () => alertsRepository.fetchRecent(userId: ownerId),
+    );
 
     final medicationsById = {
       for (final medication in medications) medication.id: medication,
-    };
-    final appointmentsByKey = {
-      for (final appointment in appointments)
-        '${appointment.especialidad}|${appointment.hora}|${appointment.lugar}':
-            appointment,
     };
 
     final notifications = <LiveNotificationItem>[
@@ -121,15 +135,12 @@ class RealtimeSimulationService {
             ),
           )
           .whereType<LiveNotificationItem>(),
-      ...alerts
-          .where(
-            (alert) =>
-                alert.tipo == TipoAlerta.cita &&
-                alert.estado != EstadoAlerta.expirada &&
-                alert.estado != EstadoAlerta.omitida,
-          )
-          .map(
-            (alert) => _buildAppointmentNotification(alert, appointmentsByKey),
+      ...appointments
+          .expand(
+            (appointment) => _buildAppointmentNotifications(
+              appointment,
+              alerts.where((alert) => alert.tipo == TipoAlerta.cita).toList(),
+            ),
           )
           .whereType<LiveNotificationItem>(),
     ]..sort((a, b) => a.scheduledAt.compareTo(b.scheduledAt));
@@ -169,54 +180,128 @@ class RealtimeSimulationService {
       expiresAt: dose.fechaProgramada.add(const Duration(minutes: 5)),
       title: medication.nombre,
       subtitle:
-          '${medication.dosis} · ${medication.instrucciones ?? 'Pulse para confirmar la toma'}',
-      leadingLabel: _formatTime(dose.fechaProgramada),
+          '${formatMedicationDose(medication.dosis)} · ${medication.instrucciones ?? 'Revise la toma y confirme cuando la haya hecho'}',
+      leadingLabel: formatAlertHour(dose.fechaProgramada),
       medication: medication,
       dose: dose,
+      actionLabel: 'Pulse para abrir',
+      keyValue: formatMedicationDose(medication.dosis),
     );
   }
 
   LiveNotificationItem? _buildAppointmentNotification(
-    Alerta alert,
-    Map<String, Cita> appointmentsByKey,
-  ) {
-    final appointment = _findAppointmentForAlert(alert, appointmentsByKey);
-    if (appointment == null) return null;
-    final appointmentAt = _appointmentDateTime(appointment);
+    Cita appointment,
+    _DerivedAppointmentReminder reminder, {
+    Alerta? alert,
+  }) {
+    final appointmentAt = appointmentDateTime(appointment);
     if (appointmentAt.isBefore(DateTime.now())) return null;
-    final isConfirmedReminder = alert.estado == EstadoAlerta.confirmada;
+    final isHandledLocally = alertsRepository.isAppointmentReminderHandled(
+      appointmentId: appointment.id,
+      reminderKind: reminder.kind,
+    );
+    final isConfirmedReminder =
+        alert?.estado == EstadoAlerta.confirmada || isHandledLocally;
+    final isFinalReminder = reminder.isFinal;
+
+    if (isConfirmedReminder && !isFinalReminder) {
+      return null;
+    }
 
     return LiveNotificationItem(
-      id: 'alert:${alert.id}',
+      id: alert != null
+          ? 'alert:${alert.id}'
+          : 'derived:${appointment.id}:${reminder.when.toIso8601String()}',
       type: LiveNotificationType.appointment,
-      scheduledAt: alert.fechaHora,
-      expiresAt: isConfirmedReminder
+      scheduledAt: reminder.when,
+      expiresAt: (isConfirmedReminder || isFinalReminder)
           ? appointmentAt
-          : alert.fechaHora.add(const Duration(minutes: 5)),
-      title: isConfirmedReminder ? 'Recordatorio activo' : alert.titulo,
+          : reminder.when.add(const Duration(minutes: 5)),
+      title: isConfirmedReminder ? appointment.especialidad : reminder.title,
       subtitle: isConfirmedReminder
-          ? '${appointment.especialidad} · ${appointment.lugar} · ${appointment.hora}'
-          : (alert.descripcion ?? 'Recordatorio de cita médica'),
-      leadingLabel: _formatTime(alert.fechaHora),
+          ? 'Recordatorio confirmado'
+          : reminder.message,
+      leadingLabel: isConfirmedReminder
+          ? appointment.hora
+          : formatAlertHour(reminder.when),
       appointment: appointment,
       alert: alert,
-      compactReminder: isConfirmedReminder,
+      compactReminder: isConfirmedReminder && isFinalReminder,
+      actionLabel: 'Pulse para abrir',
+      keyValue: appointment.hora,
+      reminderKind: reminder.kind,
     );
   }
 
-  Cita? _findAppointmentForAlert(
-    Alerta alert,
-    Map<String, Cita> appointmentsByKey,
-  ) {
-    if (alert.descripcion == null) return null;
-    for (final entry in appointmentsByKey.entries) {
-      final appointment = entry.value;
-      if (alert.titulo.contains(appointment.especialidad) &&
-          alert.descripcion!.contains(appointment.hora)) {
-        return appointment;
-      }
+  Iterable<LiveNotificationItem> _buildAppointmentNotifications(
+    Cita appointment,
+    List<Alerta> appointmentAlerts,
+  ) sync* {
+    final appointmentAt = appointmentDateTime(appointment);
+    if (appointmentAt.isBefore(DateTime.now())) return;
+
+    for (final reminder in _derivedRemindersForAppointment(
+      appointment,
+      appointmentAt,
+    )) {
+      final matchedAlert =
+          appointmentAlerts
+              .where((alert) => _matchesReminder(alert, appointment, reminder))
+              .toList()
+            ..sort((a, b) => a.fechaHora.compareTo(b.fechaHora));
+
+      final alert = matchedAlert.isEmpty ? null : matchedAlert.last;
+      final item = _buildAppointmentNotification(
+        appointment,
+        reminder,
+        alert: alert,
+      );
+      if (item != null) yield item;
     }
-    return null;
+  }
+
+  List<_DerivedAppointmentReminder> _derivedRemindersForAppointment(
+    Cita appointment,
+    DateTime appointmentAt,
+  ) {
+    final reminders = <_DerivedAppointmentReminder>[];
+
+    if (appointment.recordatorio24h) {
+      reminders.add(
+        _DerivedAppointmentReminder(
+          when: subtractOneLocalDayPreservingClock(appointmentAt),
+          title: 'Cita mañana: ${appointment.especialidad}',
+          message:
+              'Recordatorio 24h · ${appointment.lugar} a las ${appointment.hora}',
+          kind: '24h',
+        ),
+      );
+    }
+
+    if (appointment.recordatorio3h) {
+      reminders.add(
+        _DerivedAppointmentReminder(
+          when: appointmentAt.subtract(const Duration(hours: 3)),
+          title: 'Cita hoy: ${appointment.especialidad}',
+          message:
+              'Recordatorio 3h · ${appointment.lugar} a las ${appointment.hora}',
+          kind: '3h',
+        ),
+      );
+    }
+
+    reminders.add(
+      _DerivedAppointmentReminder(
+        when: appointmentAt.subtract(const Duration(minutes: 30)),
+        title: 'Cita en 30 min: ${appointment.especialidad}',
+        message:
+            'Recordatorio final · ${appointment.lugar} a las ${appointment.hora}',
+        isFinal: true,
+        kind: '30m',
+      ),
+    );
+
+    return reminders;
   }
 
   Future<void> _expireOverdueDoses(String ownerId) async {
@@ -237,22 +322,47 @@ class RealtimeSimulationService {
     }
   }
 
-  String _formatTime(DateTime value) =>
-      '${value.hour.toString().padLeft(2, '0')}:${value.minute.toString().padLeft(2, '0')}';
-
-  DateTime _appointmentDateTime(Cita appointment) {
-    final parts = appointment.hora.split(':');
-    final hour =
-        int.tryParse(parts.firstOrNull ?? '') ?? appointment.fecha.hour;
-    final minute =
-        int.tryParse(parts.length > 1 ? parts[1] : '') ??
-        appointment.fecha.minute;
-    return DateTime(
-      appointment.fecha.year,
-      appointment.fecha.month,
-      appointment.fecha.day,
-      hour,
-      minute,
-    );
+  Future<List<T>> _safeLoad<T>(Future<List<T>> Function() loader) async {
+    try {
+      return await loader();
+    } catch (_) {
+      return List<T>.empty(growable: false);
+    }
   }
+
+  bool _matchesReminder(
+    Alerta alert,
+    Cita appointment,
+    _DerivedAppointmentReminder reminder,
+  ) {
+    if (alert.idCita != null &&
+        alert.idCita!.isNotEmpty &&
+        alert.idCita == appointment.id) {
+      return (alert.fechaHora.difference(reminder.when).inMinutes).abs() <= 1;
+    }
+
+    final sameTitle = alert.titulo == reminder.title;
+    final sameHour =
+        alert.descripcion?.contains(appointment.hora) == true ||
+        alert.titulo.contains(appointment.especialidad);
+    final closeSchedule =
+        (alert.fechaHora.difference(reminder.when).inMinutes).abs() <= 1;
+    return sameTitle && sameHour && closeSchedule;
+  }
+}
+
+class _DerivedAppointmentReminder {
+  final DateTime when;
+  final String title;
+  final String message;
+  final bool isFinal;
+  final String kind;
+
+  const _DerivedAppointmentReminder({
+    required this.when,
+    required this.title,
+    required this.message,
+    this.isFinal = false,
+    required this.kind,
+  });
 }

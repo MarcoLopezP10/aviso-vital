@@ -4,6 +4,7 @@ import 'package:aviso_vital_2/core/services/care_plan_context_service.dart';
 import 'package:aviso_vital_2/data/models/models.dart';
 import 'package:aviso_vital_2/data/repositories/medications_repository.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
+import 'package:aviso_vital_2/shared/utils/alert_formatters.dart';
 import 'package:aviso_vital_2/shared/widgets/shared_widgets.dart';
 
 /// Pantalla: Alerta de Medicación — flujo principal de Carmen
@@ -118,6 +119,7 @@ class _AlertaMedicacionScreenState extends State<AlertaMedicacionScreen>
                         userFirstName: data.userFirstName,
                         pulseAnim: _pulseAnim,
                         pospuesto: _pospuesto,
+                        isSubmitting: _isSubmitting,
                         onClose: () => Navigator.maybePop(context),
                         onConfirm: () => _confirmar(data),
                         onSnooze: () => _posponer(data),
@@ -240,6 +242,7 @@ class _MedicationAlertView extends StatelessWidget {
   final String userFirstName;
   final Animation<double> pulseAnim;
   final bool pospuesto;
+  final bool isSubmitting;
   final VoidCallback onClose;
   final VoidCallback onConfirm;
   final VoidCallback onSnooze;
@@ -252,6 +255,7 @@ class _MedicationAlertView extends StatelessWidget {
     required this.userFirstName,
     required this.pulseAnim,
     this.pospuesto = false,
+    this.isSubmitting = false,
     required this.onClose,
     required this.onConfirm,
     required this.onSnooze,
@@ -266,121 +270,72 @@ class _MedicationAlertView extends StatelessWidget {
         final horizontalPadding = constraints.maxWidth < 360
             ? AppSpacing.lg
             : AppSpacing.xl;
-        final titleSize = veryCompact ? 25.0 : (compact ? 28.0 : 34.0);
-        final sectionGap = veryCompact
-            ? AppSpacing.lg
-            : (compact ? AppSpacing.xl : AppSpacing.xxl);
+        final titleSize = veryCompact ? 24.0 : (compact ? 28.0 : 32.0);
 
-        return SingleChildScrollView(
-          padding: EdgeInsets.fromLTRB(
-            horizontalPadding,
-            veryCompact
-                ? AppSpacing.sm
-                : (compact ? AppSpacing.md : AppSpacing.lg),
-            horizontalPadding,
-            compact ? AppSpacing.lg : AppSpacing.xl,
-          ),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              minHeight:
-                  constraints.maxHeight -
-                  (compact ? AppSpacing.lg : AppSpacing.xl),
-            ),
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 520),
-                child: Column(
-                  children: [
-                    _AlertTopBar(onClose: onClose),
-                    SizedBox(
-                      height: veryCompact
-                          ? AppSpacing.sm
-                          : (compact ? AppSpacing.md : AppSpacing.xl),
-                    ),
-                    _GlowHeaderIcon(
-                      pulseAnim: pulseAnim,
-                      color: AppColors.amberLight,
-                      shape: _toFormShape(med.formaPastilla),
-                      compact: compact,
-                    ),
-                    SizedBox(
-                      height: veryCompact
-                          ? AppSpacing.md
-                          : (compact ? AppSpacing.lg : AppSpacing.xl),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 7,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.amberSubtle.withValues(alpha: 0.82),
-                        borderRadius: AppRadius.chip,
-                        border: Border.all(color: AppColors.amberBorder),
-                      ),
-                      child: Text(
-                        'Recordatorio de medicación',
-                        style: AppTextStyles.caption.copyWith(
+        return Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(
+                  horizontalPadding,
+                  veryCompact ? AppSpacing.sm : AppSpacing.md,
+                  horizontalPadding,
+                  AppSpacing.md,
+                ),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 520),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        _AlertTopBar(onClose: onClose),
+                        SizedBox(height: veryCompact ? 10 : 14),
+                        _GlowHeaderIcon(
+                          pulseAnim: pulseAnim,
                           color: AppColors.amberLight,
-                          fontWeight: FontWeight.w700,
+                          shape: _toFormShape(med.formaPastilla),
+                          compact: true,
                         ),
-                      ),
+                        const SizedBox(height: 14),
+                        _MedicationDetailHeader(
+                          userFirstName: userFirstName,
+                          titleSize: titleSize,
+                        ),
+                        const SizedBox(height: 16),
+                        _MedicationAlertCard(
+                          med: med,
+                          horaActual: horaActual,
+                          compact: true,
+                        ),
+                      ],
                     ),
-                    SizedBox(
-                      height: veryCompact ? AppSpacing.md : AppSpacing.lg,
-                    ),
-                    Text(
-                      '$userFirstName, es hora\nde su medicación',
-                      textAlign: TextAlign.center,
-                      style: AppTextStyles.h1.copyWith(
-                        fontSize: titleSize,
-                        height: 1.15,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      'Vaya paso a paso. Revise su medicación y confirme cuando la haya tomado.',
-                      textAlign: TextAlign.center,
-                      style: AppTextStyles.bodyLarge.copyWith(
-                        color: AppColors.textSecondary,
-                        height: 1.38,
-                      ),
-                    ),
-                    SizedBox(height: sectionGap),
-                    _MedicationAlertCard(
-                      med: med,
-                      horaActual: horaActual,
-                      compact: compact,
-                    ),
-                    SizedBox(height: sectionGap),
-                    _PrimaryAlertButton(
-                      onPressed: onConfirm,
-                      label: 'Ya la he tomado',
-                      compact: compact,
-                    ),
-                    SizedBox(height: compact ? AppSpacing.sm : AppSpacing.md),
-                    _SecondarySnoozeButton(
-                      onPressed: pospuesto ? null : onSnooze,
-                      label: pospuesto
-                          ? 'Recordatorio en 10 min'
-                          : 'Recordármelo en 10 min',
-                      compact: compact,
-                    ),
-                    SizedBox(height: compact ? AppSpacing.md : AppSpacing.lg),
-                    Text(
-                      'Siguiente toma a las $nextDose',
-                      textAlign: TextAlign.center,
-                      style: AppTextStyles.label.copyWith(
-                        color: AppColors.textTertiary,
-                        letterSpacing: 0.35,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
-          ),
+            SafeArea(
+              top: false,
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  horizontalPadding,
+                  AppSpacing.sm,
+                  horizontalPadding,
+                  AppSpacing.md,
+                ),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 520),
+                  child: _MedicationBottomActions(
+                    nextDose: nextDose,
+                    compact: compact,
+                    isSubmitting: isSubmitting,
+                    pospuesto: pospuesto,
+                    onConfirm: onConfirm,
+                    onSnooze: onSnooze,
+                  ),
+                ),
+              ),
+            ),
+          ],
         );
       },
     );
@@ -396,7 +351,7 @@ class _AlertTopBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        const SizedBox(width: 44),
+        const SizedBox(width: 48),
         Expanded(
           child: Text(
             'Aviso Vital',
@@ -410,8 +365,8 @@ class _AlertTopBar extends StatelessWidget {
         GestureDetector(
           onTap: onClose,
           child: Container(
-            width: 44,
-            height: 44,
+            width: 48,
+            height: 48,
             decoration: BoxDecoration(
               color: AppColors.surfaceFloating.withValues(alpha: 0.92),
               shape: BoxShape.circle,
@@ -445,9 +400,9 @@ class _GlowHeaderIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final outerSize = compact ? 116.0 : 136.0;
-    final innerSize = compact ? 82.0 : 96.0;
-    final pillSize = compact ? 32.0 : 36.0;
+    final outerSize = compact ? 94.0 : 116.0;
+    final innerSize = compact ? 68.0 : 82.0;
+    final pillSize = compact ? 28.0 : 32.0;
 
     return AnimatedBuilder(
       animation: pulseAnim,
@@ -482,8 +437,8 @@ class _GlowHeaderIcon extends StatelessWidget {
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.16),
-                  blurRadius: 18,
-                  offset: const Offset(0, 10),
+                  blurRadius: compact ? 12 : 18,
+                  offset: const Offset(0, 8),
                 ),
               ],
             ),
@@ -498,6 +453,60 @@ class _GlowHeaderIcon extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _MedicationDetailHeader extends StatelessWidget {
+  final String userFirstName;
+  final double titleSize;
+
+  const _MedicationDetailHeader({
+    required this.userFirstName,
+    required this.titleSize,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: AppColors.amberSubtle.withValues(alpha: 0.9),
+            borderRadius: AppRadius.chip,
+            border: Border.all(color: AppColors.amberBorder),
+          ),
+          child: Text(
+            'Recordatorio de medicación',
+            style: AppTextStyles.labelLarge.copyWith(
+              color: AppColors.amberLight,
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          '$userFirstName, es hora de su medicación',
+          textAlign: TextAlign.center,
+          style: AppTextStyles.h1.copyWith(
+            fontSize: titleSize,
+            height: 1.12,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Revise la toma con calma y confirme cuando la haya tomado.',
+          textAlign: TextAlign.center,
+          style: AppTextStyles.bodyLarge.copyWith(
+            color: const Color(0xFFABABAB),
+            fontSize: 16,
+            height: 1.32,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -560,8 +569,9 @@ class _MedicationAlertCard extends StatelessWidget {
                     const SizedBox(width: 8),
                     Text(
                       horaActual,
-                      style: AppTextStyles.label.copyWith(
+                      style: AppTextStyles.labelLarge.copyWith(
                         color: AppColors.amberLight,
+                        fontSize: 16,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -580,11 +590,11 @@ class _MedicationAlertCard extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            med.dosis,
+            formatMedicationDose(med.dosis),
             style: AppTextStyles.userMedDose.copyWith(
-              fontSize: compact ? 22 : 26,
+              fontSize: 22,
               color: AppColors.amberLight,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w800,
             ),
           ),
           SizedBox(height: compact ? AppSpacing.md : AppSpacing.lg),
@@ -628,17 +638,17 @@ class _CardInfoRow extends StatelessWidget {
     return Row(
       children: [
         Container(
-          width: compact ? 30 : 34,
-          height: compact ? 30 : 34,
+          width: compact ? 36 : 40,
+          height: compact ? 36 : 40,
           decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.surfaceBorderSoft),
+            color: Colors.white.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
           ),
           child: Icon(
             icon,
             color: AppColors.amberLight,
-            size: compact ? 16 : 18,
+            size: compact ? 18 : 20,
           ),
         ),
         SizedBox(width: compact ? AppSpacing.sm : AppSpacing.md),
@@ -647,7 +657,7 @@ class _CardInfoRow extends StatelessWidget {
             text,
             style: AppTextStyles.bodyLarge.copyWith(
               color: color,
-              fontSize: compact ? 17 : null,
+              fontSize: 16,
               fontWeight: subtle ? FontWeight.w500 : FontWeight.w600,
             ),
           ),
@@ -657,9 +667,74 @@ class _CardInfoRow extends StatelessWidget {
   }
 }
 
+class _MedicationBottomActions extends StatelessWidget {
+  final String nextDose;
+  final bool compact;
+  final bool isSubmitting;
+  final bool pospuesto;
+  final VoidCallback onConfirm;
+  final VoidCallback onSnooze;
+
+  const _MedicationBottomActions({
+    required this.nextDose,
+    required this.compact,
+    required this.isSubmitting,
+    required this.pospuesto,
+    required this.onConfirm,
+    required this.onSnooze,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceStrong.withValues(alpha: 0.94),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppColors.surfaceBorderSoft),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 18,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _PrimaryAlertButton(
+            onPressed: isSubmitting ? null : onConfirm,
+            label: isSubmitting ? 'Guardando...' : 'Ya la he tomado',
+            compact: true,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          _SecondarySnoozeButton(
+            onPressed: isSubmitting || pospuesto ? null : onSnooze,
+            label: pospuesto
+                ? 'Recordatorio en 10 min'
+                : 'Recordármelo en 10 min',
+            compact: compact,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            'Siguiente toma a las $nextDose',
+            textAlign: TextAlign.center,
+            style: AppTextStyles.labelLarge.copyWith(
+              color: const Color(0xFFABABAB),
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _PrimaryAlertButton extends StatelessWidget {
   final String label;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final bool compact;
 
   const _PrimaryAlertButton({
@@ -672,11 +747,12 @@ class _PrimaryAlertButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       width: double.infinity,
-      height: compact ? 64 : 78,
+      height: compact ? 56 : 64,
       child: ElevatedButton.icon(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.amber,
+          disabledBackgroundColor: AppColors.amber.withValues(alpha: 0.45),
           foregroundColor: AppColors.textOnAmber,
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
@@ -689,7 +765,7 @@ class _PrimaryAlertButton extends StatelessWidget {
         label: Text(
           label,
           style: AppTextStyles.buttonLarge.copyWith(
-            fontSize: compact ? 20 : 24,
+            fontSize: compact ? 18 : 22,
             color: AppColors.textOnAmber,
             fontWeight: FontWeight.w800,
           ),
@@ -714,7 +790,7 @@ class _SecondarySnoozeButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       width: double.infinity,
-      height: compact ? 56 : 64,
+      height: compact ? 52 : 56,
       child: OutlinedButton.icon(
         onPressed: onPressed,
         style: OutlinedButton.styleFrom(
@@ -735,7 +811,7 @@ class _SecondarySnoozeButton extends StatelessWidget {
           label,
           style: AppTextStyles.button.copyWith(
             color: AppColors.textPrimary,
-            fontSize: compact ? 16 : 18,
+            fontSize: 16,
           ),
         ),
       ),

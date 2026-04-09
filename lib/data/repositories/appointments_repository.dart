@@ -30,8 +30,11 @@ class AppointmentsRepository {
       response as List,
     ).map(Cita.fromJson).toList(growable: false);
 
-    _cachedAppointments = appointments;
-    return appointments;
+    final sorted = appointments.toList(growable: false)
+      ..sort((a, b) => a.fechaHora.compareTo(b.fechaHora));
+
+    _cachedAppointments = sorted;
+    return sorted;
   }
 
   Future<Cita?> fetchById(String id) async {
@@ -133,7 +136,7 @@ class AppointmentsRepository {
     } else {
       mutable[index] = appointment;
     }
-    mutable.sort((a, b) => a.fecha.compareTo(b.fecha));
+    mutable.sort((a, b) => a.fechaHora.compareTo(b.fechaHora));
     _cachedAppointments = List.unmodifiable(mutable);
   }
 
