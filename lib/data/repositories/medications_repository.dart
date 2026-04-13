@@ -3,12 +3,30 @@ import 'package:aviso_vital_2/data/mock/mock_data.dart';
 import 'package:aviso_vital_2/data/models/models.dart';
 import 'package:aviso_vital_2/data/repositories/user_repository.dart';
 
+class MedicationDailySnapshot {
+  final List<Medicamento> medications;
+  final List<Toma> doses;
+  final Medicamento? upcomingMedication;
+  final String upcomingTime;
+  final int pendingTodayCount;
+
+  const MedicationDailySnapshot({
+    required this.medications,
+    required this.doses,
+    required this.upcomingMedication,
+    required this.upcomingTime,
+    required this.pendingTodayCount,
+  });
+}
+
 class MedicationsRepository {
   const MedicationsRepository();
 
   static const _userRepository = UserRepository();
   static List<Medicamento> _cachedMedications = const [];
   static List<Toma> _cachedTodayDoses = const [];
+  static MedicationDailySnapshot? _cachedDailySnapshot;
+  static String? _cachedDailySnapshotKey;
 
   Future<List<Medicamento>> fetchAll({String? userId}) async {
     if (!SupabaseService.isReady) return getAll();
@@ -87,6 +105,7 @@ class MedicationsRepository {
     final created = Medicamento.fromJson(Map<String, dynamic>.from(response));
     _upsertCache(created);
     await _ensureTodayDoseSchedule(userId: userId, medications: [created]);
+    _invalidateDailySnapshot();
     return created;
   }
 
@@ -107,6 +126,7 @@ class MedicationsRepository {
     final updated = Medicamento.fromJson(Map<String, dynamic>.from(response));
     _upsertCache(updated);
     await _syncMedicationDailyDoses(updated);
+    _invalidateDailySnapshot();
     return updated;
   }
 
@@ -123,6 +143,7 @@ class MedicationsRepository {
     _cachedTodayDoses = _cachedTodayDoses
         .where((dose) => dose.idMedicamento != id)
         .toList(growable: false);
+    _invalidateDailySnapshot();
   }
 
   Future<List<Medicamento>> fetchLowStock({String? userId}) async {
@@ -135,6 +156,7 @@ class MedicationsRepository {
   Future<List<Toma>> fetchTodayDoses({
     String? userId,
     String? medicationId,
+    List<Medicamento>? preloadedMedications,
   }) async {
     if (!SupabaseService.isReady) return getTodayDoses();
 
@@ -145,7 +167,10 @@ class MedicationsRepository {
       _cachedTodayDoses = const [];
       return const [];
     }
-    await _ensureTodayDoseSchedule(userId: resolvedUserId);
+    await _ensureTodayDoseSchedule(
+      userId: resolvedUserId,
+      medications: preloadedMedications,
+    );
 
     final start = DateTime.now();
     final dayStart = DateTime(start.year, start.month, start.day);
@@ -176,19 +201,51 @@ class MedicationsRepository {
     return doses;
   }
 
-  Future<Medicamento?> fetchUpcoming({String? userId}) async {
-    final medications = await fetchAll(userId: userId);
-    final doses = await fetchTodayDoses(userId: userId);
-    final pendingDoses = _pendingDoses(doses);
-
-    if (pendingDoses.isNotEmpty) {
-      final nextDose = pendingDoses.first;
-      return medications
-          .where((medication) => medication.id == nextDose.idMedicamento)
-          .firstOrNull;
+  Future<MedicationDailySnapshot> fetchDailySnapshot({String? userId}) async {
+    final resolvedUserId = await _userRepository.resolveCareRecipientUserId(
+      explicitUserId: userId,
+    );
+    final snapshotKey = _dailySnapshotKey(resolvedUserId);
+    final cachedSnapshot = _cachedDailySnapshot;
+    if (cachedSnapshot != null && _cachedDailySnapshotKey == snapshotKey) {
+      return cachedSnapshot;
     }
 
-    return _deriveUpcomingMedicationFromSchedule(medications);
+    final medications = await fetchAll(userId: resolvedUserId);
+    final doses = await fetchTodayDoses(
+      userId: resolvedUserId,
+      preloadedMedications: medications
+          .where((item) => item.activo)
+          .toList(growable: false),
+    );
+    final pendingDoses = _pendingDoses(doses);
+
+    final snapshot = MedicationDailySnapshot(
+      medications: medications,
+      doses: doses,
+      upcomingMedication: pendingDoses.isNotEmpty
+          ? medications
+                .where(
+                  (medication) =>
+                      medication.id == pendingDoses.first.idMedicamento,
+                )
+                .firstOrNull
+          : _deriveUpcomingMedicationFromSchedule(medications),
+      upcomingTime: pendingDoses.isNotEmpty
+          ? _formatHour(pendingDoses.first.fechaProgramada)
+          : (_deriveUpcomingHourFromSchedule(medications) ?? ''),
+      pendingTodayCount: pendingDoses.isNotEmpty
+          ? pendingDoses.length
+          : _derivePendingCountFromSchedules(medications),
+    );
+    _cachedDailySnapshot = snapshot;
+    _cachedDailySnapshotKey = snapshotKey;
+    return snapshot;
+  }
+
+  Future<Medicamento?> fetchUpcoming({String? userId}) async {
+    final snapshot = await fetchDailySnapshot(userId: userId);
+    return snapshot.upcomingMedication;
   }
 
   Future<Toma?> fetchUpcomingDoseForMedication(
@@ -204,30 +261,13 @@ class MedicationsRepository {
   }
 
   Future<int> fetchPendingTodayCount({String? userId}) async {
-    final doses = await fetchTodayDoses(userId: userId);
-    if (doses.isNotEmpty) {
-      return _pendingDoses(doses).length;
-    }
-
-    final medications = _cachedMedications.isNotEmpty
-        ? _cachedMedications
-        : await fetchAll(userId: userId);
-    return _derivePendingCountFromSchedules(medications);
+    final snapshot = await fetchDailySnapshot(userId: userId);
+    return snapshot.pendingTodayCount;
   }
 
   Future<String> fetchUpcomingTime({String? userId}) async {
-    final doses = await fetchTodayDoses(userId: userId);
-    final pendingDoses = _pendingDoses(doses);
-
-    if (pendingDoses.isNotEmpty) {
-      return _formatHour(pendingDoses.first.fechaProgramada);
-    }
-
-    final medications = _cachedMedications.isNotEmpty
-        ? _cachedMedications
-        : await fetchAll(userId: userId);
-    final derived = _deriveUpcomingHourFromSchedule(medications);
-    return derived ?? '';
+    final snapshot = await fetchDailySnapshot(userId: userId);
+    return snapshot.upcomingTime;
   }
 
   Future<Toma?> confirmDose(
@@ -246,6 +286,7 @@ class MedicationsRepository {
       );
       _upsertDoseCache(updated);
       _decrementMockStock(existing.idMedicamento);
+      _invalidateDailySnapshot();
       return updated;
     }
 
@@ -265,6 +306,7 @@ class MedicationsRepository {
     final updated = Toma.fromJson(Map<String, dynamic>.from(response));
     _upsertDoseCache(updated);
     await _decrementStock(existing.idMedicamento);
+    _invalidateDailySnapshot();
     return updated;
   }
 
@@ -283,6 +325,7 @@ class MedicationsRepository {
         nota: 'Pospuesta ${delay.inMinutes} minutos',
       );
       _upsertDoseCache(updated);
+      _invalidateDailySnapshot();
       return updated;
     }
 
@@ -299,6 +342,7 @@ class MedicationsRepository {
 
     final updated = Toma.fromJson(Map<String, dynamic>.from(response));
     _upsertDoseCache(updated);
+    _invalidateDailySnapshot();
     return updated;
   }
 
@@ -314,6 +358,7 @@ class MedicationsRepository {
         nota: note ?? 'Caducada por falta de respuesta',
       );
       _upsertDoseCache(updated);
+      _invalidateDailySnapshot();
       return updated;
     }
 
@@ -329,6 +374,7 @@ class MedicationsRepository {
 
     final updated = Toma.fromJson(Map<String, dynamic>.from(response));
     _upsertDoseCache(updated);
+    _invalidateDailySnapshot();
     return updated;
   }
 
@@ -557,6 +603,17 @@ class MedicationsRepository {
     }
     mutable.sort((a, b) => a.fechaProgramada.compareTo(b.fechaProgramada));
     _cachedTodayDoses = List.unmodifiable(mutable);
+  }
+
+  String _dailySnapshotKey(String? userId) {
+    final today = DateTime.now();
+    final ownerKey = userId?.trim().isNotEmpty == true ? userId!.trim() : 'all';
+    return '$ownerKey|${today.year}-${today.month}-${today.day}';
+  }
+
+  void _invalidateDailySnapshot() {
+    _cachedDailySnapshot = null;
+    _cachedDailySnapshotKey = null;
   }
 
   Future<String> _requireCareRecipientUserId() async {

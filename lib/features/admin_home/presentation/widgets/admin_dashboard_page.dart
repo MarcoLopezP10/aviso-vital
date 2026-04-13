@@ -40,6 +40,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   static const _medicationsRepository = MedicationsRepository();
 
   late Future<_DashboardData> _dashboardFuture;
+  int _deviceBannerRefreshSeed = 0;
 
   @override
   void initState() {
@@ -49,43 +50,37 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
 
   Future<_DashboardData> _loadDashboardData() async {
     try {
+      final alertsFuture = _alertsRepository.fetchHistoryTimeline();
+      final medicationSnapshotFuture = _medicationsRepository
+          .fetchDailySnapshot();
+      final appointmentsFuture = _appointmentsRepository.fetchAll();
+
+      final alerts = await alertsFuture;
       final results = await Future.wait([
-        _alertsRepository.fetchAdherenceSummary(),
-        _medicationsRepository.fetchLowStock(),
-        _appointmentsRepository.fetchAll(),
-        _medicationsRepository.fetchAll(),
-        _alertsRepository.fetchHistoryTimeline(),
-        _medicationsRepository.fetchPendingTodayCount(),
-        _medicationsRepository.fetchTodayDoses(),
+        medicationSnapshotFuture,
+        appointmentsFuture,
+        _alertsRepository.fetchAdherenceSummary(historyTimeline: alerts),
       ]);
 
-      final adherence = results[0] as ResumenAdherencia;
-      final lowStock = results[1] as List<Medicamento>;
-      final appointments = results[2] as List<Cita>;
-      final medications = results[3] as List<Medicamento>;
-      final alerts = results[4] as List<Alerta>;
-      final pendingToday = results[5] as int;
-      final doses = results[6] as List<Toma>;
+      final medicationSnapshot = results[0] as MedicationDailySnapshot;
+      final appointments = results[1] as List<Cita>;
+      final adherence = results[2] as ResumenAdherencia;
+      final medications = medicationSnapshot.medications;
+      final lowStock = medications
+          .where((item) => item.stockBajo && item.activo)
+          .toList(growable: false);
 
       final todayAppointment = appointments
           .where((item) => item.esHoy)
           .firstOrNull;
-      final upcomingDose =
-          doses.where((item) => item.estado == EstadoToma.pendiente).toList()
-            ..sort((a, b) => a.fechaProgramada.compareTo(b.fechaProgramada));
-      final upcomingMedication = upcomingDose.isNotEmpty
-          ? medications
-                .where((item) => item.id == upcomingDose.first.idMedicamento)
-                .firstOrNull
-          : _medicationsRepository.getUpcoming();
 
       return _DashboardData(
         adherence: adherence,
         lowStock: lowStock,
         todayAppointment: todayAppointment,
-        upcomingMedication: upcomingMedication,
+        upcomingMedication: medicationSnapshot.upcomingMedication,
         alerts: alerts,
-        pendingToday: pendingToday,
+        pendingToday: medicationSnapshot.pendingTodayCount,
         medicationsCount: medications.length,
         upcomingAppointmentsCount: appointments
             .where((item) => !item.esPasada)
@@ -149,7 +144,10 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             return RefreshIndicator(
               onRefresh: () async {
                 final future = _loadDashboardData();
-                setState(() => _dashboardFuture = future);
+                setState(() {
+                  _dashboardFuture = future;
+                  _deviceBannerRefreshSeed++;
+                });
                 await future;
               },
               child: SingleChildScrollView(
@@ -161,7 +159,9 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                   children: [
                     const AdminDashboardHeader(),
                     const SizedBox(height: AppSpacing.md),
-                    const AdminDeviceStatusBanner(),
+                    AdminDeviceStatusBanner(
+                      refreshSeed: _deviceBannerRefreshSeed,
+                    ),
                     SizedBox(height: sectionGap),
                     if (data.upcomingMedication != null ||
                         data.todayAppointment != null) ...[

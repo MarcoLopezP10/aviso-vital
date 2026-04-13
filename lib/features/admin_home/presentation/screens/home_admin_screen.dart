@@ -19,41 +19,57 @@ class HomeAdminScreen extends StatefulWidget {
 
 class _HomeAdminScreenState extends State<HomeAdminScreen> {
   late int _navIndex;
+  late final List<Widget> _pages;
+  final Set<int> _visitedIndexes = <int>{};
 
   @override
   void initState() {
     super.initState();
     _navIndex = widget.initialIndex;
+    _visitedIndexes.add(_navIndex);
+    _pages = [
+      AdminDashboardPage(
+        onSwitchTab: _switchTab,
+        onOpenRecentActivity: () =>
+            Navigator.pushNamed(context, ActividadRecienteScreen.routeName),
+      ),
+      const AdminMedicamentosScreen(showBackButton: false),
+      const AdminCitasScreen(showBackButton: false),
+      const AdminAlertasScreen(showBackButton: false),
+    ];
   }
 
   @override
   void didUpdateWidget(covariant HomeAdminScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.initialIndex != widget.initialIndex) {
-      setState(() => _navIndex = widget.initialIndex);
+      setState(() {
+        _navIndex = widget.initialIndex;
+        _visitedIndexes.add(_navIndex);
+      });
     }
   }
 
-  void _switchTab(int index) => setState(() => _navIndex = index);
+  void _switchTab(int index) {
+    if (_navIndex == index && _visitedIndexes.contains(index)) return;
 
-  List<Widget> _buildPages() => [
-    AdminDashboardPage(
-      key: ValueKey('dashboard-$_navIndex'),
-      onSwitchTab: _switchTab,
-      onOpenRecentActivity: () =>
-          Navigator.pushNamed(context, ActividadRecienteScreen.routeName),
-    ),
-    const AdminMedicamentosScreen(showBackButton: false),
-    const AdminCitasScreen(showBackButton: false),
-    const AdminAlertasScreen(showBackButton: false),
-  ];
+    setState(() {
+      _navIndex = index;
+      _visitedIndexes.add(index);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return AdminHomeShell(
       selectedIndex: _navIndex,
       onDestinationSelected: _switchTab,
-      pages: _buildPages(),
+      pages: List<Widget>.generate(
+        _pages.length,
+        (index) =>
+            _visitedIndexes.contains(index) ? _pages[index] : const SizedBox(),
+        growable: false,
+      ),
     );
   }
 }

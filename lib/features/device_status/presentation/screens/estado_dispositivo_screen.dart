@@ -10,18 +10,33 @@ import 'package:aviso_vital_2/shared/widgets/layout/app_detail_scaffold.dart';
 
 /// Pantalla: Estado del dispositivo vinculado
 /// Accessible desde el home admin — muestra info del dispositivo de Carmen
-class EstadoDispositivoScreen extends StatelessWidget {
+class EstadoDispositivoScreen extends StatefulWidget {
   static const String routeName = AppRoutes.estadoDispositivo;
   static const _deviceRepository = DeviceRepository();
   static const _userRepository = UserRepository();
+
   const EstadoDispositivoScreen({super.key});
+
+  @override
+  State<EstadoDispositivoScreen> createState() =>
+      _EstadoDispositivoScreenState();
+}
+
+class _EstadoDispositivoScreenState extends State<EstadoDispositivoScreen> {
+  late final Future<_DeviceStatusData> _screenDataFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _screenDataFuture = _loadData();
+  }
 
   @override
   Widget build(BuildContext context) {
     return AppDetailScaffold(
       title: 'Estado del dispositivo',
       content: FutureBuilder<_DeviceStatusData>(
-        future: _loadData(),
+        future: _screenDataFuture,
         builder: (context, snapshot) {
           final data = snapshot.data;
           final device = data?.linkedDevice;
@@ -129,8 +144,10 @@ class EstadoDispositivoScreen extends StatelessWidget {
   }
 
   Future<_DeviceStatusData> _loadData() async {
-    final admin = await _userRepository.getSignedInUserProfile();
-    final linkedDevice = await _deviceRepository.getLinkedDeviceStatus();
+    final admin = await EstadoDispositivoScreen._userRepository
+        .getSignedInUserProfile();
+    final linkedDevice = await EstadoDispositivoScreen._deviceRepository
+        .getLinkedDeviceStatus();
     return _DeviceStatusData(admin: admin, linkedDevice: linkedDevice);
   }
 }

@@ -40,13 +40,10 @@ class _AdminAlertasScreenState extends State<AdminAlertasScreen>
   }
 
   Future<_AlertsScreenData> _loadData() async {
-    final results = await Future.wait([
-      _alertsRepository.fetchAdherenceSummary(),
-      _alertsRepository.fetchHistoryTimeline(),
-    ]);
-
-    final adherencia = results[0] as ResumenAdherencia;
-    final alertas = results[1] as List<Alerta>;
+    final alertas = await _alertsRepository.fetchHistoryTimeline();
+    final adherencia = await _alertsRepository.fetchAdherenceSummary(
+      historyTimeline: alertas,
+    );
     return _AlertsScreenData(adherencia: adherencia, alertas: alertas);
   }
 

@@ -104,22 +104,24 @@ class RealtimeSimulationService {
       await _expireOverdueDoses(ownerId);
     } catch (_) {}
 
-    final medications = await _safeLoad(
-      () => medicationsRepository.fetchAll(userId: ownerId),
-    );
-    final appointments = await _safeLoad(
-      () => appointmentsRepository.fetchAll(userId: ownerId),
-    );
-    final doses = await _safeLoad(
-      () => medicationsRepository.fetchTodayDoses(userId: ownerId),
-    );
-    final alerts = await _safeLoad(
-      () => alertsRepository.fetchRecent(userId: ownerId),
-    );
+    final results = await Future.wait([
+      medicationsRepository.fetchDailySnapshot(userId: ownerId),
+      _safeLoad(() => appointmentsRepository.fetchAll(userId: ownerId)),
+      _safeLoad(() => alertsRepository.fetchRecent(userId: ownerId)),
+    ]);
+
+    final medicationSnapshot = results[0] as MedicationDailySnapshot;
+    final appointments = results[1] as List<Cita>;
+    final alerts = results[2] as List<Alerta>;
+    final medications = medicationSnapshot.medications;
+    final doses = medicationSnapshot.doses;
 
     final medicationsById = {
       for (final medication in medications) medication.id: medication,
     };
+    final appointmentAlerts = alerts
+        .where((alert) => alert.tipo == TipoAlerta.cita)
+        .toList(growable: false);
 
     final notifications = <LiveNotificationItem>[
       ...doses
@@ -137,10 +139,8 @@ class RealtimeSimulationService {
           .whereType<LiveNotificationItem>(),
       ...appointments
           .expand(
-            (appointment) => _buildAppointmentNotifications(
-              appointment,
-              alerts.where((alert) => alert.tipo == TipoAlerta.cita).toList(),
-            ),
+            (appointment) =>
+                _buildAppointmentNotifications(appointment, appointmentAlerts),
           )
           .whereType<LiveNotificationItem>(),
     ]..sort((a, b) => a.scheduledAt.compareTo(b.scheduledAt));
@@ -244,13 +244,11 @@ class RealtimeSimulationService {
       appointment,
       appointmentAt,
     )) {
-      final matchedAlert =
-          appointmentAlerts
-              .where((alert) => _matchesReminder(alert, appointment, reminder))
-              .toList()
-            ..sort((a, b) => a.fechaHora.compareTo(b.fechaHora));
-
-      final alert = matchedAlert.isEmpty ? null : matchedAlert.last;
+      final alert = _latestMatchingReminderAlert(
+        appointmentAlerts,
+        appointment,
+        reminder,
+      );
       final item = _buildAppointmentNotification(
         appointment,
         reminder,
@@ -328,6 +326,24 @@ class RealtimeSimulationService {
     } catch (_) {
       return List<T>.empty(growable: false);
     }
+  }
+
+  Alerta? _latestMatchingReminderAlert(
+    List<Alerta> alerts,
+    Cita appointment,
+    _DerivedAppointmentReminder reminder,
+  ) {
+    Alerta? latestMatch;
+
+    for (final alert in alerts) {
+      if (!_matchesReminder(alert, appointment, reminder)) continue;
+      if (latestMatch == null ||
+          alert.fechaHora.isAfter(latestMatch.fechaHora)) {
+        latestMatch = alert;
+      }
+    }
+
+    return latestMatch;
   }
 
   bool _matchesReminder(

@@ -33,7 +33,9 @@ class AdminHomeShell extends StatelessWidget {
               selectedIndex: selectedIndex,
               onDestinationSelected: onDestinationSelected,
             ),
-            Expanded(child: pages[selectedIndex]),
+            Expanded(
+              child: IndexedStack(index: selectedIndex, children: pages),
+            ),
           ],
         ),
       );
@@ -47,7 +49,7 @@ class AdminHomeShell extends StatelessWidget {
       secondaryGlowAlignment: const Alignment(1, -0.55),
       intensity: 0.48,
       extendBody: true,
-      body: pages[selectedIndex],
+      body: IndexedStack(index: selectedIndex, children: pages),
       bottomNavigationBar: AdminBottomNav(
         selectedIndex: selectedIndex,
         onDestinationSelected: onDestinationSelected,

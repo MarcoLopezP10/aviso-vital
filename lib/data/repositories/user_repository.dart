@@ -15,17 +15,30 @@ class UserRepository {
 
   static Usuario? _cachedCurrentUser;
   static Usuario? _cachedAdminUser;
+  static final Map<String, Usuario> _cachedUsersById = <String, Usuario>{};
+  static final Map<String, Usuario> _cachedLinkedMayorByAdminId =
+      <String, Usuario>{};
+  static final Map<String, Usuario> _cachedAdminsByLinkCode =
+      <String, Usuario>{};
 
   static void clearCache() {
     _cachedCurrentUser = null;
     _cachedAdminUser = null;
+    _cachedUsersById.clear();
+    _cachedLinkedMayorByAdminId.clear();
+    _cachedAdminsByLinkCode.clear();
   }
 
-  Future<Usuario?> getSignedInUserProfile() async {
+  Future<Usuario?> getSignedInUserProfile({bool forceRefresh = false}) async {
     if (!SupabaseService.isReady) return null;
 
     final authUser = SupabaseService.currentUser;
     if (authUser == null) return null;
+
+    if (!forceRefresh) {
+      final cached = _cachedUsersById[authUser.id];
+      if (cached != null) return cached;
+    }
 
     final response = await _fetchProfileById(authUser.id);
     if (response != null) {
@@ -39,10 +52,18 @@ class UserRepository {
     return ensureCurrentUserProfile();
   }
 
-  Future<Usuario?> fetchProfileById(String id) async {
+  Future<Usuario?> fetchProfileById(
+    String id, {
+    bool forceRefresh = false,
+  }) async {
     if (id.trim().isEmpty) return null;
     if (!SupabaseService.isReady) {
       return getById(id);
+    }
+
+    if (!forceRefresh) {
+      final cached = _cachedUsersById[id];
+      if (cached != null) return cached;
     }
 
     final response = await _fetchProfileById(id);
@@ -188,9 +209,17 @@ class UserRepository {
     }
   }
 
-  Future<Usuario?> findAdminByLinkCode(String code) async {
+  Future<Usuario?> findAdminByLinkCode(
+    String code, {
+    bool forceRefresh = false,
+  }) async {
     final normalizedCode = code.replaceAll('-', '').trim().toUpperCase();
     if (normalizedCode.isEmpty) return null;
+
+    if (!forceRefresh) {
+      final cached = _cachedAdminsByLinkCode[normalizedCode];
+      if (cached != null) return cached;
+    }
 
     if (!SupabaseService.isReady) {
       return MockData.administrador.codigoVinculacion == normalizedCode
@@ -212,6 +241,7 @@ class UserRepository {
 
       final user = Usuario.fromJson(Map<String, dynamic>.from(response));
       if (user.rol == RolUsuario.administrador) {
+        _cacheAdminByLinkCode(normalizedCode, user);
         await _appLinkService.saveKnownAdminProfile(user);
       }
       return user;
@@ -261,12 +291,24 @@ class UserRepository {
         displayName: profile.nombre,
       );
     }
+    if (profile.idAdministrador != null &&
+        profile.idAdministrador!.isNotEmpty) {
+      _cacheLinkedMayor(profile.idAdministrador!, profile);
+    }
     return profile;
   }
 
-  Future<Usuario?> findLinkedMayorForAdmin(String adminId) async {
+  Future<Usuario?> findLinkedMayorForAdmin(
+    String adminId, {
+    bool forceRefresh = false,
+  }) async {
     final normalizedAdminId = adminId.trim();
     if (normalizedAdminId.isEmpty) return null;
+
+    if (!forceRefresh) {
+      final cached = _cachedLinkedMayorByAdminId[normalizedAdminId];
+      if (cached != null) return cached;
+    }
 
     if (!SupabaseService.isReady) {
       final mockUser = MockData.usuarioMayor;
@@ -286,9 +328,11 @@ class UserRepository {
         .maybeSingle();
 
     if (response == null) return null;
-    return _rememberLookupUser(
+    final user = _rememberLookupUser(
       Usuario.fromJson(Map<String, dynamic>.from(response)),
     );
+    _cacheLinkedMayor(normalizedAdminId, user);
+    return user;
   }
 
   Future<Usuario> getOrCreateLinkedMayorForAdmin(
@@ -323,9 +367,11 @@ class UserRepository {
         .select()
         .single();
 
-    return _rememberLookupUser(
+    final linkedMayor = _rememberLookupUser(
       Usuario.fromJson(Map<String, dynamic>.from(response)),
     );
+    _cacheLinkedMayor(admin.id, linkedMayor);
+    return linkedMayor;
   }
 
   Future<Usuario?> getLinkedCareRecipientForCurrentAdmin() async {
@@ -380,6 +426,8 @@ class UserRepository {
   }
 
   Usuario? getById(String id) {
+    final cachedById = _cachedUsersById[id];
+    if (cachedById != null) return cachedById;
     final cached = _cachedCurrentUser;
     if (cached?.id == id) return cached;
     final cachedAdmin = _cachedAdminUser;
@@ -402,17 +450,40 @@ class UserRepository {
 
   Usuario _cacheUser(Usuario user) {
     _cachedCurrentUser = user;
+    _cachedUsersById[user.id] = user;
     if (user.rol == RolUsuario.administrador) {
       _cachedAdminUser = user;
+      _cacheAdminByLinkCode(user.codigoVinculacion, user);
     }
     return user;
   }
 
   Usuario _rememberLookupUser(Usuario user) {
+    _cachedUsersById[user.id] = user;
     if (user.rol == RolUsuario.administrador) {
       _cachedAdminUser = user;
+      _cacheAdminByLinkCode(user.codigoVinculacion, user);
+    }
+    final adminId = user.idAdministrador?.trim();
+    if (user.rol == RolUsuario.mayor && adminId != null && adminId.isNotEmpty) {
+      _cacheLinkedMayor(adminId, user);
     }
     return user;
+  }
+
+  void _cacheLinkedMayor(String adminId, Usuario user) {
+    if (adminId.isEmpty || user.rol != RolUsuario.mayor) return;
+    _cachedLinkedMayorByAdminId[adminId] = user;
+  }
+
+  void _cacheAdminByLinkCode(String? code, Usuario user) {
+    final normalizedCode = code?.replaceAll('-', '').trim().toUpperCase();
+    if (normalizedCode == null ||
+        normalizedCode.isEmpty ||
+        user.rol != RolUsuario.administrador) {
+      return;
+    }
+    _cachedAdminsByLinkCode[normalizedCode] = user;
   }
 
   Usuario _fallbackProfileFromAuth(User authUser) {

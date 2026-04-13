@@ -181,22 +181,19 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
   Future<_UserHomeViewData> _buildViewData() async {
     final contextData = await _carePlanContextService.resolve();
     final ownerId = contextData.ownerUserId;
-    final nextMedication = await _medicationsRepository.fetchUpcoming(
-      userId: ownerId,
-    );
-    final appointments = await _appointmentsRepository.fetchAll(
-      userId: ownerId,
-    );
+    final results = await Future.wait([
+      _medicationsRepository.fetchDailySnapshot(userId: ownerId),
+      _appointmentsRepository.fetchAll(userId: ownerId),
+    ]);
+
+    final medicationSnapshot = results[0] as MedicationDailySnapshot;
+    final appointments = results[1] as List<Cita>;
     final sortedUpcomingAppointments =
         appointments.where((item) => !item.esPasada).toList(growable: false)
           ..sort((a, b) => a.fechaHora.compareTo(b.fechaHora));
     final todayAppointment = sortedUpcomingAppointments.firstOrNull;
-    final pendingToday = await _medicationsRepository.fetchPendingTodayCount(
-      userId: ownerId,
-    );
-    final dosesToday = await _medicationsRepository.fetchTodayDoses(
-      userId: ownerId,
-    );
+    final pendingToday = medicationSnapshot.pendingTodayCount;
+    final dosesToday = medicationSnapshot.doses;
     final profile =
         contextData.careRecipientProfile ?? contextData.viewerProfile;
     final confirmedToday = dosesToday
@@ -212,10 +209,8 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
     return _UserHomeViewData(
       greeting: greeting,
       dateLabel: _formatDate(now),
-      nextMedication: nextMedication,
-      nextMedicationTime: await _medicationsRepository.fetchUpcomingTime(
-        userId: ownerId,
-      ),
+      nextMedication: medicationSnapshot.upcomingMedication,
+      nextMedicationTime: medicationSnapshot.upcomingTime,
       todayAppointment: todayAppointment,
       pendingToday: pendingToday,
       confirmedToday: confirmedToday,

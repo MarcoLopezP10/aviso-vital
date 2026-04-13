@@ -3,15 +3,38 @@ import 'package:aviso_vital_2/data/repositories/device_repository.dart';
 import 'package:aviso_vital_2/features/device_status/presentation/screens/estado_dispositivo_screen.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 
-class AdminDeviceStatusBanner extends StatelessWidget {
+class AdminDeviceStatusBanner extends StatefulWidget {
   static const _deviceRepository = DeviceRepository();
+  final int refreshSeed;
 
-  const AdminDeviceStatusBanner({super.key});
+  const AdminDeviceStatusBanner({super.key, this.refreshSeed = 0});
+
+  @override
+  State<AdminDeviceStatusBanner> createState() =>
+      _AdminDeviceStatusBannerState();
+}
+
+class _AdminDeviceStatusBannerState extends State<AdminDeviceStatusBanner> {
+  late Future<_DeviceBannerData> _bannerFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _bannerFuture = _loadData();
+  }
+
+  @override
+  void didUpdateWidget(covariant AdminDeviceStatusBanner oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.refreshSeed != widget.refreshSeed) {
+      setState(() => _bannerFuture = _loadData());
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<_DeviceBannerData>(
-      future: _loadData(),
+      future: _bannerFuture,
       builder: (context, snapshot) {
         final data = snapshot.data ?? const _DeviceBannerData();
         final color = data.connected ? AppColors.success : AppColors.warning;
@@ -81,7 +104,8 @@ class AdminDeviceStatusBanner extends StatelessWidget {
   }
 
   Future<_DeviceBannerData> _loadData() async {
-    final user = await _deviceRepository.getLinkedDeviceStatus();
+    final user = await AdminDeviceStatusBanner._deviceRepository
+        .getLinkedDeviceStatus();
     return _DeviceBannerData(
       connected: user?.connected == true,
       userName: user?.displayName,

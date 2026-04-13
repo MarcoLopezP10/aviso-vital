@@ -50,20 +50,26 @@ class CarePlanContextService {
       );
     }
 
-    final linkedCode = await linkService.getLinkedAdminCode();
+    final localLinkData = await Future.wait([
+      linkService.getLinkedAdminCode(),
+      linkService.getLinkedUserId(),
+      linkService.getLinkedUserName(),
+      linkService.getKnownAdminProfile(),
+    ]);
+    final linkedCode = localLinkData[0] as String?;
     if (linkedCode == null) {
       return const CarePlanContext(ownerUserId: null, viewerProfile: null);
     }
-    final linkedUserId = await linkService.getLinkedUserId();
+    final linkedUserId = localLinkData[1] as String?;
+    final linkedName = localLinkData[2] as String?;
+    final knownAdmin = localLinkData[3] as Usuario?;
 
     final linkedAdmin =
-        await userRepository.findAdminByLinkCode(linkedCode) ??
-        await linkService.getKnownAdminProfile();
+        await userRepository.findAdminByLinkCode(linkedCode) ?? knownAdmin;
     if (linkedAdmin == null) {
       return const CarePlanContext(ownerUserId: null, viewerProfile: null);
     }
 
-    final linkedName = await linkService.getLinkedUserName();
     final viewerProfile = Usuario(
       id: linkedUserId ?? 'local-linked-user',
       nombre: linkedName ?? 'Usuario',

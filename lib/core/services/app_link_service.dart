@@ -13,11 +13,15 @@ class AppLinkService {
   static const _knownAdminEmailKey = 'known_admin_email';
   static const _knownAdminCreatedAtKey = 'known_admin_created_at';
   static const _knownAdminLastSyncKey = 'known_admin_last_sync';
+  static Future<SharedPreferences>? _preferencesFuture;
 
   const AppLinkService();
 
+  Future<SharedPreferences> _prefs() =>
+      _preferencesFuture ??= SharedPreferences.getInstance();
+
   Future<String> getOrCreateLocalDeviceId() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _prefs();
     final existing = prefs.getString(_localDeviceIdKey)?.trim();
     if (existing != null && existing.isNotEmpty) return existing;
 
@@ -33,7 +37,7 @@ class AppLinkService {
     String? userId,
     String displayName = 'Usuario',
   }) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _prefs();
     await prefs.setString(_linkedAdminCodeKey, adminCode);
     if (adminId != null && adminId.isNotEmpty) {
       await prefs.setString(_linkedAdminIdKey, adminId);
@@ -45,25 +49,25 @@ class AppLinkService {
   }
 
   Future<String?> getLinkedAdminCode() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _prefs();
     final value = prefs.getString(_linkedAdminCodeKey)?.trim();
     return value == null || value.isEmpty ? null : value;
   }
 
   Future<String?> getLinkedAdminId() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _prefs();
     final value = prefs.getString(_linkedAdminIdKey)?.trim();
     return value == null || value.isEmpty ? null : value;
   }
 
   Future<String?> getLinkedUserId() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _prefs();
     final value = prefs.getString(_linkedUserIdKey)?.trim();
     return value == null || value.isEmpty ? null : value;
   }
 
   Future<String?> getLinkedUserName() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _prefs();
     final value = prefs.getString(_linkedUserNameKey)?.trim();
     return value == null || value.isEmpty ? null : value;
   }
@@ -71,7 +75,7 @@ class AppLinkService {
   Future<bool> hasLinkedAdmin() async => (await getLinkedAdminCode()) != null;
 
   Future<void> saveKnownAdminProfile(Usuario admin) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _prefs();
     if (admin.rol != RolUsuario.administrador) return;
     await prefs.setString(_knownAdminIdKey, admin.id);
     if (admin.codigoVinculacion != null &&
@@ -93,7 +97,7 @@ class AppLinkService {
   }
 
   Future<Usuario?> getKnownAdminProfile() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _prefs();
     final id = prefs.getString(_knownAdminIdKey)?.trim();
     if (id == null || id.isEmpty) return null;
 
@@ -119,7 +123,7 @@ class AppLinkService {
   }
 
   Future<void> clear() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _prefs();
     await prefs.remove(_linkedAdminCodeKey);
     await prefs.remove(_linkedAdminIdKey);
     await prefs.remove(_linkedUserIdKey);

@@ -228,7 +228,10 @@ class AlertsRepository {
     return _cachedAlerts;
   }
 
-  Future<ResumenAdherencia> fetchAdherenceSummary({String? userId}) async {
+  Future<ResumenAdherencia> fetchAdherenceSummary({
+    String? userId,
+    List<Alerta>? historyTimeline,
+  }) async {
     if (!SupabaseService.isReady) return getAdherenceSummary();
 
     try {
@@ -266,9 +269,14 @@ class AlertsRepository {
       dosesQuery = dosesQuery.eq('id_usuario', resolvedUserId);
       appointmentsQuery = appointmentsQuery.eq('id_usuario', resolvedUserId);
 
-      final dosesResponse = await dosesQuery;
-      final appointmentsResponse = await appointmentsQuery;
-      final alerts = await fetchHistoryTimeline(userId: resolvedUserId);
+      final results = await Future.wait<dynamic>([
+        dosesQuery,
+        appointmentsQuery,
+      ]);
+      final dosesResponse = results[0];
+      final appointmentsResponse = results[1];
+      final alerts =
+          historyTimeline ?? await fetchHistoryTimeline(userId: resolvedUserId);
       final doses = List<Map<String, dynamic>>.from(dosesResponse as List);
       final appointments = List<Map<String, dynamic>>.from(
         appointmentsResponse as List,

@@ -26,19 +26,18 @@ class _SimulacionAlertasScreenState extends State<SimulacionAlertasScreen> {
   bool _isRefreshing = false;
   String? _loadError;
   int _tick = 0;
-  DateTime _now = DateTime.now();
   Timer? _timer;
+  late final ValueNotifier<DateTime> _nowNotifier;
 
   @override
   void initState() {
     super.initState();
+    _nowNotifier = ValueNotifier(DateTime.now());
     _refreshSnapshot(initial: true);
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted) return;
-      setState(() {
-        _tick += 1;
-        _now = DateTime.now();
-      });
+      _tick += 1;
+      _nowNotifier.value = DateTime.now();
       if (_tick % 5 == 0) {
         _refreshSnapshot();
       }
@@ -48,6 +47,7 @@ class _SimulacionAlertasScreenState extends State<SimulacionAlertasScreen> {
   @override
   void dispose() {
     _timer?.cancel();
+    _nowNotifier.dispose();
     super.dispose();
   }
 
@@ -67,8 +67,8 @@ class _SimulacionAlertasScreenState extends State<SimulacionAlertasScreen> {
         _isRefreshing = false;
         _isLoading = false;
         _loadError = null;
-        _now = DateTime.now();
       });
+      _nowNotifier.value = DateTime.now();
     } catch (error) {
       if (!mounted) return;
       setState(() {
@@ -104,8 +104,6 @@ class _SimulacionAlertasScreenState extends State<SimulacionAlertasScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final visibleNotifications = _snapshot?.visibleAt(_now) ?? const [];
-
     return PremiumScreenScaffold(
       variant: PremiumBackgroundVariant.dashboard,
       primaryGlowColor: AppColors.amber,
@@ -129,31 +127,39 @@ class _SimulacionAlertasScreenState extends State<SimulacionAlertasScreen> {
               )
             : RefreshIndicator(
                 onRefresh: _refreshSnapshot,
-                child: ListView(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.lg,
-                    AppSpacing.sm,
-                    AppSpacing.lg,
-                    AppSpacing.xl,
-                  ),
-                  children: [
-                    _SimulationHintCard(
-                      syncedAt: _snapshot?.syncedAt,
-                      visibleCount: visibleNotifications.length,
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-                    Center(
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 420),
-                        child: _PhoneFrame(
-                          now: _now,
-                          visibleNotifications: visibleNotifications,
-                          nextNotification: _snapshot?.nextScheduled,
-                          onTapNotification: _openNotification,
-                        ),
+                child: ValueListenableBuilder<DateTime>(
+                  valueListenable: _nowNotifier,
+                  builder: (context, now, _) {
+                    final visibleNotifications =
+                        _snapshot?.visibleAt(now) ?? const [];
+
+                    return ListView(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.lg,
+                        AppSpacing.sm,
+                        AppSpacing.lg,
+                        AppSpacing.xl,
                       ),
-                    ),
-                  ],
+                      children: [
+                        _SimulationHintCard(
+                          syncedAt: _snapshot?.syncedAt,
+                          visibleCount: visibleNotifications.length,
+                        ),
+                        const SizedBox(height: AppSpacing.lg),
+                        Center(
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 420),
+                            child: _PhoneFrame(
+                              now: now,
+                              visibleNotifications: visibleNotifications,
+                              nextNotification: _snapshot?.nextScheduled,
+                              onTapNotification: _openNotification,
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ),
       ),

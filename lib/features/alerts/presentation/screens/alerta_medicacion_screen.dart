@@ -144,12 +144,23 @@ class _AlertaMedicacionScreenState extends State<AlertaMedicacionScreen>
         med = await _medicationsRepository.fetchById(dose.idMedicamento);
       }
     } else {
-      med = await _medicationsRepository.fetchUpcoming(userId: ownerId);
+      final snapshot = await _medicationsRepository.fetchDailySnapshot(
+        userId: ownerId,
+      );
+      med = snapshot.upcomingMedication;
       if (med != null) {
-        dose = await _medicationsRepository.fetchUpcomingDoseForMedication(
-          med.id,
-          userId: ownerId,
+        final pendingDoses = snapshot.doses
+            .where((item) => item.idMedicamento == med!.id)
+            .where(
+              (item) =>
+                  item.estado == EstadoToma.pendiente ||
+                  item.estado == EstadoToma.pospuesta,
+            )
+            .toList(growable: false);
+        pendingDoses.sort(
+          (a, b) => a.fechaProgramada.compareTo(b.fechaProgramada),
         );
+        dose = pendingDoses.firstOrNull;
       }
     }
 
