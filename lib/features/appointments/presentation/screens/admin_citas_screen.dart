@@ -68,14 +68,16 @@ class _AdminCitasScreenState extends State<AdminCitasScreen> {
     super.dispose();
   }
 
-  Future<void> _loadAppointments() async {
+  Future<void> _loadAppointments({bool forceRefresh = false}) async {
     setState(() {
       _isLoading = true;
       _loadError = null;
     });
 
     try {
-      final appointments = await _appointmentsRepository.fetchAll();
+      final appointments = await _appointmentsRepository.fetchAll(
+        forceRefresh: forceRefresh,
+      );
       if (!mounted) return;
       setState(() {
         _citas = appointments;
@@ -209,7 +211,8 @@ class _AdminCitasScreenState extends State<AdminCitasScreen> {
                           ),
                         )
                       : RefreshIndicator(
-                          onRefresh: _loadAppointments,
+                          onRefresh: () =>
+                              _loadAppointments(forceRefresh: true),
                           child: ListView.builder(
                             padding: EdgeInsets.fromLTRB(
                               isCompactMobile ? AppSpacing.lg : AppSpacing.xl,

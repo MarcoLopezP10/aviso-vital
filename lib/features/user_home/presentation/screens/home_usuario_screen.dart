@@ -73,7 +73,7 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
             final data = snapshot.data!;
             return RefreshIndicator(
               onRefresh: () async {
-                final future = _buildViewData();
+                final future = _buildViewData(forceRefresh: true);
                 setState(() => _viewDataFuture = future);
                 await future;
               },
@@ -178,12 +178,18 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
     );
   }
 
-  Future<_UserHomeViewData> _buildViewData() async {
+  Future<_UserHomeViewData> _buildViewData({bool forceRefresh = false}) async {
     final contextData = await _carePlanContextService.resolve();
     final ownerId = contextData.ownerUserId;
     final results = await Future.wait([
-      _medicationsRepository.fetchDailySnapshot(userId: ownerId),
-      _appointmentsRepository.fetchAll(userId: ownerId),
+      _medicationsRepository.fetchDailySnapshot(
+        userId: ownerId,
+        forceRefresh: forceRefresh,
+      ),
+      _appointmentsRepository.fetchAll(
+        userId: ownerId,
+        forceRefresh: forceRefresh,
+      ),
     ]);
 
     final medicationSnapshot = results[0] as MedicationDailySnapshot;

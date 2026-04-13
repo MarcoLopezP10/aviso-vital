@@ -48,12 +48,14 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     _dashboardFuture = _loadDashboardData();
   }
 
-  Future<_DashboardData> _loadDashboardData() async {
+  Future<_DashboardData> _loadDashboardData({bool forceRefresh = false}) async {
     try {
       final alertsFuture = _alertsRepository.fetchHistoryTimeline();
       final medicationSnapshotFuture = _medicationsRepository
-          .fetchDailySnapshot();
-      final appointmentsFuture = _appointmentsRepository.fetchAll();
+          .fetchDailySnapshot(forceRefresh: forceRefresh);
+      final appointmentsFuture = _appointmentsRepository.fetchAll(
+        forceRefresh: forceRefresh,
+      );
 
       final alerts = await alertsFuture;
       final results = await Future.wait([
@@ -143,7 +145,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             final data = snapshot.data!;
             return RefreshIndicator(
               onRefresh: () async {
-                final future = _loadDashboardData();
+                final future = _loadDashboardData(forceRefresh: true);
                 setState(() {
                   _dashboardFuture = future;
                   _deviceBannerRefreshSeed++;

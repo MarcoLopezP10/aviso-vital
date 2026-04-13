@@ -69,14 +69,16 @@ class _AdminMedicamentosScreenState extends State<AdminMedicamentosScreen> {
     super.dispose();
   }
 
-  Future<void> _loadMedicamentos() async {
+  Future<void> _loadMedicamentos({bool forceRefresh = false}) async {
     setState(() {
       _isLoading = true;
       _loadError = null;
     });
 
     try {
-      final medications = await _medicationsRepository.fetchAll();
+      final medications = await _medicationsRepository.fetchAll(
+        forceRefresh: forceRefresh,
+      );
       if (!mounted) return;
       setState(() {
         _medicamentos = medications;
@@ -207,7 +209,8 @@ class _AdminMedicamentosScreenState extends State<AdminMedicamentosScreen> {
                           ),
                         )
                       : RefreshIndicator(
-                          onRefresh: _loadMedicamentos,
+                          onRefresh: () =>
+                              _loadMedicamentos(forceRefresh: true),
                           child: ListView.builder(
                             padding: const EdgeInsets.fromLTRB(
                               AppSpacing.lg,

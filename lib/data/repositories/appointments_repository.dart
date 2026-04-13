@@ -9,16 +9,26 @@ class AppointmentsRepository {
 
   static const _userRepository = UserRepository();
   static List<Cita> _cachedAppointments = const [];
+  static String? _cachedAppointmentsKey;
 
-  Future<List<Cita>> fetchAll({String? userId}) async {
+  Future<List<Cita>> fetchAll({
+    String? userId,
+    bool forceRefresh = false,
+  }) async {
     if (!SupabaseService.isReady) return getAll();
 
-    dynamic query = SupabaseService.client.from('citas').select();
     final resolvedUserId = await _userRepository.resolveCareRecipientUserId(
       explicitUserId: userId,
     );
+    final cacheKey = _ownerCacheKey(resolvedUserId);
+    if (!forceRefresh && _cachedAppointmentsKey == cacheKey) {
+      return List.unmodifiable(_cachedAppointments);
+    }
+
+    dynamic query = SupabaseService.client.from('citas').select();
     if (resolvedUserId == null && SupabaseService.currentUser != null) {
       _cachedAppointments = const [];
+      _cachedAppointmentsKey = cacheKey;
       return const [];
     }
     if (resolvedUserId != null && resolvedUserId.isNotEmpty) {
@@ -34,10 +44,25 @@ class AppointmentsRepository {
       ..sort((a, b) => a.fechaHora.compareTo(b.fechaHora));
 
     _cachedAppointments = sorted;
+    _cachedAppointmentsKey = cacheKey;
     return sorted;
   }
 
-  Future<Cita?> fetchById(String id) async {
+  Future<Cita?> fetchById(
+    String id, {
+    String? userId,
+    bool forceRefresh = false,
+  }) async {
+    if (!forceRefresh) {
+      final resolvedUserId = await _userRepository.resolveCareRecipientUserId(
+        explicitUserId: userId,
+      );
+      final cacheKey = _ownerCacheKey(resolvedUserId);
+      if (_cachedAppointmentsKey == cacheKey) {
+        final cached = getById(id);
+        if (cached != null) return cached;
+      }
+    }
     if (!SupabaseService.isReady) return getById(id);
 
     final response = await SupabaseService.client
@@ -129,7 +154,10 @@ class AppointmentsRepository {
   int getUpcomingCount() => getUpcoming().length;
 
   void _upsertCache(Cita appointment) {
-    final mutable = _cachedAppointments.toList(growable: true);
+    final cacheKey = _ownerCacheKey(appointment.idUsuario);
+    final mutable = _cachedAppointmentsKey == cacheKey
+        ? _cachedAppointments.toList(growable: true)
+        : <Cita>[];
     final index = mutable.indexWhere((item) => item.id == appointment.id);
     if (index == -1) {
       mutable.add(appointment);
@@ -138,6 +166,12 @@ class AppointmentsRepository {
     }
     mutable.sort((a, b) => a.fechaHora.compareTo(b.fechaHora));
     _cachedAppointments = List.unmodifiable(mutable);
+    _cachedAppointmentsKey = cacheKey;
+  }
+
+  String _ownerCacheKey(String? userId) {
+    final ownerKey = userId?.trim().isNotEmpty == true ? userId!.trim() : 'all';
+    return 'appointments:$ownerKey';
   }
 
   Future<String> _requireCareRecipientUserId() async {

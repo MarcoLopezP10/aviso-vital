@@ -25,18 +25,29 @@ class MedicationsRepository {
   static const _userRepository = UserRepository();
   static List<Medicamento> _cachedMedications = const [];
   static List<Toma> _cachedTodayDoses = const [];
+  static String? _cachedMedicationsKey;
+  static String? _cachedTodayDosesKey;
   static MedicationDailySnapshot? _cachedDailySnapshot;
   static String? _cachedDailySnapshotKey;
 
-  Future<List<Medicamento>> fetchAll({String? userId}) async {
+  Future<List<Medicamento>> fetchAll({
+    String? userId,
+    bool forceRefresh = false,
+  }) async {
     if (!SupabaseService.isReady) return getAll();
 
-    dynamic query = SupabaseService.client.from('medicamentos').select();
     final resolvedUserId = await _userRepository.resolveCareRecipientUserId(
       explicitUserId: userId,
     );
+    final cacheKey = _ownerCacheKey(resolvedUserId);
+    if (!forceRefresh && _cachedMedicationsKey == cacheKey) {
+      return List.unmodifiable(_cachedMedications);
+    }
+
+    dynamic query = SupabaseService.client.from('medicamentos').select();
     if (resolvedUserId == null && SupabaseService.currentUser != null) {
       _cachedMedications = const [];
+      _cachedMedicationsKey = cacheKey;
       return const [];
     }
     if (resolvedUserId != null && resolvedUserId.isNotEmpty) {
@@ -49,10 +60,25 @@ class MedicationsRepository {
     ).map(Medicamento.fromJson).toList(growable: false);
 
     _cachedMedications = medications;
+    _cachedMedicationsKey = cacheKey;
     return medications;
   }
 
-  Future<Medicamento?> fetchById(String id) async {
+  Future<Medicamento?> fetchById(
+    String id, {
+    String? userId,
+    bool forceRefresh = false,
+  }) async {
+    if (!forceRefresh) {
+      final resolvedUserId = await _userRepository.resolveCareRecipientUserId(
+        explicitUserId: userId,
+      );
+      final cacheKey = _ownerCacheKey(resolvedUserId);
+      if (_cachedMedicationsKey == cacheKey) {
+        final cached = getById(id);
+        if (cached != null) return cached;
+      }
+    }
     if (!SupabaseService.isReady) return getById(id);
 
     final response = await SupabaseService.client
@@ -69,7 +95,23 @@ class MedicationsRepository {
     return medication;
   }
 
-  Future<Toma?> fetchDoseById(String id) async {
+  Future<Toma?> fetchDoseById(
+    String id, {
+    String? userId,
+    bool forceRefresh = false,
+  }) async {
+    if (!forceRefresh) {
+      final resolvedUserId = await _userRepository.resolveCareRecipientUserId(
+        explicitUserId: userId,
+      );
+      final cacheKey = _todayDoseCacheKey(resolvedUserId);
+      if (_cachedTodayDosesKey == cacheKey) {
+        final cachedDose = getTodayDoses()
+            .where((item) => item.id == id)
+            .firstOrNull;
+        if (cachedDose != null) return cachedDose;
+      }
+    }
     if (!SupabaseService.isReady) {
       return getTodayDoses().where((item) => item.id == id).firstOrNull;
     }
@@ -105,6 +147,7 @@ class MedicationsRepository {
     final created = Medicamento.fromJson(Map<String, dynamic>.from(response));
     _upsertCache(created);
     await _ensureTodayDoseSchedule(userId: userId, medications: [created]);
+    _clearTodayDoseCache();
     _invalidateDailySnapshot();
     return created;
   }
@@ -126,6 +169,7 @@ class MedicationsRepository {
     final updated = Medicamento.fromJson(Map<String, dynamic>.from(response));
     _upsertCache(updated);
     await _syncMedicationDailyDoses(updated);
+    _clearTodayDoseCache();
     _invalidateDailySnapshot();
     return updated;
   }
@@ -143,6 +187,7 @@ class MedicationsRepository {
     _cachedTodayDoses = _cachedTodayDoses
         .where((dose) => dose.idMedicamento != id)
         .toList(growable: false);
+    _clearTodayDoseCache();
     _invalidateDailySnapshot();
   }
 
@@ -157,19 +202,31 @@ class MedicationsRepository {
     String? userId,
     String? medicationId,
     List<Medicamento>? preloadedMedications,
+    bool forceRefresh = false,
   }) async {
     if (!SupabaseService.isReady) return getTodayDoses();
 
     final resolvedUserId = await _userRepository.resolveCareRecipientUserId(
       explicitUserId: userId,
     );
+    final cacheKey = _todayDoseCacheKey(resolvedUserId);
+    if (!forceRefresh && _cachedTodayDosesKey == cacheKey) {
+      if (medicationId == null || medicationId.isEmpty) {
+        return List.unmodifiable(_cachedTodayDoses);
+      }
+      return _cachedTodayDoses
+          .where((dose) => dose.idMedicamento == medicationId)
+          .toList(growable: false);
+    }
     if (resolvedUserId == null && SupabaseService.currentUser != null) {
       _cachedTodayDoses = const [];
+      _cachedTodayDosesKey = cacheKey;
       return const [];
     }
     await _ensureTodayDoseSchedule(
       userId: resolvedUserId,
       medications: preloadedMedications,
+      forceRefresh: forceRefresh,
     );
 
     final start = DateTime.now();
@@ -196,27 +253,37 @@ class MedicationsRepository {
 
     if (medicationId == null || medicationId.isEmpty) {
       _cachedTodayDoses = doses;
+      _cachedTodayDosesKey = cacheKey;
     }
 
     return doses;
   }
 
-  Future<MedicationDailySnapshot> fetchDailySnapshot({String? userId}) async {
+  Future<MedicationDailySnapshot> fetchDailySnapshot({
+    String? userId,
+    bool forceRefresh = false,
+  }) async {
     final resolvedUserId = await _userRepository.resolveCareRecipientUserId(
       explicitUserId: userId,
     );
     final snapshotKey = _dailySnapshotKey(resolvedUserId);
     final cachedSnapshot = _cachedDailySnapshot;
-    if (cachedSnapshot != null && _cachedDailySnapshotKey == snapshotKey) {
+    if (!forceRefresh &&
+        cachedSnapshot != null &&
+        _cachedDailySnapshotKey == snapshotKey) {
       return cachedSnapshot;
     }
 
-    final medications = await fetchAll(userId: resolvedUserId);
+    final medications = await fetchAll(
+      userId: resolvedUserId,
+      forceRefresh: forceRefresh,
+    );
     final doses = await fetchTodayDoses(
       userId: resolvedUserId,
       preloadedMedications: medications
           .where((item) => item.activo)
           .toList(growable: false),
+      forceRefresh: forceRefresh,
     );
     final pendingDoses = _pendingDoses(doses);
 
@@ -474,6 +541,7 @@ class MedicationsRepository {
   Future<void> _ensureTodayDoseSchedule({
     required String? userId,
     List<Medicamento>? medications,
+    bool forceRefresh = false,
   }) async {
     if (!SupabaseService.isReady || userId == null || userId.isEmpty) return;
 
@@ -482,7 +550,7 @@ class MedicationsRepository {
     final dayEnd = dayStart.add(const Duration(days: 1));
     final meds = medications != null
         ? medications.toList(growable: false)
-        : await fetchAll(userId: userId).then(
+        : await fetchAll(userId: userId, forceRefresh: forceRefresh).then(
             (items) =>
                 items.where((item) => item.activo).toList(growable: false),
           );
@@ -571,7 +639,10 @@ class MedicationsRepository {
   }
 
   void _upsertCache(Medicamento medication) {
-    final mutable = _cachedMedications.toList(growable: true);
+    final cacheKey = _ownerCacheKey(medication.idUsuario);
+    final mutable = _cachedMedicationsKey == cacheKey
+        ? _cachedMedications.toList(growable: true)
+        : <Medicamento>[];
     final index = mutable.indexWhere((item) => item.id == medication.id);
     if (index == -1) {
       mutable.add(medication);
@@ -580,6 +651,7 @@ class MedicationsRepository {
     }
     mutable.sort((a, b) => a.fechaCreacion.compareTo(b.fechaCreacion));
     _cachedMedications = List.unmodifiable(mutable);
+    _cachedMedicationsKey = cacheKey;
   }
 
   void _decrementMockStock(String medicationId) {
@@ -594,7 +666,10 @@ class MedicationsRepository {
   }
 
   void _upsertDoseCache(Toma dose) {
-    final mutable = _cachedTodayDoses.toList(growable: true);
+    final cacheKey = _todayDoseCacheKey(dose.idUsuario);
+    final mutable = _cachedTodayDosesKey == cacheKey
+        ? _cachedTodayDoses.toList(growable: true)
+        : <Toma>[];
     final index = mutable.indexWhere((item) => item.id == dose.id);
     if (index == -1) {
       mutable.add(dose);
@@ -603,6 +678,16 @@ class MedicationsRepository {
     }
     mutable.sort((a, b) => a.fechaProgramada.compareTo(b.fechaProgramada));
     _cachedTodayDoses = List.unmodifiable(mutable);
+    _cachedTodayDosesKey = cacheKey;
+  }
+
+  String _ownerCacheKey(String? userId) {
+    final ownerKey = userId?.trim().isNotEmpty == true ? userId!.trim() : 'all';
+    return 'medications:$ownerKey';
+  }
+
+  String _todayDoseCacheKey(String? userId) {
+    return 'doses:${_dailySnapshotKey(userId)}';
   }
 
   String _dailySnapshotKey(String? userId) {
@@ -614,6 +699,11 @@ class MedicationsRepository {
   void _invalidateDailySnapshot() {
     _cachedDailySnapshot = null;
     _cachedDailySnapshotKey = null;
+  }
+
+  void _clearTodayDoseCache() {
+    _cachedTodayDoses = const [];
+    _cachedTodayDosesKey = null;
   }
 
   Future<String> _requireCareRecipientUserId() async {
