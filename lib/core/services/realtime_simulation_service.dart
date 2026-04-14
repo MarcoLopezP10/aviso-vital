@@ -177,7 +177,7 @@ class RealtimeSimulationService {
       id: 'dose:${dose.id}',
       type: LiveNotificationType.medication,
       scheduledAt: dose.fechaProgramada,
-      expiresAt: dose.fechaProgramada.add(const Duration(minutes: 5)),
+      expiresAt: dose.fechaProgramada.add(const Duration(minutes: 15)),
       title: medication.nombre,
       subtitle:
           '${formatMedicationDose(medication.dosis)} · ${medication.instrucciones ?? 'Revise la toma y confirme cuando la haya hecho'}',
@@ -310,12 +310,12 @@ class RealtimeSimulationService {
           dose.estado == EstadoToma.pendiente ||
           dose.estado == EstadoToma.pospuesta;
       if (!isPending) continue;
-      if (dose.fechaProgramada.add(const Duration(minutes: 5)).isAfter(now)) {
+      if (dose.fechaProgramada.add(const Duration(minutes: 15)).isAfter(now)) {
         continue;
       }
       await medicationsRepository.expireDose(
         dose.id,
-        note: 'Sin respuesta en 5 minutos desde la notificación',
+        note: 'Sin respuesta en 15 minutos desde la notificacion',
       );
     }
   }

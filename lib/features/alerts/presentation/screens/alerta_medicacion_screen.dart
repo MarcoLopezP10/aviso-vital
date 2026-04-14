@@ -76,7 +76,7 @@ class _AlertaMedicacionScreenState extends State<AlertaMedicacionScreen>
     });
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Se lo recordaremos de nuevo en 10 minutos'),
+        content: Text('Se lo recordaremos de nuevo en 15 minutos'),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -183,15 +183,18 @@ class _AlertaMedicacionScreenState extends State<AlertaMedicacionScreen>
   }
 
   String _nextDoseLabel(Medicamento medication, String currentHour) {
-    final horas = _expandedHours(medication);
+    final horas =
+        medication.horasToma
+            .map((item) => item.trim())
+            .where((item) => item.isNotEmpty)
+            .toList(growable: true)
+          ..sort((a, b) => _minutesForHour(a) - _minutesForHour(b));
     if (horas.isEmpty) return '--:--';
     final current = _minutesForHour(currentHour);
-    final ordered = horas.toList()
-      ..sort((a, b) => _minutesForHour(a) - _minutesForHour(b));
-    for (final hour in ordered) {
+    for (final hour in horas) {
       if (_minutesForHour(hour) > current) return hour;
     }
-    return ordered.first;
+    return horas.first;
   }
 
   int _minutesForHour(String value) {
@@ -200,33 +203,6 @@ class _AlertaMedicacionScreenState extends State<AlertaMedicacionScreen>
     final hour = int.tryParse(parts[0]) ?? 0;
     final minute = int.tryParse(parts[1]) ?? 0;
     return (hour * 60) + minute;
-  }
-
-  List<String> _expandedHours(Medicamento medication) {
-    final baseHours = medication.horasToma
-        .map((item) => item.trim())
-        .where((item) => item.isNotEmpty)
-        .toList(growable: false);
-    if (baseHours.isEmpty) return const <String>[];
-
-    final shouldExpand =
-        (medication.frecuencia == FrecuenciaMed.cada8h ||
-            medication.frecuencia == FrecuenciaMed.cada12h) &&
-        baseHours.length == 1;
-
-    if (!shouldExpand) return baseHours;
-
-    final interval = medication.frecuencia == FrecuenciaMed.cada8h ? 8 : 12;
-    final startMinutes = _minutesForHour(baseHours.first);
-    final values = <String>[];
-    for (var offset = 0; offset < 24 * 60; offset += interval * 60) {
-      final totalMinutes = startMinutes + offset;
-      if (totalMinutes >= 24 * 60) break;
-      values.add(
-        '${(totalMinutes ~/ 60).toString().padLeft(2, '0')}:${(totalMinutes % 60).toString().padLeft(2, '0')}',
-      );
-    }
-    return values;
   }
 }
 
@@ -614,11 +590,11 @@ class _MedicationAlertCard extends StatelessWidget {
             text: med.instrucciones ?? 'Tómela con agua',
             compact: compact,
           ),
-          if (med.frecuencia.label.isNotEmpty) ...[
+          if (med.resumenTomas.isNotEmpty) ...[
             SizedBox(height: compact ? AppSpacing.sm : AppSpacing.md),
             _CardInfoRow(
               icon: Icons.repeat_rounded,
-              text: med.frecuencia.label,
+              text: med.resumenTomas,
               subtle: true,
               compact: compact,
             ),

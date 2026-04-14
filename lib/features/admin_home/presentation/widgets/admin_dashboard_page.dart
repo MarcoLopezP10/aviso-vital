@@ -288,7 +288,7 @@ class _UpcomingMedicationCard extends StatelessWidget {
                 Text(medicamento.nombre, style: AppTextStyles.h4),
                 const SizedBox(height: 2),
                 Text(
-                  '${medicamento.dosis} · ${medicamento.frecuencia.label}',
+                  '${medicamento.dosis} · ${medicamento.resumenTomas}',
                   style: AppTextStyles.bodySmall,
                 ),
               ],

@@ -297,13 +297,13 @@ class _MedicamentoFormState extends State<_MedicamentoForm> {
   final _nombreCtrl = TextEditingController();
   final _dosisCtrl = TextEditingController();
   final _stockCtrl = TextEditingController();
-  final _horaCtrl = TextEditingController();
   final _instruccionesCtrl = TextEditingController();
-  FrecuenciaMed _frecuencia = FrecuenciaMed.cada24h;
   Color _colorPastilla = AppColors.pillColors[0];
   FormaPastilla _formaPastilla = FormaPastilla.redonda;
   final _stockMinimoCtrl = TextEditingController(text: '7');
   final _notasCtrl = TextEditingController();
+  int _tomasAlDia = 1;
+  List<String> _horasToma = const ['09:00'];
   bool _isLoading = false;
 
   @override
@@ -314,13 +314,15 @@ class _MedicamentoFormState extends State<_MedicamentoForm> {
       _nombreCtrl.text = m.nombre;
       _dosisCtrl.text = m.dosis;
       _stockCtrl.text = '${m.stockActual}';
-      _horaCtrl.text = m.horasToma.join(', ');
       _instruccionesCtrl.text = m.instrucciones ?? '';
       _stockMinimoCtrl.text = '${m.stockMinimo}';
       _notasCtrl.text = m.notas ?? '';
-      _frecuencia = m.frecuencia;
       _colorPastilla = m.colorPastilla;
       _formaPastilla = m.formaPastilla;
+      _horasToma = List<String>.from(
+        m.horasToma.isEmpty ? const ['09:00'] : m.horasToma,
+      )..sort(_compareHours);
+      _tomasAlDia = _horasToma.length;
     }
   }
 
@@ -329,15 +331,97 @@ class _MedicamentoFormState extends State<_MedicamentoForm> {
     _nombreCtrl.dispose();
     _dosisCtrl.dispose();
     _stockCtrl.dispose();
-    _horaCtrl.dispose();
     _instruccionesCtrl.dispose();
     _stockMinimoCtrl.dispose();
     _notasCtrl.dispose();
     super.dispose();
   }
 
+  Future<void> _pickHour(int index) async {
+    final selected = await showTimePicker(
+      context: context,
+      initialTime: _timeOfDayFromString(_horasToma[index]),
+      builder: (context, child) => Theme(
+        data: Theme.of(context).copyWith(
+          colorScheme: Theme.of(
+            context,
+          ).colorScheme.copyWith(primary: AppColors.amber),
+        ),
+        child: child!,
+      ),
+    );
+    if (selected == null) return;
+
+    setState(() {
+      _horasToma[index] = _formatTimeOfDay(selected);
+      _horasToma.sort(_compareHours);
+    });
+  }
+
+  void _updateTomasAlDia(int value) {
+    setState(() {
+      _tomasAlDia = value;
+      final current = List<String>.from(_horasToma);
+      if (current.length < value) {
+        for (var i = current.length; i < value; i++) {
+          current.add(_defaultHourForIndex(i));
+        }
+      } else if (current.length > value) {
+        current.removeRange(value, current.length);
+      }
+      current.sort(_compareHours);
+      _horasToma = current;
+    });
+  }
+
+  FrecuenciaMed _frequencyFromDoseCount(int count) {
+    return switch (count) {
+      3 => FrecuenciaMed.cada8h,
+      2 => FrecuenciaMed.cada12h,
+      1 => FrecuenciaMed.cada24h,
+      _ => FrecuenciaMed.segunPrescripcion,
+    };
+  }
+
+  String _defaultHourForIndex(int index) {
+    const defaults = ['09:00', '14:00', '21:00', '23:00', '07:00', '17:00'];
+    if (index < defaults.length) return defaults[index];
+    return '09:00';
+  }
+
+  TimeOfDay _timeOfDayFromString(String value) {
+    final parts = value.split(':');
+    final hour = int.tryParse(parts.firstOrNull ?? '') ?? 9;
+    final minute = int.tryParse(parts.length > 1 ? parts[1] : '') ?? 0;
+    return TimeOfDay(hour: hour, minute: minute);
+  }
+
+  String _formatTimeOfDay(TimeOfDay time) {
+    return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+  }
+
+  int _compareHours(String a, String b) {
+    final aParts = a.split(':');
+    final bParts = b.split(':');
+    final aMinutes =
+        ((int.tryParse(aParts.firstOrNull ?? '') ?? 0) * 60) +
+        (int.tryParse(aParts.length > 1 ? aParts[1] : '') ?? 0);
+    final bMinutes =
+        ((int.tryParse(bParts.firstOrNull ?? '') ?? 0) * 60) +
+        (int.tryParse(bParts.length > 1 ? bParts[1] : '') ?? 0);
+    return aMinutes.compareTo(bMinutes);
+  }
+
   Future<void> _guardar() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_horasToma.length != _tomasAlDia) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Revise las horas de toma antes de guardar.'),
+        ),
+      );
+      return;
+    }
     setState(() => _isLoading = true);
     try {
       final existing = widget.medicamento;
@@ -346,12 +430,8 @@ class _MedicamentoFormState extends State<_MedicamentoForm> {
         idUsuario: existing?.idUsuario ?? '',
         nombre: _nombreCtrl.text.trim(),
         dosis: _dosisCtrl.text.trim(),
-        frecuencia: _frecuencia,
-        horasToma: _horaCtrl.text
-            .split(',')
-            .map((item) => item.trim())
-            .where((item) => item.isNotEmpty)
-            .toList(growable: false),
+        frecuencia: _frequencyFromDoseCount(_tomasAlDia),
+        horasToma: List.unmodifiable(_horasToma),
         stockActual: int.tryParse(_stockCtrl.text.trim()) ?? 0,
         stockMinimo: int.tryParse(_stockMinimoCtrl.text.trim()) ?? 7,
         colorPastilla: _colorPastilla,
@@ -489,11 +569,55 @@ class _MedicamentoFormState extends State<_MedicamentoForm> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _FormField(
-                        controller: _horaCtrl,
-                        label: 'Horario de toma',
-                        hint: 'Ej: 09:00, 21:00',
-                        compact: isCompactHeight,
+                      Text(
+                        'Tomas al dia',
+                        style: AppTextStyles.label.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      DropdownButtonFormField<int>(
+                        initialValue: _tomasAlDia,
+                        items: List.generate(
+                          6,
+                          (index) => DropdownMenuItem(
+                            value: index + 1,
+                            child: Text('${index + 1}'),
+                          ),
+                        ),
+                        onChanged: (value) {
+                          if (value != null) _updateTomasAlDia(value);
+                        },
+                        decoration: const InputDecoration(
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 10,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      Text(
+                        'Horas exactas',
+                        style: AppTextStyles.label.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      ...List.generate(
+                        _horasToma.length,
+                        (index) => Padding(
+                          padding: EdgeInsets.only(
+                            bottom: index == _horasToma.length - 1
+                                ? 0
+                                : AppSpacing.sm,
+                          ),
+                          child: _HourPickerTile(
+                            label: 'Toma ${index + 1}',
+                            value: _horasToma[index],
+                            compact: isCompactHeight,
+                            onTap: () => _pickHour(index),
+                          ),
+                        ),
                       ),
                       const SizedBox(height: AppSpacing.sm),
                       _FormField(
@@ -503,34 +627,6 @@ class _MedicamentoFormState extends State<_MedicamentoForm> {
                         maxLines: 2,
                         compact: isCompactHeight,
                         secondary: true,
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                      Text(
-                        'Frecuencia',
-                        style: AppTextStyles.label.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.xs),
-                      Wrap(
-                        spacing: 6,
-                        runSpacing: 6,
-                        children: FrecuenciaMed.values
-                            .map(
-                              (f) => ChoiceChip(
-                                label: Text(f.label),
-                                selected: _frecuencia == f,
-                                materialTapTargetSize:
-                                    MaterialTapTargetSize.shrinkWrap,
-                                visualDensity: const VisualDensity(
-                                  horizontal: -2,
-                                  vertical: -2,
-                                ),
-                                onSelected: (_) =>
-                                    setState(() => _frecuencia = f),
-                              ),
-                            )
-                            .toList(),
                       ),
                     ],
                   ),
@@ -788,6 +884,63 @@ class _FormaChip extends StatelessWidget {
             color: isSelected ? AppColors.amber : AppColors.textSecondary,
             fontSize: compact ? 12 : null,
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HourPickerTile extends StatelessWidget {
+  final String label;
+  final String value;
+  final bool compact;
+  final VoidCallback onTap;
+
+  const _HourPickerTile({
+    required this.label,
+    required this.value,
+    required this.onTap,
+    this.compact = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: AppRadius.input,
+      child: Ink(
+        padding: EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: compact ? 14 : 16,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: AppRadius.input,
+          border: Border.all(color: AppColors.surfaceBorder),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: AppTextStyles.label.copyWith(
+                      color: AppColors.textTertiary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(value, style: AppTextStyles.body),
+                ],
+              ),
+            ),
+            const Icon(
+              Icons.access_time_rounded,
+              color: AppColors.amber,
+              size: 18,
+            ),
+          ],
         ),
       ),
     );

@@ -87,7 +87,7 @@ class MedicationCard extends StatelessWidget {
                   ),
                   SizedBox(height: compact ? 2 : 3),
                   Text(
-                    '${medicamento.dosis} · ${medicamento.frecuencia.label}',
+                    '${medicamento.dosis} · ${medicamento.resumenTomas}',
                     style: AppTextStyles.bodySmall,
                   ),
                   if ((!compact || forceStockBar) &&

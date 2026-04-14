@@ -119,10 +119,7 @@ class _MedicamentoDetalleView extends StatelessWidget {
           _InfoSection(
             title: 'Información',
             items: [
-              _InfoItem(
-                label: 'Frecuencia',
-                value: medicamento.frecuencia.label,
-              ),
+              _InfoItem(label: 'Tomas al dia', value: medicamento.resumenTomas),
               _InfoItem(
                 label: 'Horario',
                 value: medicamento.horasToma.join(' · '),

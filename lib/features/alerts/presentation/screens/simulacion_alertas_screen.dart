@@ -265,7 +265,7 @@ class _SimulationHintCard extends StatelessWidget {
           Expanded(
             child: Text(
               visibleCount > 0
-                  ? 'Las notificaciones activas permanecen visibles durante 5 minutos y se actualizan con la hora real. Última sincronización: $syncLabel.'
+                  ? 'Las notificaciones activas permanecen visibles durante 15 minutos y se actualizan con la hora real. Última sincronización: $syncLabel.'
                   : 'Esta pantalla simula el móvil de la persona mayor. Cuando llegue la hora real de una toma o recordatorio, aparecerá aquí. Última sincronización: $syncLabel.',
               style: AppTextStyles.bodySmall.copyWith(
                 color: AppColors.textSecondary,

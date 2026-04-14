@@ -247,6 +247,10 @@ class Medicamento {
 
   bool get stockBajo => stockActual <= stockMinimo;
   bool get sinStock => stockActual == 0;
+  int get tomasAlDia =>
+      horasToma.where((item) => item.trim().isNotEmpty).length;
+  String get resumenTomas =>
+      tomasAlDia == 1 ? '1 toma al dia' : '$tomasAlDia tomas al dia';
 
   factory Medicamento.fromJson(Map<String, dynamic> json) => Medicamento(
     id: json['id'].toString(),

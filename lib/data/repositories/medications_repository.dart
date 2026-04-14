@@ -379,7 +379,7 @@ class MedicationsRepository {
 
   Future<Toma?> snoozeDose(
     String doseId, {
-    Duration delay = const Duration(minutes: 10),
+    Duration delay = const Duration(minutes: 15),
   }) async {
     final existing = await fetchDoseById(doseId);
     if (existing == null) return null;
@@ -797,33 +797,12 @@ class MedicationsRepository {
   }
 
   List<String> _scheduledHoursForMedication(Medicamento medication) {
-    final baseHours = medication.horasToma
-        .map((item) => item.trim())
-        .where((item) => item.isNotEmpty)
-        .toList(growable: false);
-    if (baseHours.isEmpty) return const <String>[];
-
-    final shouldExpand =
-        (medication.frecuencia == FrecuenciaMed.cada8h ||
-            medication.frecuencia == FrecuenciaMed.cada12h) &&
-        baseHours.length == 1;
-
-    if (!shouldExpand) return baseHours;
-
-    final intervalHours = medication.frecuencia == FrecuenciaMed.cada8h
-        ? 8
-        : 12;
-    final startMinutes = _minutesForHour(baseHours.first);
-    final generated = <String>[];
-
-    for (var offset = 0; offset < 24 * 60; offset += intervalHours * 60) {
-      final totalMinutes = startMinutes + offset;
-      if (totalMinutes >= 24 * 60) break;
-      final hour = (totalMinutes ~/ 60).toString().padLeft(2, '0');
-      final minute = (totalMinutes % 60).toString().padLeft(2, '0');
-      generated.add('$hour:$minute');
-    }
-
-    return generated;
+    final sortedHours =
+        medication.horasToma
+            .map((item) => item.trim())
+            .where((item) => item.isNotEmpty)
+            .toList(growable: true)
+          ..sort((a, b) => _minutesForHour(a).compareTo(_minutesForHour(b)));
+    return List.unmodifiable(sortedHours);
   }
 }

@@ -493,8 +493,8 @@ class AlertsRepository {
       EstadoToma.confirmada =>
         'Toma confirmada a las ${_formatHour(dose.fechaConfirmacion ?? dose.fechaProgramada)}',
       EstadoToma.omitida => 'La toma quedó registrada como omitida',
-      EstadoToma.expirada => 'No se respondió en los 5 minutos disponibles',
-      EstadoToma.pospuesta => dose.nota ?? 'Se reprogramó 10 minutos después',
+      EstadoToma.expirada => 'No se respondió en los 15 minutos disponibles',
+      EstadoToma.pospuesta => dose.nota ?? 'Se reprogramo 15 minutos despues',
       EstadoToma.pendiente =>
         'Pendiente desde las ${_formatHour(dose.fechaProgramada)}',
     };
