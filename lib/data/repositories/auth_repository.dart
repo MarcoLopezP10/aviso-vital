@@ -65,18 +65,31 @@ class AuthRepository {
     final response = await SupabaseService.client.auth.signUp(
       email: email,
       password: password,
-      data: {'rol': rol.name, 'nombre': generatedName},
+      data: {
+        'rol': rol.name,
+        'nombre': generatedName,
+        'auth_provider': accessType.name,
+      },
     );
 
     final signedUser = response.user ?? response.session?.user;
     if (signedUser != null) {
-      final profile = await userRepository.upsertUserProfile(
+      var profile = await userRepository.upsertUserProfile(
         userId: signedUser.id,
         email: signedUser.email ?? email,
         nombre: generatedName,
         rol: rol,
         tipoAcceso: accessType,
       );
+      if (profile.tipoAcceso != accessType) {
+        profile = await userRepository.upsertUserProfile(
+          userId: signedUser.id,
+          email: signedUser.email ?? email,
+          nombre: generatedName,
+          rol: rol,
+          tipoAcceso: accessType,
+        );
+      }
       if (rol == RolUsuario.administrador) {
         await appLinkService.saveKnownAdminProfile(profile);
       } else if (linkCode != null && linkCode.trim().isNotEmpty) {

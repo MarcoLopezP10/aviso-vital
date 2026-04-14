@@ -531,7 +531,8 @@ class UserRepository {
   Future<TipoAccesoUsuario> _accessTypeFromAuthUser(User authUser) async {
     return await _appLinkService.getPendingSocialAccessType() ??
         _accessTypeFromMetadata(
-          authUser.appMetadata['provider'] ??
+          authUser.userMetadata?['auth_provider'] ??
+              authUser.appMetadata['provider'] ??
               authUser.userMetadata?['provider'],
         );
   }

@@ -98,6 +98,12 @@ class _SocialAuthScreenState extends State<SocialAuthScreen> {
       ? 'Completa el alta dentro de la app y el perfil se guardara con auth_provider ${_accessType.name}.'
       : 'Accede desde la propia app con una pantalla inspirada en ${_provider.label}, pero usando tu cuenta guardada aqui.';
 
+  String get _switchPrompt => _isSignup
+      ? '¿Ya tienes cuenta con ${_provider.label}?'
+      : '¿Aun no tienes cuenta con ${_provider.label}?';
+
+  String get _switchLabel => _isSignup ? 'Iniciar sesion' : 'Crear cuenta';
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
@@ -180,6 +186,18 @@ class _SocialAuthScreenState extends State<SocialAuthScreen> {
     );
   }
 
+  void _switchMode() {
+    Navigator.pushReplacementNamed(
+      context,
+      AppRoutes.socialAuth,
+      arguments: {
+        'providerId': widget.providerId,
+        'roleId': widget.roleId,
+        'modeId': _isSignup ? 'login' : 'signup',
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return AuthScaffold(
@@ -192,10 +210,10 @@ class _SocialAuthScreenState extends State<SocialAuthScreen> {
       secondaryGlowAlignment: const Alignment(0.98, 0.92),
       intensity: 0.86,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           const SizedBox(height: AppSpacing.sm),
-          const AppBackButton(),
+          const Align(alignment: Alignment.centerLeft, child: AppBackButton()),
           const SizedBox(height: AppSpacing.lg),
           _ProviderHero(
             provider: _provider,
@@ -353,6 +371,33 @@ class _SocialAuthScreenState extends State<SocialAuthScreen> {
                   SecondaryButton(
                     label: 'Volver',
                     onPressed: () => Navigator.maybePop(context),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  Center(
+                    child: Wrap(
+                      alignment: WrapAlignment.center,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: [
+                        Text(
+                          _switchPrompt,
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        GestureDetector(
+                          onTap: _switchMode,
+                          child: Text(
+                            _switchLabel,
+                            style: AppTextStyles.labelLarge.copyWith(
+                              color: _provider.accent,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
