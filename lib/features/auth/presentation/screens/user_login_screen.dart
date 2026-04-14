@@ -94,7 +94,11 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
     Navigator.pushNamed(
       context,
       AppRoutes.socialAuth,
-      arguments: {'providerId': provider.id, 'roleId': 'user'},
+      arguments: {
+        'providerId': provider.id,
+        'roleId': 'user',
+        'modeId': 'login',
+      },
     );
   }
 

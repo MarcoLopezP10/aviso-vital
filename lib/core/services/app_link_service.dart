@@ -13,6 +13,8 @@ class AppLinkService {
   static const _knownAdminEmailKey = 'known_admin_email';
   static const _knownAdminCreatedAtKey = 'known_admin_created_at';
   static const _knownAdminLastSyncKey = 'known_admin_last_sync';
+  static const _pendingSocialRoleKey = 'pending_social_role';
+  static const _pendingSocialProviderKey = 'pending_social_provider';
   static Future<SharedPreferences>? _preferencesFuture;
 
   const AppLinkService();
@@ -96,6 +98,49 @@ class AppLinkService {
     }
   }
 
+  Future<void> savePendingSocialAuth({
+    required RolUsuario rol,
+    required String providerId,
+  }) async {
+    final prefs = await _prefs();
+    await prefs.setString(_pendingSocialRoleKey, rol.name);
+    await prefs.setString(_pendingSocialProviderKey, providerId);
+  }
+
+  Future<RolUsuario?> getPendingSocialRole() async {
+    final prefs = await _prefs();
+    final value = prefs.getString(_pendingSocialRoleKey)?.trim().toLowerCase();
+    if (value == RolUsuario.administrador.name) {
+      return RolUsuario.administrador;
+    }
+    if (value == RolUsuario.mayor.name) {
+      return RolUsuario.mayor;
+    }
+    return null;
+  }
+
+  Future<String?> getPendingSocialProviderId() async {
+    final prefs = await _prefs();
+    final value = prefs.getString(_pendingSocialProviderKey)?.trim();
+    return value == null || value.isEmpty ? null : value;
+  }
+
+  Future<TipoAccesoUsuario?> getPendingSocialAccessType() async {
+    final providerId = await getPendingSocialProviderId();
+    return switch (providerId?.trim().toLowerCase()) {
+      'apple' => TipoAccesoUsuario.apple,
+      'facebook' => TipoAccesoUsuario.facebook,
+      'google' => TipoAccesoUsuario.google,
+      _ => null,
+    };
+  }
+
+  Future<void> clearPendingSocialAuth() async {
+    final prefs = await _prefs();
+    await prefs.remove(_pendingSocialRoleKey);
+    await prefs.remove(_pendingSocialProviderKey);
+  }
+
   Future<Usuario?> getKnownAdminProfile() async {
     final prefs = await _prefs();
     final id = prefs.getString(_knownAdminIdKey)?.trim();
@@ -112,6 +157,7 @@ class AppLinkService {
       nombre: name,
       email: email,
       rol: RolUsuario.administrador,
+      tipoAcceso: TipoAccesoUsuario.app,
       codigoVinculacion: code,
       fechaCreacion: createdAtRaw == null
           ? DateTime.now()
@@ -128,5 +174,6 @@ class AppLinkService {
     await prefs.remove(_linkedAdminIdKey);
     await prefs.remove(_linkedUserIdKey);
     await prefs.remove(_linkedUserNameKey);
+    await clearPendingSocialAuth();
   }
 }

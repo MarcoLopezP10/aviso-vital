@@ -1,19 +1,25 @@
 import 'package:flutter/material.dart';
-import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_form_card.dart';
-import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_hero_card.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:aviso_vital_2/app/router/app_routes.dart';
+import 'package:aviso_vital_2/data/models/models.dart';
+import 'package:aviso_vital_2/data/repositories/auth_repository.dart';
+import 'package:aviso_vital_2/data/repositories/user_repository.dart';
 import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_scaffold.dart';
 import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_social_row.dart';
+import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_text_field.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 import 'package:aviso_vital_2/shared/widgets/shared_widgets.dart';
 
 class SocialAuthScreen extends StatefulWidget {
   final String providerId;
   final String roleId;
+  final String modeId;
 
   const SocialAuthScreen({
     super.key,
     required this.providerId,
     required this.roleId,
+    required this.modeId,
   });
 
   @override
@@ -21,7 +27,25 @@ class SocialAuthScreen extends StatefulWidget {
 }
 
 class _SocialAuthScreenState extends State<SocialAuthScreen> {
+  static const _authRepository = AuthRepository();
+  static const _userRepository = UserRepository();
+  final _formKey = GlobalKey<FormState>();
+  final _emailCtrl = TextEditingController();
+  final _passCtrl = TextEditingController();
+  final _confirmCtrl = TextEditingController();
+  final _linkCodeCtrl = TextEditingController();
   bool _isLoading = false;
+  bool _passVisible = false;
+  bool _confirmVisible = false;
+
+  @override
+  void dispose() {
+    _emailCtrl.dispose();
+    _passCtrl.dispose();
+    _confirmCtrl.dispose();
+    _linkCodeCtrl.dispose();
+    super.dispose();
+  }
 
   _ProviderUi get _provider {
     return switch (widget.providerId) {
@@ -29,8 +53,9 @@ class _SocialAuthScreenState extends State<SocialAuthScreen> {
         id: 'apple',
         label: 'Apple',
         icon: Icons.apple_rounded,
-        accent: Color(0xFFE8EEF8),
-        glow: Color(0xFF92A8D1),
+        accent: Color(0xFFC8D7F1),
+        glow: Color(0xFF90A9D6),
+        panel: Color(0xFF161D2A),
       ),
       'facebook' => const _ProviderUi(
         id: 'facebook',
@@ -38,32 +63,120 @@ class _SocialAuthScreenState extends State<SocialAuthScreen> {
         icon: Icons.facebook_rounded,
         accent: Color(0xFF7CB5FF),
         glow: Color(0xFF2D6CDF),
+        panel: Color(0xFF12294B),
       ),
       _ => const _ProviderUi(
         id: 'google',
         label: 'Google',
         icon: Icons.g_mobiledata_rounded,
-        accent: Color(0xFFFFD166),
-        glow: AppColors.amber,
+        accent: Color(0xFFFFC83D),
+        glow: Color(0xFFE0A800),
+        panel: Color(0xFF2A2310),
       ),
     };
   }
 
   bool get _isAdmin => widget.roleId == 'admin';
+  bool get _isSignup => widget.modeId == 'signup';
+
+  RolUsuario get _selectedRole =>
+      _isAdmin ? RolUsuario.administrador : RolUsuario.mayor;
+
+  TipoAccesoUsuario get _accessType => switch (_provider.id) {
+    'apple' => TipoAccesoUsuario.apple,
+    'facebook' => TipoAccesoUsuario.facebook,
+    _ => TipoAccesoUsuario.google,
+  };
 
   String get _roleLabel => _isAdmin ? 'administrador' : 'usuario';
 
-  Future<void> _simulateAccess() async {
+  String get _title => _isSignup
+      ? 'Crear cuenta con\n${_provider.label}'
+      : 'Iniciar sesion con\n${_provider.label}';
+
+  String get _description => _isSignup
+      ? 'Completa el alta dentro de la app y el perfil se guardara con auth_provider ${_accessType.name}.'
+      : 'Accede desde la propia app con una pantalla inspirada en ${_provider.label}, pero usando tu cuenta guardada aqui.';
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
-    await Future<void>.delayed(const Duration(milliseconds: 900));
-    if (!mounted) return;
-    setState(() => _isLoading = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Pantalla de ${_provider.label} preparada como simulación visual para acceso de $_roleLabel.',
-        ),
-      ),
+
+    try {
+      if (_isSignup) {
+        await _authRepository.signUp(
+          email: _emailCtrl.text.trim(),
+          password: _passCtrl.text,
+          rol: _selectedRole,
+          accessType: _accessType,
+          linkCode: _isAdmin ? null : _linkCodeCtrl.text.trim(),
+        );
+      } else {
+        await _authRepository.signInWithPassword(
+          email: _emailCtrl.text.trim(),
+          password: _passCtrl.text,
+          expectedAccessType: _accessType,
+        );
+      }
+
+      final profile = await _userRepository.getSignedInUserProfile(
+        forceRefresh: true,
+      );
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        _targetRoute(profile),
+        (_) => false,
+      );
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_mapAuthError(error))));
+    }
+  }
+
+  String _targetRoute(Usuario? profile) {
+    if (profile?.rol == RolUsuario.administrador) return AppRoutes.homeAdmin;
+    if (profile == null) return AppRoutes.roleSelection;
+    return profile.idAdministrador == null || profile.idAdministrador!.isEmpty
+        ? AppRoutes.codigoManual
+        : AppRoutes.homeUsuario;
+  }
+
+  String _mapAuthError(Object error) {
+    final message = error.toString();
+    if (message.contains('Invalid login credentials')) {
+      return 'Email o contraseña incorrectos.';
+    }
+    if (message.contains('User already registered')) {
+      return 'Ya existe una cuenta con ese email.';
+    }
+    if (message.contains('Password should be at least')) {
+      return 'La contraseña no cumple la longitud mínima requerida.';
+    }
+    if (message.contains('Email not confirmed')) {
+      return 'Confirma tu email antes de iniciar sesión.';
+    }
+    if (error is AuthException && error.message.trim().isNotEmpty) {
+      return error.message;
+    }
+    if (error is StateError) return message.replaceFirst('Bad state: ', '');
+    return 'No se pudo completar la operación: $message';
+  }
+
+  void _switchProvider(AuthSocialProvider provider) {
+    if (provider.id == _provider.id) return;
+    Navigator.pushReplacementNamed(
+      context,
+      AppRoutes.socialAuth,
+      arguments: {
+        'providerId': provider.id,
+        'roleId': widget.roleId,
+        'modeId': widget.modeId,
+      },
     );
   }
 
@@ -74,120 +187,188 @@ class _SocialAuthScreenState extends State<SocialAuthScreen> {
           ? PremiumBackgroundVariant.dashboard
           : PremiumBackgroundVariant.warm,
       primaryGlowColor: _provider.glow,
-      secondaryGlowColor: _isAdmin ? AppColors.orange : AppColors.amber,
-      primaryGlowAlignment: const Alignment(0.2, -0.62),
-      secondaryGlowAlignment: const Alignment(0.92, 0.84),
-      intensity: 0.82,
+      secondaryGlowColor: _provider.accent,
+      primaryGlowAlignment: const Alignment(0.15, -0.78),
+      secondaryGlowAlignment: const Alignment(0.98, 0.92),
+      intensity: 0.86,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: AppSpacing.sm),
           const AppBackButton(),
-          const SizedBox(height: AppSpacing.xl),
-          AuthHeroCard(
-            eyebrow: 'Acceso con ${_provider.label}',
-            eyebrowColor: _provider.accent,
-            title: 'Continúa con\n${_provider.label}',
-            description:
-                'Hemos preparado una pantalla intermedia para que el acceso social se sienta más real y claro antes de conectar la integración definitiva.',
+          const SizedBox(height: AppSpacing.lg),
+          _ProviderHero(
+            provider: _provider,
+            isSignup: _isSignup,
+            roleLabel: _roleLabel,
+            title: _title,
+            description: _description,
           ),
-          const SizedBox(height: AppSpacing.xl),
-          AuthFormCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 88,
-                    height: 88,
-                    decoration: BoxDecoration(
-                      color: _provider.accent.withValues(alpha: 0.16),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: _provider.accent.withValues(alpha: 0.42),
+          const SizedBox(height: AppSpacing.lg),
+          _BottomProviderPanel(
+            provider: _provider,
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        _isSignup ? 'Crear cuenta' : 'Iniciar sesion',
+                        style: AppTextStyles.h4,
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: _provider.glow.withValues(alpha: 0.18),
-                          blurRadius: 24,
-                          spreadRadius: 1,
+                      const Spacer(),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
                         ),
-                      ],
-                    ),
-                    child: Icon(
-                      _provider.icon,
-                      size: _provider.id == 'google' ? 58 : 42,
-                      color: _provider.accent,
+                        decoration: BoxDecoration(
+                          color: _provider.accent.withValues(alpha: 0.14),
+                          borderRadius: AppRadius.chip,
+                          border: Border.all(
+                            color: _provider.accent.withValues(alpha: 0.28),
+                          ),
+                        ),
+                        child: Text(
+                          _accessType.label,
+                          style: AppTextStyles.caption.copyWith(
+                            color: _provider.accent,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    _isSignup
+                        ? 'Este acceso quedara guardado como ${_accessType.name} en Supabase.'
+                        : 'Solo podras entrar aqui con cuentas creadas o asignadas a ${_accessType.label}.',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.textSecondary,
+                      height: 1.4,
                     ),
                   ),
-                ),
-                const SizedBox(height: AppSpacing.xl),
-                Text('Simulación de proveedor', style: AppTextStyles.h4),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  'Esta pantalla representa el paso externo de $_roleLabel con ${_provider.label}. Más adelante podremos conectar el flujo real sin cambiar esta experiencia visual.',
-                  style: AppTextStyles.body.copyWith(
-                    color: AppColors.textSecondary,
-                    height: 1.45,
+                  const SizedBox(height: AppSpacing.lg),
+                  AuthTextField(
+                    controller: _emailCtrl,
+                    hint: 'Email',
+                    icon: Icons.alternate_email_rounded,
+                    keyboardType: TextInputType.emailAddress,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Introduzca su email';
+                      }
+                      if (!value.contains('@')) return 'Email no válido';
+                      return null;
+                    },
                   ),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                _InfoChip(
-                  icon: Icons.verified_user_outlined,
-                  text: 'Proveedor: ${_provider.label}',
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                _InfoChip(
-                  icon: Icons.person_outline_rounded,
-                  text: 'Acceso preparado para $_roleLabel',
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                _InfoChip(
-                  icon: Icons.motion_photos_auto_rounded,
-                  text: 'Modo visual tipo simulación',
-                ),
-                const SizedBox(height: AppSpacing.xl),
-                PrimaryButton(
-                  label: 'Simular acceso con ${_provider.label}',
-                  backgroundColor: _provider.glow,
-                  foregroundColor: AppColors.textPrimary,
-                  isLoading: _isLoading,
-                  onPressed: _simulateAccess,
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                SecondaryButton(
-                  label: 'Volver al inicio de sesión',
-                  onPressed: () => Navigator.maybePop(context),
-                ),
-              ],
+                  const SizedBox(height: AppSpacing.md),
+                  if (_isSignup && !_isAdmin) ...[
+                    AuthTextField(
+                      controller: _linkCodeCtrl,
+                      hint: 'Código del administrador',
+                      icon: Icons.link_rounded,
+                      textCapitalization: TextCapitalization.characters,
+                      validator: (value) {
+                        final normalized = value
+                            ?.replaceAll(RegExp(r'[^A-Za-z0-9]'), '')
+                            .trim();
+                        if (normalized == null || normalized.isEmpty) {
+                          return 'Introduce el código del administrador';
+                        }
+                        if (normalized.length != 6) {
+                          return 'El código debe tener 6 caracteres';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                  ],
+                  AuthTextField(
+                    controller: _passCtrl,
+                    hint: 'Contraseña',
+                    icon: Icons.lock_outline_rounded,
+                    obscure: !_passVisible,
+                    suffix: IconButton(
+                      icon: Icon(
+                        _passVisible
+                            ? Icons.visibility_outlined
+                            : Icons.visibility_off_outlined,
+                        color: AppColors.textDisabled,
+                        size: 20,
+                      ),
+                      onPressed: () =>
+                          setState(() => _passVisible = !_passVisible),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Introduce una contraseña';
+                      }
+                      if (value.length < 6) return 'Mínimo 6 caracteres';
+                      return null;
+                    },
+                  ),
+                  if (_isSignup) ...[
+                    const SizedBox(height: AppSpacing.md),
+                    AuthTextField(
+                      controller: _confirmCtrl,
+                      hint: 'Confirmar contraseña',
+                      icon: Icons.verified_user_outlined,
+                      obscure: !_confirmVisible,
+                      suffix: IconButton(
+                        icon: Icon(
+                          _confirmVisible
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined,
+                          color: AppColors.textDisabled,
+                          size: 20,
+                        ),
+                        onPressed: () =>
+                            setState(() => _confirmVisible = !_confirmVisible),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Confirma la contraseña';
+                        }
+                        if (value != _passCtrl.text) {
+                          return 'Las contraseñas no coinciden';
+                        }
+                        return null;
+                      },
+                    ),
+                  ],
+                  const SizedBox(height: AppSpacing.lg),
+                  PrimaryButton(
+                    label: _isSignup
+                        ? 'Crear con ${_provider.label}'
+                        : 'Entrar con ${_provider.label}',
+                    backgroundColor: _provider.glow,
+                    foregroundColor: AppColors.textPrimary,
+                    isLoading: _isLoading,
+                    onPressed: _submit,
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  SecondaryButton(
+                    label: 'Volver',
+                    onPressed: () => Navigator.maybePop(context),
+                  ),
+                ],
+              ),
             ),
           ),
-          const SizedBox(height: AppSpacing.xl),
+          const SizedBox(height: AppSpacing.lg),
           Center(
             child: Text(
-              'También puedes cambiar de proveedor aquí',
+              'Cambiar de proveedor',
               style: AppTextStyles.caption.copyWith(
                 color: AppColors.textTertiary,
               ),
             ),
           ),
-          const SizedBox(height: AppSpacing.md),
-          Center(
-            child: AuthSocialRow(
-              onProviderTap: (provider) {
-                if (provider.id == _provider.id) return;
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => SocialAuthScreen(
-                      providerId: provider.id,
-                      roleId: widget.roleId,
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
+          const SizedBox(height: AppSpacing.sm),
+          Center(child: AuthSocialRow(onProviderTap: _switchProvider)),
           const SizedBox(height: AppSpacing.lg),
         ],
       ),
@@ -201,6 +382,7 @@ class _ProviderUi {
   final IconData icon;
   final Color accent;
   final Color glow;
+  final Color panel;
 
   const _ProviderUi({
     required this.id,
@@ -208,39 +390,156 @@ class _ProviderUi {
     required this.icon,
     required this.accent,
     required this.glow,
+    required this.panel,
   });
 }
 
-class _InfoChip extends StatelessWidget {
-  final IconData icon;
-  final String text;
+class _ProviderHero extends StatelessWidget {
+  final _ProviderUi provider;
+  final bool isSignup;
+  final String roleLabel;
+  final String title;
+  final String description;
 
-  const _InfoChip({required this.icon, required this.text});
+  const _ProviderHero({
+    required this.provider,
+    required this.isSignup,
+    required this.roleLabel,
+    required this.title,
+    required this.description,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.md,
-      ),
+      padding: const EdgeInsets.all(AppSpacing.xl),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: AppRadius.card,
-        border: Border.all(color: AppColors.surfaceBorder),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            provider.panel,
+            provider.panel.withValues(alpha: 0.92),
+            AppColors.surfaceRaised,
+          ],
+        ),
+        borderRadius: AppRadius.modal,
+        border: Border.all(color: provider.accent.withValues(alpha: 0.28)),
+        boxShadow: [
+          BoxShadow(
+            color: provider.glow.withValues(alpha: 0.16),
+            blurRadius: 32,
+            offset: const Offset(0, 18),
+          ),
+        ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 18, color: AppColors.textSecondary),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Text(
-              text,
-              style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.textSecondary,
+          Row(
+            children: [
+              Container(
+                width: 66,
+                height: 66,
+                decoration: BoxDecoration(
+                  color: provider.accent.withValues(alpha: 0.14),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: provider.accent.withValues(alpha: 0.28),
+                  ),
+                ),
+                child: Icon(
+                  provider.icon,
+                  color: provider.accent,
+                  size: provider.id == 'google' ? 44 : 30,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isSignup
+                          ? 'Alta ${provider.label}'
+                          : 'Acceso ${provider.label}',
+                      style: AppTextStyles.overline.copyWith(
+                        color: provider.accent,
+                        letterSpacing: 1.1,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      roleLabel == 'administrador'
+                          ? 'Panel profesional'
+                          : 'Cuenta personal',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          Text(title, style: AppTextStyles.h2),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            description,
+            style: AppTextStyles.body.copyWith(
+              color: AppColors.textSecondary,
+              height: 1.45,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BottomProviderPanel extends StatelessWidget {
+  final _ProviderUi provider;
+  final Widget child;
+
+  const _BottomProviderPanel({required this.provider, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surfaceRaised,
+        borderRadius: AppRadius.modal,
+        border: Border.all(color: provider.accent.withValues(alpha: 0.18)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.18),
+            blurRadius: 24,
+            offset: const Offset(0, 14),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          const SizedBox(height: AppSpacing.sm),
+          Center(
+            child: Container(
+              width: 48,
+              height: 5,
+              decoration: BoxDecoration(
+                color: provider.accent.withValues(alpha: 0.36),
+                borderRadius: AppRadius.chip,
               ),
             ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.xl,
+              AppSpacing.lg,
+              AppSpacing.xl,
+              AppSpacing.xl,
+            ),
+            child: child,
           ),
         ],
       ),

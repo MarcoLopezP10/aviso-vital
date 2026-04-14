@@ -16,6 +16,7 @@ class AuthRepository {
   Future<AuthResponse> signInWithPassword({
     required String email,
     required String password,
+    TipoAccesoUsuario expectedAccessType = TipoAccesoUsuario.app,
   }) async {
     if (!SupabaseService.isReady) {
       throw StateError(
@@ -31,6 +32,13 @@ class AuthRepository {
 
     if (response.user != null || response.session?.user != null) {
       final profile = await userRepository.ensureCurrentUserProfile();
+      if (profile.tipoAcceso != expectedAccessType) {
+        await signOut();
+        throw StateError(
+          'Esta cuenta pertenece al acceso ${profile.tipoAcceso.label}. '
+          'Usa la opcion correcta para iniciar sesion.',
+        );
+      }
       if (profile.rol == RolUsuario.administrador) {
         await appLinkService.saveKnownAdminProfile(profile);
       }
@@ -43,6 +51,7 @@ class AuthRepository {
     required String email,
     required String password,
     required RolUsuario rol,
+    TipoAccesoUsuario accessType = TipoAccesoUsuario.app,
     String? linkCode,
   }) async {
     if (!SupabaseService.isReady) {
@@ -66,6 +75,7 @@ class AuthRepository {
         email: signedUser.email ?? email,
         nombre: generatedName,
         rol: rol,
+        tipoAcceso: accessType,
       );
       if (rol == RolUsuario.administrador) {
         await appLinkService.saveKnownAdminProfile(profile);
@@ -80,6 +90,7 @@ class AuthRepository {
   Future<void> signOut() async {
     if (!SupabaseService.isReady) return;
     await SupabaseService.client.auth.signOut();
+    await appLinkService.clearPendingSocialAuth();
     UserRepository.clearCache();
   }
 

@@ -86,6 +86,18 @@ class _UserSignupScreenState extends State<UserSignupScreen> {
     return 'No se pudo crear la cuenta: $message';
   }
 
+  void _openSocialSignup(AuthSocialProvider provider) {
+    Navigator.pushNamed(
+      context,
+      AppRoutes.socialAuth,
+      arguments: {
+        'providerId': provider.id,
+        'roleId': 'user',
+        'modeId': 'signup',
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return AuthScaffold(
@@ -206,7 +218,7 @@ class _UserSignupScreenState extends State<UserSignupScreen> {
             const SizedBox(height: AppSpacing.xl),
             const AuthDivider(),
             const SizedBox(height: AppSpacing.xl),
-            const AuthSocialRow(),
+            AuthSocialRow(onProviderTap: _openSocialSignup),
             const SizedBox(height: AppSpacing.lg),
             AuthSwitchLink(
               prompt: '¿Ya tienes cuenta? ',

@@ -44,6 +44,7 @@ class AppRouter {
       AppRoutes.socialAuth => SocialAuthScreen(
         providerId: args?['providerId'] as String? ?? 'google',
         roleId: args?['roleId'] as String? ?? 'user',
+        modeId: args?['modeId'] as String? ?? 'login',
       ),
       AppRoutes.homeAdmin => HomeAdminScreen(
         initialIndex: args?['tab'] as int? ?? 0,

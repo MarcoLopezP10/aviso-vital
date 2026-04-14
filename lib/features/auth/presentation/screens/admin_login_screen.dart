@@ -81,7 +81,11 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
     Navigator.pushNamed(
       context,
       AppRoutes.socialAuth,
-      arguments: {'providerId': provider.id, 'roleId': 'admin'},
+      arguments: {
+        'providerId': provider.id,
+        'roleId': 'admin',
+        'modeId': 'login',
+      },
     );
   }
 

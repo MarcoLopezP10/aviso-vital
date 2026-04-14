@@ -8,6 +8,16 @@ import 'package:flutter/material.dart';
 /// Perfil de usuario en la app
 enum RolUsuario { mayor, administrador }
 
+enum TipoAccesoUsuario {
+  app('App'),
+  google('Google'),
+  apple('Apple'),
+  facebook('Facebook');
+
+  final String label;
+  const TipoAccesoUsuario(this.label);
+}
+
 /// Estado de una toma de medicamento
 enum EstadoToma { pendiente, confirmada, omitida, pospuesta, expirada }
 
@@ -129,6 +139,7 @@ class Usuario {
   final String nombre;
   final String email;
   final RolUsuario rol;
+  final TipoAccesoUsuario tipoAcceso;
   final String? idAdministrador;
   final String? codigoVinculacion;
   final DateTime fechaCreacion;
@@ -140,6 +151,7 @@ class Usuario {
     required this.nombre,
     required this.email,
     required this.rol,
+    this.tipoAcceso = TipoAccesoUsuario.app,
     this.idAdministrador,
     this.codigoVinculacion,
     required this.fechaCreacion,
@@ -155,6 +167,12 @@ class Usuario {
       RolUsuario.values,
       json['rol'] ?? json['tipo'],
       fallback: RolUsuario.mayor,
+    ),
+    tipoAcceso: _enumFromJson(
+      TipoAccesoUsuario.values,
+      json['auth_provider'] ?? json['tipo_acceso'] ?? json['provider'],
+      fallback: TipoAccesoUsuario.app,
+      labelOf: (value) => value.label,
     ),
     idAdministrador: json['id_administrador']?.toString(),
     codigoVinculacion: json['codigo_vinculacion']?.toString(),
@@ -177,6 +195,7 @@ class Usuario {
     'nombre': nombre,
     'email': email,
     'rol': rol.name,
+    'auth_provider': tipoAcceso.name,
     'id_administrador': idAdministrador,
     'codigo_vinculacion': codigoVinculacion,
     'created_at': fechaCreacion.toUtc().toIso8601String(),
@@ -189,6 +208,7 @@ class Usuario {
     String? nombre,
     String? email,
     RolUsuario? rol,
+    TipoAccesoUsuario? tipoAcceso,
     String? idAdministrador,
     String? codigoVinculacion,
     DateTime? fechaCreacion,
@@ -199,6 +219,7 @@ class Usuario {
     nombre: nombre ?? this.nombre,
     email: email ?? this.email,
     rol: rol ?? this.rol,
+    tipoAcceso: tipoAcceso ?? this.tipoAcceso,
     idAdministrador: idAdministrador ?? this.idAdministrador,
     codigoVinculacion: codigoVinculacion ?? this.codigoVinculacion,
     fechaCreacion: fechaCreacion ?? this.fechaCreacion,

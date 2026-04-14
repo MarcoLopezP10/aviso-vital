@@ -85,6 +85,18 @@ class _CrearCuentaScreenState extends State<CrearCuentaScreen> {
     return 'No se pudo crear la cuenta: $message';
   }
 
+  void _openSocialSignup(AuthSocialProvider provider) {
+    Navigator.pushNamed(
+      context,
+      AppRoutes.socialAuth,
+      arguments: {
+        'providerId': provider.id,
+        'roleId': 'admin',
+        'modeId': 'signup',
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final height = MediaQuery.of(context).size.height;
@@ -212,7 +224,7 @@ class _CrearCuentaScreenState extends State<CrearCuentaScreen> {
             SizedBox(height: socialGap),
             const AuthDivider(),
             SizedBox(height: compact ? AppSpacing.lg : AppSpacing.xl),
-            const AuthSocialRow(),
+            AuthSocialRow(onProviderTap: _openSocialSignup),
             SizedBox(height: footerGap),
             AuthSwitchLink(
               prompt: '¿Ya tiene cuenta? ',

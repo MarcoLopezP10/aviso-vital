@@ -86,15 +86,20 @@ class UserRepository {
       userId: authUser.id,
       email: authUser.email ?? '',
       nombre: _displayNameFromUser(authUser),
-      rol: _roleFromMetadata(authUser.userMetadata?['rol']),
+      rol:
+          await _appLinkService.getPendingSocialRole() ??
+          _roleFromMetadata(authUser.userMetadata?['rol']),
+      tipoAcceso: await _accessTypeFromAuthUser(authUser),
       codigoVinculacion:
-          _roleFromMetadata(authUser.userMetadata?['rol']) ==
+          (await _appLinkService.getPendingSocialRole() ??
+                  _roleFromMetadata(authUser.userMetadata?['rol'])) ==
               RolUsuario.administrador
           ? await _generateUniqueLinkCode()
           : null,
     );
 
     final cached = _cacheUser(profile);
+    await _appLinkService.clearPendingSocialAuth();
     if (cached.rol == RolUsuario.administrador) {
       await _appLinkService.saveKnownAdminProfile(cached);
     }
@@ -106,6 +111,7 @@ class UserRepository {
     required String email,
     required String nombre,
     required RolUsuario rol,
+    TipoAccesoUsuario tipoAcceso = TipoAccesoUsuario.app,
     String? codigoVinculacion,
   }) async {
     if (!SupabaseService.isReady) {
@@ -124,6 +130,7 @@ class UserRepository {
           'email': email,
           'nombre': nombre,
           'rol': rol.name,
+          'auth_provider': tipoAcceso.name,
           'codigo_vinculacion':
               normalizedCode ??
               existing?['codigo_vinculacion']?.toString() ??
@@ -359,6 +366,7 @@ class UserRepository {
               : 'Usuario mayor',
           'email': '',
           'rol': RolUsuario.mayor.name,
+          'auth_provider': TipoAccesoUsuario.app.name,
           'id_administrador': admin.id,
           'notificaciones_activas': true,
           'created_at': DateTime.now().toUtc().toIso8601String(),
@@ -492,6 +500,9 @@ class UserRepository {
       nombre: _displayNameFromUser(authUser),
       email: authUser.email ?? '',
       rol: _roleFromMetadata(authUser.userMetadata?['rol']),
+      tipoAcceso: _accessTypeFromMetadata(
+        authUser.appMetadata['provider'] ?? authUser.userMetadata?['provider'],
+      ),
       idAdministrador: authUser.userMetadata?['id_administrador']?.toString(),
       codigoVinculacion: authUser.userMetadata?['codigo_vinculacion']
           ?.toString(),
@@ -503,6 +514,8 @@ class UserRepository {
   String _displayNameFromUser(User authUser) {
     final raw =
         authUser.userMetadata?['nombre']?.toString().trim() ??
+        authUser.userMetadata?['full_name']?.toString().trim() ??
+        authUser.userMetadata?['name']?.toString().trim() ??
         authUser.email?.split('@').first.replaceAll(RegExp(r'[._-]+'), ' ') ??
         'Usuario';
     return raw.isEmpty ? 'Usuario' : raw;
@@ -513,6 +526,24 @@ class UserRepository {
     return role == RolUsuario.administrador.name
         ? RolUsuario.administrador
         : RolUsuario.mayor;
+  }
+
+  Future<TipoAccesoUsuario> _accessTypeFromAuthUser(User authUser) async {
+    return await _appLinkService.getPendingSocialAccessType() ??
+        _accessTypeFromMetadata(
+          authUser.appMetadata['provider'] ??
+              authUser.userMetadata?['provider'],
+        );
+  }
+
+  TipoAccesoUsuario _accessTypeFromMetadata(Object? value) {
+    final normalized = value?.toString().trim().toLowerCase();
+    return switch (normalized) {
+      'google' => TipoAccesoUsuario.google,
+      'apple' => TipoAccesoUsuario.apple,
+      'facebook' => TipoAccesoUsuario.facebook,
+      _ => TipoAccesoUsuario.app,
+    };
   }
 
   Future<String> _generateUniqueLinkCode() async {
