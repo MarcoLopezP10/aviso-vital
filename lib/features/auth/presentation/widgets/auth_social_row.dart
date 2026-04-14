@@ -1,32 +1,68 @@
 import 'package:flutter/material.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 
+class AuthSocialProvider {
+  final String id;
+  final IconData icon;
+  final String label;
+
+  const AuthSocialProvider({
+    required this.id,
+    required this.icon,
+    required this.label,
+  });
+}
+
 class AuthSocialRow extends StatelessWidget {
-  const AuthSocialRow({super.key});
+  final ValueChanged<AuthSocialProvider>? onProviderTap;
+
+  const AuthSocialRow({super.key, this.onProviderTap});
+
+  static const providers = [
+    AuthSocialProvider(
+      id: 'google',
+      icon: Icons.g_mobiledata_rounded,
+      label: 'Google',
+    ),
+    AuthSocialProvider(id: 'apple', icon: Icons.apple_rounded, label: 'Apple'),
+    AuthSocialProvider(
+      id: 'facebook',
+      icon: Icons.facebook_rounded,
+      label: 'Facebook',
+    ),
+  ];
 
   @override
   Widget build(BuildContext context) {
-    final socials = [
-      Icons.g_mobiledata_rounded,
-      Icons.apple_rounded,
-      Icons.facebook_rounded,
-    ];
-
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
-      children: socials
+      children: providers
           .map(
-            (icon) => Padding(
+            (provider) => Padding(
               padding: const EdgeInsets.symmetric(horizontal: 6),
-              child: Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
+              child: Semantics(
+                button: true,
+                label: 'Continuar con ${provider.label}',
+                child: InkWell(
+                  onTap: onProviderTap == null
+                      ? null
+                      : () => onProviderTap!(provider),
                   borderRadius: AppRadius.iconLg,
-                  border: Border.all(color: AppColors.surfaceBorder),
+                  child: Ink(
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: AppRadius.iconLg,
+                      border: Border.all(color: AppColors.surfaceBorder),
+                    ),
+                    child: Icon(
+                      provider.icon,
+                      color: AppColors.textPrimary,
+                      size: 24,
+                    ),
+                  ),
                 ),
-                child: Icon(icon, color: AppColors.textPrimary, size: 24),
               ),
             ),
           )

@@ -77,6 +77,14 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
     return 'No se pudo iniciar sesión: $message';
   }
 
+  void _openSocialLogin(AuthSocialProvider provider) {
+    Navigator.pushNamed(
+      context,
+      AppRoutes.socialAuth,
+      arguments: {'providerId': provider.id, 'roleId': 'admin'},
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final height = MediaQuery.of(context).size.height;
@@ -177,7 +185,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
             SizedBox(height: socialGap),
             const AuthDivider(),
             SizedBox(height: compact ? AppSpacing.lg : AppSpacing.xl),
-            const AuthSocialRow(),
+            AuthSocialRow(onProviderTap: _openSocialLogin),
             SizedBox(height: footerGap),
             AuthSwitchLink(
               prompt: '¿No tiene cuenta? ',

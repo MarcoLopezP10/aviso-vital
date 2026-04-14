@@ -90,6 +90,14 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
     return 'No se pudo iniciar sesión: $message';
   }
 
+  void _openSocialLogin(AuthSocialProvider provider) {
+    Navigator.pushNamed(
+      context,
+      AppRoutes.socialAuth,
+      arguments: {'providerId': provider.id, 'roleId': 'user'},
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return AuthScaffold(
@@ -164,7 +172,7 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
             const SizedBox(height: AppSpacing.xl),
             const AuthDivider(),
             const SizedBox(height: AppSpacing.xl),
-            const AuthSocialRow(),
+            AuthSocialRow(onProviderTap: _openSocialLogin),
             const SizedBox(height: AppSpacing.lg),
             AuthSwitchLink(
               prompt: '¿No tienes cuenta? ',

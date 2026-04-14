@@ -11,6 +11,7 @@ import 'package:aviso_vital_2/features/appointments/presentation/screens/admin_c
 import 'package:aviso_vital_2/features/appointments/presentation/screens/cita_detalle_screen.dart';
 import 'package:aviso_vital_2/features/auth/presentation/screens/admin_login_screen.dart';
 import 'package:aviso_vital_2/features/auth/presentation/screens/crear_cuenta_screen.dart';
+import 'package:aviso_vital_2/features/auth/presentation/screens/social_auth_screen.dart';
 import 'package:aviso_vital_2/features/auth/presentation/screens/user_login_screen.dart';
 import 'package:aviso_vital_2/features/auth/presentation/screens/user_signup_screen.dart';
 import 'package:aviso_vital_2/features/device_status/presentation/screens/estado_dispositivo_screen.dart';
@@ -40,6 +41,10 @@ class AppRouter {
       AppRoutes.crearCuenta => const CrearCuentaScreen(),
       AppRoutes.userLogin => const UserLoginScreen(),
       AppRoutes.userCrearCuenta => const UserSignupScreen(),
+      AppRoutes.socialAuth => SocialAuthScreen(
+        providerId: args?['providerId'] as String? ?? 'google',
+        roleId: args?['roleId'] as String? ?? 'user',
+      ),
       AppRoutes.homeAdmin => HomeAdminScreen(
         initialIndex: args?['tab'] as int? ?? 0,
       ),

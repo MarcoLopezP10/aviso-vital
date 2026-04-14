@@ -9,6 +9,7 @@ class AppRoutes {
   static const String crearCuenta = '/crear-cuenta';
   static const String userLogin = '/user-login';
   static const String userCrearCuenta = '/user-crear-cuenta';
+  static const String socialAuth = '/social-auth';
   static const String homeAdmin = '/home-admin';
   static const String adminMedicamentos = '/admin-medicamentos';
   static const String medicamentoDetalle = '/medicamento-detalle';
