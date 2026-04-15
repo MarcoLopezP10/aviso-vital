@@ -309,6 +309,7 @@ class _MedicationAlertView extends StatelessWidget {
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 520),
                   child: _MedicationBottomActions(
+                    medication: med,
                     nextDose: nextDose,
                     compact: compact,
                     isSubmitting: isSubmitting,
@@ -652,6 +653,7 @@ class _CardInfoRow extends StatelessWidget {
 }
 
 class _MedicationBottomActions extends StatelessWidget {
+  final Medicamento medication;
   final String nextDose;
   final bool compact;
   final bool isSubmitting;
@@ -660,6 +662,7 @@ class _MedicationBottomActions extends StatelessWidget {
   final VoidCallback onSnooze;
 
   const _MedicationBottomActions({
+    required this.medication,
     required this.nextDose,
     required this.compact,
     required this.isSubmitting,
@@ -701,14 +704,26 @@ class _MedicationBottomActions extends StatelessWidget {
             compact: compact,
           ),
           const SizedBox(height: AppSpacing.sm),
-          Text(
-            'Siguiente toma a las $nextDose',
-            textAlign: TextAlign.center,
-            style: AppTextStyles.labelLarge.copyWith(
-              color: const Color(0xFFABABAB),
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
+          Column(
+            children: [
+              Text(
+                'Siguiente toma a las $nextDose',
+                textAlign: TextAlign.center,
+                style: AppTextStyles.labelLarge.copyWith(
+                  color: const Color(0xFFABABAB),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                '${medication.nombre} · ${medication.dosis}',
+                textAlign: TextAlign.center,
+                style: AppTextStyles.caption.copyWith(
+                  color: const Color(0xFF7A7A7A),
+                ),
+              ),
+            ],
           ),
         ],
       ),

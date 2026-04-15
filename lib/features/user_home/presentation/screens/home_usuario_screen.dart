@@ -93,6 +93,7 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
                       UserHomeHeader(
                         greeting: data.greeting,
                         dateLabel: data.dateLabel,
+                        avatarInitial: data.avatarInitial,
                         trailing: _UserHomeExitButton(
                           onTap: () => ConfirmDialog.show(
                             context,
@@ -121,6 +122,8 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
                         total: data.totalToday,
                         pending: data.pendingToday,
                       ),
+                      SizedBox(height: screenH * 0.03),
+                      WeeklyAdherenceStrip(weekDoses: data.weekDoses),
                       SizedBox(height: screenH * 0.04),
                       if (data.nextMedication != null) ...[
                         _SectionLabel('Próxima medicación'),
@@ -190,10 +193,12 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
         userId: ownerId,
         forceRefresh: forceRefresh,
       ),
+      _medicationsRepository.fetchWeekDoses(userId: ownerId),
     ]);
 
     final medicationSnapshot = results[0] as MedicationDailySnapshot;
     final appointments = results[1] as List<Cita>;
+    final weekDoses = results[2] as List<Toma>;
     final sortedUpcomingAppointments =
         appointments.where((item) => !item.esPasada).toList(growable: false)
           ..sort((a, b) => a.fechaHora.compareTo(b.fechaHora));
@@ -215,12 +220,14 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
     return _UserHomeViewData(
       greeting: greeting,
       dateLabel: _formatDate(now),
+      avatarInitial: firstName.isNotEmpty ? firstName[0] : null,
       nextMedication: medicationSnapshot.upcomingMedication,
       nextMedicationTime: medicationSnapshot.upcomingTime,
       todayAppointment: todayAppointment,
       pendingToday: pendingToday,
       confirmedToday: confirmedToday,
       totalToday: totalToday,
+      weekDoses: weekDoses,
     );
   }
 
@@ -311,21 +318,25 @@ class _UserHomeExitButton extends StatelessWidget {
 class _UserHomeViewData {
   final String greeting;
   final String dateLabel;
+  final String? avatarInitial;
   final Medicamento? nextMedication;
   final String nextMedicationTime;
   final Cita? todayAppointment;
   final int pendingToday;
   final int confirmedToday;
   final int totalToday;
+  final List<Toma> weekDoses;
 
   const _UserHomeViewData({
     required this.greeting,
     required this.dateLabel,
+    this.avatarInitial,
     required this.nextMedication,
     required this.nextMedicationTime,
     required this.todayAppointment,
     required this.pendingToday,
     required this.confirmedToday,
     required this.totalToday,
+    required this.weekDoses,
   });
 }

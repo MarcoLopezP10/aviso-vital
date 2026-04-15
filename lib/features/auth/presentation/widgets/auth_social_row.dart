@@ -60,60 +60,65 @@ class AuthSocialRow extends StatelessWidget {
         borderRadius: AppRadius.cardLg,
         border: Border.all(color: AppColors.surfaceBorderSoft),
       ),
-      child: Wrap(
-        alignment: WrapAlignment.center,
-        spacing: 10,
-        runSpacing: 10,
+      child: Row(
         children: providers
-            .map(
-              (provider) => Semantics(
-                button: true,
-                label: 'Continuar con ${provider.label}',
-                child: InkWell(
-                  onTap: onProviderTap == null
-                      ? null
-                      : () => onProviderTap!(provider),
-                  borderRadius: AppRadius.card,
-                  child: Ink(
-                    width: 96,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 12,
-                    ),
-                    decoration: BoxDecoration(
-                      color: provider.background,
+            .asMap()
+            .entries
+            .expand(
+              (entry) => [
+                if (entry.key > 0) const SizedBox(width: 10),
+                Expanded(
+                  child: Semantics(
+                    button: true,
+                    label: 'Continuar con ${entry.value.label}',
+                    child: InkWell(
+                      onTap: onProviderTap == null
+                          ? null
+                          : () => onProviderTap!(entry.value),
                       borderRadius: AppRadius.card,
-                      border: Border.all(color: provider.border),
-                      boxShadow: [
-                        BoxShadow(
-                          color: provider.foreground.withValues(alpha: 0.12),
-                          blurRadius: 16,
-                          offset: const Offset(0, 6),
+                      child: Ink(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 12,
                         ),
-                      ],
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          provider.icon,
-                          color: provider.foreground,
-                          size: 30,
+                        decoration: BoxDecoration(
+                          color: entry.value.background,
+                          borderRadius: AppRadius.card,
+                          border: Border.all(color: entry.value.border),
+                          boxShadow: [
+                            BoxShadow(
+                              color: entry.value.foreground.withValues(
+                                alpha: 0.12,
+                              ),
+                              blurRadius: 16,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 6),
-                        Text(
-                          provider.label,
-                          style: AppTextStyles.label.copyWith(
-                            color: provider.id == 'facebook'
-                                ? Colors.white
-                                : AppColors.textPrimary,
-                          ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              entry.value.icon,
+                              color: entry.value.foreground,
+                              size: 30,
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              entry.value.label,
+                              style: AppTextStyles.label.copyWith(
+                                color: entry.value.id == 'facebook'
+                                    ? Colors.white
+                                    : AppColors.textPrimary,
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
-              ),
+              ],
             )
             .toList(),
       ),

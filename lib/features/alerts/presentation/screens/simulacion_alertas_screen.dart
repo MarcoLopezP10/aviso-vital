@@ -53,11 +53,13 @@ class _SimulacionAlertasScreenState extends State<SimulacionAlertasScreen> {
 
   Future<void> _refreshSnapshot({bool initial = false}) async {
     if (_isRefreshing) return;
-    setState(() {
-      _isRefreshing = true;
-      if (initial) _isLoading = true;
-      if (initial) _loadError = null;
-    });
+    _isRefreshing = true; // guard flag — no UI rebuild needed
+    if (initial) {
+      setState(() {
+        _isLoading = true;
+        _loadError = null;
+      });
+    }
 
     try {
       final snapshot = await _simulationService.loadSnapshot();

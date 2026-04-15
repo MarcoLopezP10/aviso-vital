@@ -34,9 +34,16 @@ class _SocialAuthScreenState extends State<SocialAuthScreen> {
   final _passCtrl = TextEditingController();
   final _confirmCtrl = TextEditingController();
   final _linkCodeCtrl = TextEditingController();
+  late String _providerId;
   bool _isLoading = false;
   bool _passVisible = false;
   bool _confirmVisible = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _providerId = widget.providerId;
+  }
 
   @override
   void dispose() {
@@ -48,7 +55,7 @@ class _SocialAuthScreenState extends State<SocialAuthScreen> {
   }
 
   _ProviderUi get _provider {
-    return switch (widget.providerId) {
+    return switch (_providerId) {
       'apple' => const _ProviderUi(
         id: 'apple',
         label: 'Apple',
@@ -56,6 +63,8 @@ class _SocialAuthScreenState extends State<SocialAuthScreen> {
         accent: Color(0xFFC8D7F1),
         glow: Color(0xFF90A9D6),
         panel: Color(0xFF161D2A),
+        emailHint: 'nombre@icloud.com',
+        providerSubtitle: 'Puedes usar tu dirección de iCloud o tu Apple ID.',
       ),
       'facebook' => const _ProviderUi(
         id: 'facebook',
@@ -64,6 +73,9 @@ class _SocialAuthScreenState extends State<SocialAuthScreen> {
         accent: Color(0xFF7CB5FF),
         glow: Color(0xFF2D6CDF),
         panel: Color(0xFF12294B),
+        emailHint: 'nombre@email.com',
+        providerSubtitle:
+            'Usa el email con el que accedes habitualmente a Facebook.',
       ),
       _ => const _ProviderUi(
         id: 'google',
@@ -72,6 +84,9 @@ class _SocialAuthScreenState extends State<SocialAuthScreen> {
         accent: Color(0xFFFFC83D),
         glow: Color(0xFFE0A800),
         panel: Color(0xFF2A2310),
+        emailHint: 'nombre@gmail.com',
+        providerSubtitle:
+            'Usa tu cuenta de Gmail o cualquier cuenta de Google Workspace.',
       ),
     };
   }
@@ -95,8 +110,8 @@ class _SocialAuthScreenState extends State<SocialAuthScreen> {
       : 'Iniciar sesion con\n${_provider.label}';
 
   String get _description => _isSignup
-      ? 'Completa el alta dentro de la app y el perfil se guardara con auth_provider ${_accessType.name}.'
-      : 'Accede desde la propia app con una pantalla inspirada en ${_provider.label}, pero usando tu cuenta guardada aqui.';
+      ? 'Crea tu perfil usando tu cuenta de ${_provider.label}. ${_provider.providerSubtitle}'
+      : 'Introduce el email y contraseña que usaste al crear tu cuenta de ${_provider.label}. ${_provider.providerSubtitle}';
 
   String get _switchPrompt => _isSignup
       ? '¿Ya tienes cuenta con ${_provider.label}?'
@@ -174,16 +189,14 @@ class _SocialAuthScreenState extends State<SocialAuthScreen> {
   }
 
   void _switchProvider(AuthSocialProvider provider) {
-    if (provider.id == _provider.id) return;
-    Navigator.pushReplacementNamed(
-      context,
-      AppRoutes.socialAuth,
-      arguments: {
-        'providerId': provider.id,
-        'roleId': widget.roleId,
-        'modeId': widget.modeId,
-      },
-    );
+    if (provider.id == _providerId) return;
+    setState(() {
+      _providerId = provider.id;
+      _emailCtrl.clear();
+      _passCtrl.clear();
+      _confirmCtrl.clear();
+      _linkCodeCtrl.clear();
+    });
   }
 
   void _switchMode() {
@@ -191,7 +204,7 @@ class _SocialAuthScreenState extends State<SocialAuthScreen> {
       context,
       AppRoutes.socialAuth,
       arguments: {
-        'providerId': widget.providerId,
+        'providerId': _providerId,
         'roleId': widget.roleId,
         'modeId': _isSignup ? 'login' : 'signup',
       },
@@ -261,8 +274,8 @@ class _SocialAuthScreenState extends State<SocialAuthScreen> {
                   const SizedBox(height: AppSpacing.sm),
                   Text(
                     _isSignup
-                        ? 'Este acceso quedara guardado como ${_accessType.name} en Supabase.'
-                        : 'Solo podras entrar aqui con cuentas creadas o asignadas a ${_accessType.label}.',
+                        ? 'Tu cuenta quedará vinculada a ${_provider.label}. Usa el mismo email con el que sueles acceder.'
+                        : 'Accede con las credenciales de tu cuenta de ${_provider.label} en Aviso Vital.',
                     style: AppTextStyles.bodySmall.copyWith(
                       color: AppColors.textSecondary,
                       height: 1.4,
@@ -271,7 +284,7 @@ class _SocialAuthScreenState extends State<SocialAuthScreen> {
                   const SizedBox(height: AppSpacing.lg),
                   AuthTextField(
                     controller: _emailCtrl,
-                    hint: 'Email',
+                    hint: _provider.emailHint,
                     icon: Icons.alternate_email_rounded,
                     keyboardType: TextInputType.emailAddress,
                     validator: (value) {
@@ -372,6 +385,8 @@ class _SocialAuthScreenState extends State<SocialAuthScreen> {
                     label: 'Volver',
                     onPressed: () => Navigator.maybePop(context),
                   ),
+                  const SizedBox(height: AppSpacing.lg),
+                  const _PrivacyNote(),
                   const SizedBox(height: AppSpacing.md),
                   Center(
                     child: Wrap(
@@ -428,6 +443,8 @@ class _ProviderUi {
   final Color accent;
   final Color glow;
   final Color panel;
+  final String emailHint;
+  final String providerSubtitle;
 
   const _ProviderUi({
     required this.id,
@@ -436,6 +453,8 @@ class _ProviderUi {
     required this.accent,
     required this.glow,
     required this.panel,
+    required this.emailHint,
+    required this.providerSubtitle,
   });
 }
 
@@ -551,7 +570,9 @@ class _BottomProviderPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 350),
+      curve: Curves.easeInOut,
       decoration: BoxDecoration(
         color: AppColors.surfaceRaised,
         borderRadius: AppRadius.modal,
@@ -568,7 +589,9 @@ class _BottomProviderPanel extends StatelessWidget {
         children: [
           const SizedBox(height: AppSpacing.sm),
           Center(
-            child: Container(
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 350),
+              curve: Curves.easeInOut,
               width: 48,
               height: 5,
               decoration: BoxDecoration(
@@ -587,6 +610,22 @@ class _BottomProviderPanel extends StatelessWidget {
             child: child,
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _PrivacyNote extends StatelessWidget {
+  const _PrivacyNote();
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      'Al continuar aceptas los términos de uso y la política de privacidad de Aviso Vital.',
+      textAlign: TextAlign.center,
+      style: AppTextStyles.caption.copyWith(
+        color: AppColors.textTertiary,
+        height: 1.4,
       ),
     );
   }

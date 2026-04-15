@@ -36,10 +36,7 @@ class MedicationCard extends StatelessWidget {
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.only(bottom: AppSpacing.cardGap),
-        padding: EdgeInsets.symmetric(
-          horizontal: compact ? AppSpacing.md : AppSpacing.lg,
-          vertical: compact ? AppSpacing.sm : AppSpacing.lg,
-        ),
+        clipBehavior: Clip.hardEdge,
         decoration: BoxDecoration(
           gradient: const LinearGradient(
             begin: Alignment.topLeft,
@@ -54,7 +51,21 @@ class MedicationCard extends StatelessWidget {
           ),
           boxShadow: AppShadows.cardSubtle,
         ),
-        child: Row(
+        child: Stack(
+          children: [
+            if (medicamento.stockBajo)
+              Positioned(
+                left: 0,
+                top: 0,
+                bottom: 0,
+                child: Container(width: 3, color: AppColors.danger),
+              ),
+            Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: compact ? AppSpacing.md : AppSpacing.lg,
+                vertical: compact ? AppSpacing.sm : AppSpacing.lg,
+              ),
+              child: Row(
           children: [
             // ── Pastilla visual ──
             PillVisual(
@@ -108,6 +119,9 @@ class MedicationCard extends StatelessWidget {
                 color: AppColors.textDisabled,
                 size: 14,
               ),
+          ],
+        ),
+            ),
           ],
         ),
       ),

@@ -207,6 +207,38 @@ class MedicationsRepository {
         .toList(growable: false);
   }
 
+  Future<List<Toma>> fetchWeekDoses({String? userId}) async {
+    if (!SupabaseService.isReady) return getTodayDoses();
+
+    final resolvedUserId = await _userRepository.resolveCareRecipientUserId(
+      explicitUserId: userId,
+    );
+    if (resolvedUserId == null && SupabaseService.currentUser != null) {
+      return const [];
+    }
+
+    final now = DateTime.now();
+    final weekStart = DateTime(now.year, now.month, now.day)
+        .subtract(const Duration(days: 6));
+    final dayEnd = DateTime(now.year, now.month, now.day)
+        .add(const Duration(days: 1));
+
+    dynamic query = SupabaseService.client
+        .from('tomas')
+        .select()
+        .gte('fecha_programada', weekStart.toUtc().toIso8601String())
+        .lt('fecha_programada', dayEnd.toUtc().toIso8601String());
+
+    if (resolvedUserId != null && resolvedUserId.isNotEmpty) {
+      query = query.eq('id_usuario', resolvedUserId);
+    }
+
+    final response = await query.order('fecha_programada');
+    return List<Map<String, dynamic>>.from(response as List)
+        .map(Toma.fromJson)
+        .toList(growable: false);
+  }
+
   Future<List<Toma>> fetchTodayDoses({
     String? userId,
     String? medicationId,
