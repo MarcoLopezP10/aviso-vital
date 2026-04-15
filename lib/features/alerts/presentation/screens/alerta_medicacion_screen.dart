@@ -30,9 +30,6 @@ class _AlertaMedicacionScreenState extends State<AlertaMedicacionScreen>
   bool _pospuesto = false;
   bool _isSubmitting = false;
 
-  String _formatHora(DateTime dt) =>
-      '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
-
   @override
   void initState() {
     super.initState();
@@ -166,7 +163,7 @@ class _AlertaMedicacionScreenState extends State<AlertaMedicacionScreen>
 
     if (med == null || dose == null) return null;
 
-    final currentHour = _formatHora(DateTime.now());
+    final currentHour = formatAlertHour(DateTime.now());
 
     return _MedicationAlertData(
       dose: dose,

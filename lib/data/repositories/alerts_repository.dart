@@ -13,6 +13,12 @@ class AlertsRepository {
   static ResumenAdherencia? _cachedAdherenceSummary;
   static final Set<String> _handledAppointmentReminders = <String>{};
 
+  static void clearCache() {
+    _cachedAlerts = const [];
+    _cachedAdherenceSummary = null;
+    _handledAppointmentReminders.clear();
+  }
+
   String _appointmentReminderKey(String appointmentId, String reminderKind) =>
       '$appointmentId|$reminderKind';
 

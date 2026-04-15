@@ -225,11 +225,7 @@ class _AdminCitasScreenState extends State<AdminCitasScreen> {
                               cita: lista[i],
                               showActions: true,
                               compact: true,
-                              onTap: () => Navigator.pushNamed(
-                                context,
-                                CitaDetalleScreen.routeName,
-                                arguments: {'id': lista[i].id},
-                              ),
+                              onTap: () => _openCitaDetail(lista[i]),
                               onEdit: () =>
                                   _showAddForm(context, cita: lista[i]),
                               onDelete: () => ConfirmDialog.show(
@@ -261,6 +257,16 @@ class _AdminCitasScreenState extends State<AdminCitasScreen> {
         onPressed: () => _showAddForm(context),
       ),
     );
+  }
+
+  Future<void> _openCitaDetail(Cita cita) async {
+    final result = await Navigator.pushNamed(
+      context,
+      CitaDetalleScreen.routeName,
+      arguments: {'id': cita.id},
+    );
+    if (!mounted) return;
+    if (result == 'edit') _showAddForm(context, cita: cita);
   }
 
   Future<void> _showAddForm(BuildContext context, {Cita? cita}) async {

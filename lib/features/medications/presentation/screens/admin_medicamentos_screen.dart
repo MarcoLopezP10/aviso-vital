@@ -224,11 +224,8 @@ class _AdminMedicamentosScreenState extends State<AdminMedicamentosScreen> {
                               showActions: true,
                               compact: true,
                               forceStockBar: true,
-                              onTap: () => Navigator.pushNamed(
-                                context,
-                                MedicamentoDetalleScreen.routeName,
-                                arguments: {'id': lista[i].id},
-                              ),
+                              onTap: () =>
+                                  _openMedDetail(lista[i]),
                               onEdit: () => _showEditForm(context, lista[i]),
                               onDelete: () => ConfirmDialog.show(
                                 context,
@@ -258,6 +255,16 @@ class _AdminMedicamentosScreenState extends State<AdminMedicamentosScreen> {
         onPressed: () => _showAddForm(context),
       ),
     );
+  }
+
+  Future<void> _openMedDetail(Medicamento med) async {
+    final result = await Navigator.pushNamed(
+      context,
+      MedicamentoDetalleScreen.routeName,
+      arguments: {'id': med.id},
+    );
+    if (!mounted) return;
+    if (result == 'edit') _showEditForm(context, med);
   }
 
   Future<void> _showAddForm(BuildContext context) =>

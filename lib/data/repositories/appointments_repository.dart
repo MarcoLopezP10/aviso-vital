@@ -11,6 +11,11 @@ class AppointmentsRepository {
   static List<Cita> _cachedAppointments = const [];
   static String? _cachedAppointmentsKey;
 
+  static void clearCache() {
+    _cachedAppointments = const [];
+    _cachedAppointmentsKey = null;
+  }
+
   Future<List<Cita>> fetchAll({
     String? userId,
     bool forceRefresh = false,

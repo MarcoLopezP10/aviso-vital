@@ -79,7 +79,7 @@ class _CitaDetalleView extends StatelessWidget {
             child: SecondaryButton(
               label: 'Editar',
               icon: Icons.edit_outlined,
-              onPressed: () {},
+              onPressed: () => Navigator.of(context).pop('edit'),
             ),
           ),
           const SizedBox(width: 10),

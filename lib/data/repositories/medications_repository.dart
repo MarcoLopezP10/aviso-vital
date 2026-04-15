@@ -30,6 +30,15 @@ class MedicationsRepository {
   static MedicationDailySnapshot? _cachedDailySnapshot;
   static String? _cachedDailySnapshotKey;
 
+  static void clearCache() {
+    _cachedMedications = const [];
+    _cachedTodayDoses = const [];
+    _cachedMedicationsKey = null;
+    _cachedTodayDosesKey = null;
+    _cachedDailySnapshot = null;
+    _cachedDailySnapshotKey = null;
+  }
+
   Future<List<Medicamento>> fetchAll({
     String? userId,
     bool forceRefresh = false,

@@ -1,6 +1,9 @@
 import 'package:aviso_vital_2/core/services/app_link_service.dart';
 import 'package:aviso_vital_2/core/services/supabase_service.dart';
 import 'package:aviso_vital_2/data/models/models.dart';
+import 'package:aviso_vital_2/data/repositories/alerts_repository.dart';
+import 'package:aviso_vital_2/data/repositories/appointments_repository.dart';
+import 'package:aviso_vital_2/data/repositories/medications_repository.dart';
 import 'package:aviso_vital_2/data/repositories/user_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -74,22 +77,13 @@ class AuthRepository {
 
     final signedUser = response.user ?? response.session?.user;
     if (signedUser != null) {
-      var profile = await userRepository.upsertUserProfile(
+      final profile = await userRepository.upsertUserProfile(
         userId: signedUser.id,
         email: signedUser.email ?? email,
         nombre: generatedName,
         rol: rol,
         tipoAcceso: accessType,
       );
-      if (profile.tipoAcceso != accessType) {
-        profile = await userRepository.upsertUserProfile(
-          userId: signedUser.id,
-          email: signedUser.email ?? email,
-          nombre: generatedName,
-          rol: rol,
-          tipoAcceso: accessType,
-        );
-      }
       if (rol == RolUsuario.administrador) {
         await appLinkService.saveKnownAdminProfile(profile);
       } else if (linkCode != null && linkCode.trim().isNotEmpty) {
@@ -105,6 +99,9 @@ class AuthRepository {
     await SupabaseService.client.auth.signOut();
     await appLinkService.clearPendingSocialAuth();
     UserRepository.clearCache();
+    MedicationsRepository.clearCache();
+    AppointmentsRepository.clearCache();
+    AlertsRepository.clearCache();
   }
 
   String _nameFromEmail(String email) {

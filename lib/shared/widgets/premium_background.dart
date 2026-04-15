@@ -39,115 +39,123 @@ class AppBackground extends StatelessWidget {
       decoration: BoxDecoration(gradient: config.baseGradient),
       child: Stack(
         children: [
-          if (showTexture)
-            Positioned.fill(
-              child: IgnorePointer(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        AppColors.ambientFog.withValues(
-                          alpha: 0.05 * config.overlayOpacity,
+          // Static background layers cached as a separate compositing layer so
+          // body content rebuilds never trigger a repaint of the gradients.
+          RepaintBoundary(
+            child: Stack(
+              children: [
+                if (showTexture)
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              AppColors.ambientFog.withValues(
+                                alpha: 0.05 * config.overlayOpacity,
+                              ),
+                              Colors.transparent,
+                              AppColors.ambientFog.withValues(
+                                alpha: 0.02 * config.overlayOpacity,
+                              ),
+                            ],
+                          ),
                         ),
-                        Colors.transparent,
-                        AppColors.ambientFog.withValues(
-                          alpha: 0.02 * config.overlayOpacity,
-                        ),
-                      ],
+                      ),
+                    ),
+                  ),
+                Positioned.fill(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          AppColors.ambientSheen.withValues(
+                            alpha: 0.04 * config.overlayOpacity * intensity,
+                          ),
+                          Colors.transparent,
+                          AppColors.haloBlue.withValues(
+                            alpha: 0.18 * config.overlayOpacity * intensity,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ),
-          Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    AppColors.ambientSheen.withValues(
-                      alpha: 0.04 * config.overlayOpacity * intensity,
-                    ),
-                    Colors.transparent,
-                    AppColors.haloBlue.withValues(
-                      alpha: 0.18 * config.overlayOpacity * intensity,
-                    ),
-                  ],
+                _AmbientCloud(
+                  alignment: config.cloudAlignment,
+                  color: AppColors.ambientFog.withValues(
+                    alpha: config.cloudOpacity * intensity,
+                  ),
+                  width: config.cloudWidth,
+                  height: config.cloudHeight,
                 ),
-              ),
-            ),
-          ),
-          _AmbientCloud(
-            alignment: config.cloudAlignment,
-            color: AppColors.ambientFog.withValues(
-              alpha: config.cloudOpacity * intensity,
-            ),
-            width: config.cloudWidth,
-            height: config.cloudHeight,
-          ),
-          _GlowOrb(
-            alignment: primaryGlowAlignment,
-            color: primaryColor.withValues(
-              alpha: config.primaryGlowOpacity * intensity,
-            ),
-            width: config.primaryGlowWidth,
-            height: config.primaryGlowHeight,
-          ),
-          _GlowOrb(
-            alignment: secondaryGlowAlignment,
-            color: secondaryColor.withValues(
-              alpha: config.secondaryGlowOpacity * intensity,
-            ),
-            width: config.secondaryGlowWidth,
-            height: config.secondaryGlowHeight,
-          ),
-          if (showTopSheen)
-            Positioned.fill(
-              child: IgnorePointer(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      stops: const [0, 0.28, 1],
-                      colors: [
-                        AppColors.ambientSheen.withValues(
-                          alpha: 0.08 * config.overlayOpacity,
+                _GlowOrb(
+                  alignment: primaryGlowAlignment,
+                  color: primaryColor.withValues(
+                    alpha: config.primaryGlowOpacity * intensity,
+                  ),
+                  width: config.primaryGlowWidth,
+                  height: config.primaryGlowHeight,
+                ),
+                _GlowOrb(
+                  alignment: secondaryGlowAlignment,
+                  color: secondaryColor.withValues(
+                    alpha: config.secondaryGlowOpacity * intensity,
+                  ),
+                  width: config.secondaryGlowWidth,
+                  height: config.secondaryGlowHeight,
+                ),
+                if (showTopSheen)
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            stops: const [0, 0.28, 1],
+                            colors: [
+                              AppColors.ambientSheen.withValues(
+                                alpha: 0.08 * config.overlayOpacity,
+                              ),
+                              AppColors.atmosphericLine.withValues(
+                                alpha: 0.12 * config.overlayOpacity,
+                              ),
+                              Colors.transparent,
+                            ],
+                          ),
                         ),
-                        AppColors.atmosphericLine.withValues(
-                          alpha: 0.12 * config.overlayOpacity,
-                        ),
-                        Colors.transparent,
-                      ],
+                      ),
                     ),
                   ),
-                ),
-              ),
-            ),
-          if (showVignette)
-            Positioned.fill(
-              child: IgnorePointer(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: RadialGradient(
-                      center: Alignment.topCenter,
-                      radius: config.vignetteRadius,
-                      colors: [
-                        Colors.transparent,
-                        Colors.transparent,
-                        AppColors.vignette.withValues(
-                          alpha: config.vignetteOpacity,
+                if (showVignette)
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: RadialGradient(
+                            center: Alignment.topCenter,
+                            radius: config.vignetteRadius,
+                            colors: [
+                              Colors.transparent,
+                              Colors.transparent,
+                              AppColors.vignette.withValues(
+                                alpha: config.vignetteOpacity,
+                              ),
+                            ],
+                            stops: const [0, 0.68, 1],
+                          ),
                         ),
-                      ],
-                      stops: const [0, 0.68, 1],
+                      ),
                     ),
                   ),
-                ),
-              ),
+              ],
             ),
+          ),
           child,
         ],
       ),
