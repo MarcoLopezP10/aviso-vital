@@ -153,8 +153,15 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                 await future;
               },
               child: SingleChildScrollView(
-                padding: EdgeInsets.all(
+                padding: EdgeInsets.fromLTRB(
                   isWide ? AppSpacing.xxl : AppSpacing.xl,
+                  isWide ? AppSpacing.xxl : AppSpacing.xl,
+                  isWide ? AppSpacing.xxl : AppSpacing.xl,
+                  // Sin bottom nav en layout wide; con bottom nav añadir su
+                  // altura (kBottomNavigationBarHeight ≈ 80px) + 24px margen
+                  isWide
+                      ? AppSpacing.xxl
+                      : kBottomNavigationBarHeight + AppSpacing.xxl,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

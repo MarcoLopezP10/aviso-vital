@@ -1,18 +1,14 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:aviso_vital_2/app/router/app_routes.dart';
-import 'package:aviso_vital_2/core/services/app_link_service.dart';
 import 'package:aviso_vital_2/core/services/care_plan_context_service.dart';
-import 'package:aviso_vital_2/core/services/supabase_service.dart';
 import 'package:aviso_vital_2/data/models/models.dart';
 import 'package:aviso_vital_2/data/repositories/appointments_repository.dart';
-import 'package:aviso_vital_2/data/repositories/auth_repository.dart';
 import 'package:aviso_vital_2/data/repositories/medications_repository.dart';
 import 'package:aviso_vital_2/features/alerts/presentation/screens/alerta_cita_screen.dart';
 import 'package:aviso_vital_2/features/alerts/presentation/screens/alerta_medicacion_screen.dart';
-import 'package:aviso_vital_2/features/user_home/presentation/widgets/daily_progress_card.dart';
 import 'package:aviso_vital_2/features/user_home/presentation/widgets/next_appointment_card.dart';
 import 'package:aviso_vital_2/features/user_home/presentation/widgets/next_medication_card.dart';
-import 'package:aviso_vital_2/features/user_home/presentation/widgets/quick_actions_strip.dart';
 import 'package:aviso_vital_2/features/user_home/presentation/widgets/user_home_header.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 import 'package:aviso_vital_2/shared/widgets/shared_widgets.dart';
@@ -29,8 +25,6 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
   static const _appointmentsRepository = AppointmentsRepository();
   static const _medicationsRepository = MedicationsRepository();
   static const _carePlanContextService = CarePlanContextService();
-  static const _appLinkService = AppLinkService();
-  static const _authRepository = AuthRepository();
 
   late Future<_UserHomeViewData> _viewDataFuture;
 
@@ -89,87 +83,46 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      SizedBox(height: screenH * 0.04),
+                      SizedBox(height: math.max(screenH * 0.05, AppSpacing.minSection)),
                       UserHomeHeader(
                         greeting: data.greeting,
                         dateLabel: data.dateLabel,
                         avatarInitial: data.avatarInitial,
-                        trailing: _UserHomeExitButton(
-                          onTap: () => ConfirmDialog.show(
-                            context,
-                            title: 'Volver al inicio',
-                            message:
-                                'Puede volver a la selección principal cuando quiera.',
-                            confirmLabel: 'Volver',
-                            onConfirm: () async {
-                              await _appLinkService.clear();
-                              if (SupabaseService.currentUser != null) {
-                                await _authRepository.signOut();
-                              }
-                              if (!context.mounted) return;
-                              Navigator.pushNamedAndRemoveUntil(
-                                context,
-                                AppRoutes.roleSelection,
-                                (_) => false,
-                              );
-                            },
-                          ),
-                        ),
                       ),
-                      SizedBox(height: screenH * 0.03),
-                      DailyProgressCard(
-                        confirmed: data.confirmedToday,
-                        total: data.totalToday,
-                        pending: data.pendingToday,
-                      ),
-                      SizedBox(height: screenH * 0.03),
-                      WeeklyAdherenceStrip(weekDoses: data.weekDoses),
-                      SizedBox(height: screenH * 0.04),
+                      SizedBox(height: math.max(screenH * 0.05, AppSpacing.minSection)),
                       if (data.nextMedication != null) ...[
-                        _SectionLabel('Próxima medicación'),
-                        const SizedBox(height: 10),
                         NextMedicationCard(
                           medication: data.nextMedication!,
                           timeLabel: data.nextMedicationTime,
-                          statusLabel: data.pendingToday > 0
-                              ? 'Pendiente'
-                              : 'Al día',
-                          statusColor: data.pendingToday > 0
-                              ? AppColors.warning
-                              : AppColors.success,
                           onTap: () => Navigator.pushNamed(
                             context,
                             AlertaMedicacionScreen.routeName,
                           ),
                         ),
-                        SizedBox(height: screenH * 0.035),
+                        SizedBox(height: math.max(screenH * 0.04, AppSpacing.minSection)),
                       ],
-                      const _SectionLabel('Próxima cita médica'),
-                      const SizedBox(height: 10),
-                      NextAppointmentCard(
-                        appointment: data.todayAppointment,
-                        onTap: data.todayAppointment == null
-                            ? null
-                            : () => Navigator.pushNamed(
-                                context,
-                                AlertaCitaScreen.routeName,
-                                arguments: {
-                                  'appointmentId': data.todayAppointment!.id,
-                                },
-                              ),
-                      ),
-                      SizedBox(height: screenH * 0.04),
+                      if (data.todayAppointment != null) ...[
+                        NextAppointmentCard(
+                          appointment: data.todayAppointment,
+                          onTap: () => Navigator.pushNamed(
+                            context,
+                            AlertaCitaScreen.routeName,
+                            arguments: {
+                              'appointmentId': data.todayAppointment!.id,
+                            },
+                          ),
+                        ),
+                        SizedBox(height: math.max(screenH * 0.04, AppSpacing.minSection)),
+                      ],
                       PrimaryButton.large(
-                        label: 'Simulación en tiempo real',
+                        label: 'Ver mi móvil en pruebas',
                         icon: Icons.smartphone_rounded,
                         onPressed: () => Navigator.pushNamed(
                           context,
                           AppRoutes.simulacionAlertas,
                         ),
                       ),
-                      SizedBox(height: screenH * 0.028),
-                      QuickActionsStrip(pendingCount: data.pendingToday),
-                      SizedBox(height: screenH * 0.04),
+                      SizedBox(height: math.max(screenH * 0.05, AppSpacing.minSection)),
                     ],
                   ),
                 ),
@@ -263,55 +216,6 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
     ];
 
     return '${days[date.weekday - 1]}, ${date.day} de ${months[date.month - 1]}';
-  }
-}
-
-class _SectionLabel extends StatelessWidget {
-  final String text;
-
-  const _SectionLabel(this.text);
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      text,
-      style: AppTextStyles.label.copyWith(
-        color: AppColors.textTertiary,
-        letterSpacing: 0.4,
-        fontWeight: FontWeight.w600,
-      ),
-    );
-  }
-}
-
-class _UserHomeExitButton extends StatelessWidget {
-  final VoidCallback onTap;
-
-  const _UserHomeExitButton({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Tooltip(
-      message: 'Volver',
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: AppColors.surfaceFloating,
-            borderRadius: AppRadius.icon,
-            border: Border.all(color: AppColors.surfaceBorder),
-            boxShadow: AppShadows.cardSubtle,
-          ),
-          child: const Icon(
-            Icons.arrow_back_rounded,
-            color: AppColors.textSecondary,
-            size: 20,
-          ),
-        ),
-      ),
-    );
   }
 }
 

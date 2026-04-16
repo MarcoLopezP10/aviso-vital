@@ -10,39 +10,8 @@ class NextAppointmentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (appointment == null) {
-      return Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceFloating,
-          borderRadius: AppRadius.cardLg,
-          border: Border.all(color: AppColors.surfaceBorder),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.14),
-              blurRadius: 18,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            const Icon(
-              Icons.event_available_rounded,
-              color: AppColors.textTertiary,
-              size: 28,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'No tiene citas para hoy',
-              textAlign: TextAlign.center,
-              style: AppTextStyles.bodySmall,
-            ),
-          ],
-        ),
-      );
-    }
+    // Sin cita próxima: no mostrar nada — la sección entera queda oculta
+    if (appointment == null) return const SizedBox.shrink();
 
     final statusLabel = appointment!.esHoy ? 'Hoy' : 'Próxima';
     final secondaryLabel = appointment!.esHoy

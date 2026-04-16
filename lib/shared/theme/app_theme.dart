@@ -93,6 +93,14 @@ abstract class AppTheme {
         ),
       ),
 
+      // ── IconButton — WCAG 2.5.5: target táctil mínimo 48×48 dp ──
+      iconButtonTheme: IconButtonThemeData(
+        style: IconButton.styleFrom(
+          minimumSize: const Size(48, 48),
+          padding:     const EdgeInsets.all(12),
+        ),
+      ),
+
       // ── InputDecoration ───────────────────────────────────────────
       // Sin const — hintStyle y errorStyle usan AppTextStyles
       inputDecorationTheme: InputDecorationTheme(

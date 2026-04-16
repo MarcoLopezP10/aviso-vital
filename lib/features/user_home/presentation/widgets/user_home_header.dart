@@ -28,9 +28,9 @@ class UserHomeHeader extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(greeting, style: AppTextStyles.h1),
-              const SizedBox(height: 4),
-              Text(dateLabel, style: AppTextStyles.bodySmall),
+              Text(greeting, style: AppTextStyles.userGreeting),
+              const SizedBox(height: 6),
+              Text(dateLabel, style: AppTextStyles.userDate),
             ],
           ),
         ),

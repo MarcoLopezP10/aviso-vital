@@ -2,55 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:aviso_vital_2/data/models/models.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 
+/// Tarjeta de próxima medicación — diseñada para adultos mayores.
+///
+/// Muestra una frase natural y legible: "A las HH:MM · Nombre · Dosis"
+/// con tipografía accesible (≥22sp en cuerpo, hora destacada en ámbar).
 class NextMedicationCard extends StatelessWidget {
   final Medicamento medication;
   final String timeLabel;
-  final String statusLabel;
-  final Color statusColor;
   final VoidCallback? onTap;
 
   const NextMedicationCard({
     super.key,
     required this.medication,
     required this.timeLabel,
-    required this.statusLabel,
-    required this.statusColor,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return _InfoCard(
-      icon: Icons.medication_rounded,
-      color: AppColors.amber,
-      title: medication.nombre,
-      subtitle: medication.instrucciones ?? medication.dosis,
-      value: timeLabel,
-      badgeLabel: statusLabel,
-      badgeColor: statusColor,
-      onTap: onTap,
-    );
-  }
-}
-
-class _InfoCard extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final String title;
-  final String subtitle;
-  final String value;
-  final String badgeLabel;
-  final Color badgeColor;
-  final VoidCallback? onTap;
-
-  const _InfoCard({
-    required this.icon,
-    required this.color,
-    required this.title,
-    required this.subtitle,
-    required this.value,
-    required this.badgeLabel,
-    required this.badgeColor,
     this.onTap,
   });
 
@@ -60,76 +24,48 @@ class _InfoCard extends StatelessWidget {
       onTap: onTap,
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(AppSpacing.xl),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.xxl,
+          vertical: AppSpacing.xl,
+        ),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [AppColors.surfaceFloating, AppColors.surface],
-          ),
+          color: AppColors.surfaceFloating,
           borderRadius: AppRadius.cardLg,
-          border: Border.all(color: color.withValues(alpha: 0.25)),
+          border: Border.all(color: AppColors.amber.withValues(alpha: 0.22)),
           boxShadow: [
             BoxShadow(
+              color: AppColors.amber.withValues(alpha: 0.06),
+              blurRadius: 24,
+              offset: const Offset(0, 8),
+            ),
+            BoxShadow(
               color: Colors.black.withValues(alpha: 0.18),
-              blurRadius: 22,
-              offset: const Offset(0, 14),
+              blurRadius: 18,
+              offset: const Offset(0, 10),
             ),
           ],
         ),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.12),
-                borderRadius: AppRadius.iconLg,
-              ),
-              child: Icon(icon, color: color, size: 28),
+            // Hora — elemento más prominente
+            Text(
+              'A las $timeLabel',
+              style: AppTextStyles.userHour,
             ),
-            const SizedBox(width: AppSpacing.lg),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: AppTextStyles.h4),
-                  const SizedBox(height: 3),
-                  Text(
-                    subtitle,
-                    style: AppTextStyles.bodySmall,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
+            const SizedBox(height: AppSpacing.sm),
+            // Nombre del medicamento
+            Text(
+              medication.nombre,
+              style: AppTextStyles.userMedName,
+              overflow: TextOverflow.ellipsis,
             ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                if (value.isNotEmpty)
-                  Text(
-                    value,
-                    style: AppTextStyles.h3.copyWith(color: color),
-                  ),
-                const SizedBox(height: 4),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: badgeColor.withValues(alpha: 0.12),
-                    borderRadius: AppRadius.chip,
-                  ),
-                  child: Text(
-                    badgeLabel,
-                    style: AppTextStyles.caption.copyWith(
-                      color: badgeColor,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
+            const SizedBox(height: AppSpacing.xs),
+            // Dosis o instrucciones como contexto secundario
+            Text(
+              medication.instrucciones ?? medication.dosis,
+              style: AppTextStyles.userMedDose,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),

@@ -117,7 +117,7 @@ class _SimulacionAlertasScreenState extends State<SimulacionAlertasScreen> {
         backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
         leading: const AppBackButton(),
-        title: const Text('Simulación en tiempo real'),
+        title: const Text('Pantalla de pruebas'),
       ),
       body: SafeArea(
         child: _isLoading
@@ -240,43 +240,16 @@ class _SimulationHintCard extends StatelessWidget {
         ? 'sin sincronizar'
         : '${syncedAt!.hour.toString().padLeft(2, '0')}:${syncedAt!.minute.toString().padLeft(2, '0')}:${syncedAt!.second.toString().padLeft(2, '0')}';
 
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: AppRadius.card,
-        border: Border.all(color: AppColors.surfaceBorder),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: AppColors.amberSubtle,
-              borderRadius: AppRadius.icon,
-            ),
-            child: const Icon(
-              Icons.notifications_active_rounded,
-              color: AppColors.amber,
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Text(
-              visibleCount > 0
-                  ? 'Las notificaciones activas permanecen visibles durante 15 minutos y se actualizan con la hora real. Última sincronización: $syncLabel.'
-                  : 'Esta pantalla simula el móvil de la persona mayor. Cuando llegue la hora real de una toma o recordatorio, aparecerá aquí. Última sincronización: $syncLabel.',
-              style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.textSecondary,
-                height: 1.45,
-              ),
-            ),
-          ),
-        ],
-      ),
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Icon(Icons.sync_rounded, color: AppColors.textTertiary, size: 14),
+        const SizedBox(width: 6),
+        Text(
+          'Última actualización: $syncLabel',
+          style: AppTextStyles.caption,
+        ),
+      ],
     );
   }
 }
@@ -442,46 +415,74 @@ class _WaitingState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hasNext = nextNotification != null;
+    final nextHour = hasNext
+        ? formatAlertHour(nextNotification!.scheduledAt)
+        : null;
+
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.md,
-        vertical: AppSpacing.xxl,
+        vertical: AppSpacing.xl,
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            width: 84,
-            height: 84,
+            width: 72,
+            height: 72,
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.08),
               shape: BoxShape.circle,
               border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
             ),
             child: const Icon(
-              Icons.nightlight_round,
+              Icons.schedule_rounded,
               color: Colors.white70,
-              size: 34,
+              size: 32,
             ),
           ),
-          const SizedBox(height: AppSpacing.xl),
-          Text(
-            'Esperando la próxima notificación',
-            textAlign: TextAlign.center,
-            style: AppTextStyles.h3.copyWith(color: Colors.white, fontSize: 24),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            nextNotification == null
-                ? 'Cuando llegue la hora de una toma o cita programada, aparecerá aquí automáticamente.'
-                : 'Siguiente aviso previsto a las ${formatAlertHour(nextNotification!.scheduledAt)}.',
-            textAlign: TextAlign.center,
-            style: AppTextStyles.body.copyWith(
-              color: const Color(0xFFABABAB),
-              fontSize: 16,
-              height: 1.45,
+          const SizedBox(height: AppSpacing.lg),
+          if (hasNext) ...[
+            // Frase introductoria
+            Text(
+              'Tu próximo aviso será a las',
+              textAlign: TextAlign.center,
+              style: AppTextStyles.body.copyWith(
+                color: const Color(0xFFABABAB),
+                fontSize: 16,
+              ),
             ),
-          ),
+            const SizedBox(height: AppSpacing.xs),
+            // La hora es el elemento más prominente
+            Text(
+              nextHour!,
+              textAlign: TextAlign.center,
+              style: AppTextStyles.userHour.copyWith(
+                color: Colors.white,
+                fontSize: 56,
+              ),
+            ),
+          ] else ...[
+            Text(
+              'Sin avisos programados',
+              textAlign: TextAlign.center,
+              style: AppTextStyles.h3.copyWith(
+                color: Colors.white,
+                fontSize: 22,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              'Cuando llegue la hora de una toma o cita, aparecerá aquí.',
+              textAlign: TextAlign.center,
+              style: AppTextStyles.body.copyWith(
+                color: const Color(0xFFABABAB),
+                fontSize: 16,
+                height: 1.45,
+              ),
+            ),
+          ],
         ],
       ),
     );

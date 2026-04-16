@@ -53,11 +53,13 @@ abstract class AppTextStyles {
   static TextStyle get button      => _inter(fontSize: 15, fontWeight: FontWeight.w600, letterSpacing: 0.1, height: 1.0);
   static TextStyle get buttonSmall => _inter(fontSize: 13, fontWeight: FontWeight.w600, letterSpacing: 0.1, height: 1.0);
 
-  // ── Usuario mayor — escala accesible ─────────────────────────────
-  static TextStyle get userMedName => _inter(fontSize: 32, fontWeight: FontWeight.w700, letterSpacing: -0.5, height: 1.15);
-  static TextStyle get userMedDose => _inter(fontSize: 22, fontWeight: FontWeight.w600, color: AppColors.textSecondary, height: 1.2);
-  static TextStyle get userHour    => _inter(fontSize: 52, fontWeight: FontWeight.w700, color: AppColors.amber, letterSpacing: -2, height: 1.0);
-  static TextStyle get userCta     => _inter(fontSize: 22, fontWeight: FontWeight.w700, height: 1.0);
+  // ── Usuario mayor — escala accesible (WCAG AA: mín 18sp body, 7:1 contraste)
+  static TextStyle get userGreeting => _inter(fontSize: 32, fontWeight: FontWeight.w700, letterSpacing: -0.5, height: 1.2);
+  static TextStyle get userDate     => _inter(fontSize: 18, fontWeight: FontWeight.w400, color: AppColors.textSecondary, height: 1.4);
+  static TextStyle get userMedName  => _inter(fontSize: 32, fontWeight: FontWeight.w700, letterSpacing: -0.5, height: 1.15);
+  static TextStyle get userMedDose  => _inter(fontSize: 22, fontWeight: FontWeight.w600, color: AppColors.textSecondary, height: 1.2);
+  static TextStyle get userHour     => _inter(fontSize: 52, fontWeight: FontWeight.w700, color: AppColors.amber, letterSpacing: -2, height: 1.0);
+  static TextStyle get userCta      => _inter(fontSize: 22, fontWeight: FontWeight.w700, height: 1.0);
 
   // ── Helpers ───────────────────────────────────────────────────────
   static TextStyle withColor(TextStyle base, Color color) => base.copyWith(color: color);

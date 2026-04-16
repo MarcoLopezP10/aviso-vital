@@ -25,6 +25,12 @@ abstract class AppSpacing {
   /// Separación entre secciones
   static const double sectionGap = 28.0;
 
+  /// Espacios mínimos absolutos para pantallas pequeñas (ej. iPhone SE 375×667)
+  /// Usar con math.max(screenH * factor, AppSpacing.minSection) para evitar
+  /// compresión de layout en dispositivos con pantalla reducida.
+  static const double minSection = 16.0;
+  static const double minGap     = 10.0;
+
   /// EdgeInsets helpers
   static const EdgeInsets paddingScreen = EdgeInsets.symmetric(
     horizontal: screenH,
