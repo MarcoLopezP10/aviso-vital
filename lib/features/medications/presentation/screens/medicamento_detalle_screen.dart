@@ -119,10 +119,16 @@ class _MedicamentoDetalleView extends StatelessWidget {
           _InfoSection(
             title: 'Información',
             items: [
-              _InfoItem(label: 'Tomas al dia', value: medicamento.resumenTomas),
+              _InfoItem(label: 'Tomas', value: medicamento.resumenTomas),
+              _InfoItem(
+                label: 'Patrón',
+                value: _frecuenciaLabel(medicamento),
+              ),
               _InfoItem(
                 label: 'Horario',
-                value: medicamento.horasToma.join(' · '),
+                value: medicamento.horasToma.isEmpty
+                    ? '—'
+                    : medicamento.horasToma.join(' · '),
               ),
               if (medicamento.instrucciones != null)
                 _InfoItem(
@@ -161,6 +167,22 @@ class _MedicamentoDetalleView extends StatelessWidget {
   }
 
   String _formatDate(DateTime dt) => '${dt.day}/${dt.month}/${dt.year}';
+
+  String _frecuenciaLabel(Medicamento med) {
+    return switch (med.frecuencia) {
+      FrecuenciaMed.cadaDias => 'Cada ${med.intervaloDias} días',
+      FrecuenciaMed.diasSemana => med.diasSemana.isEmpty
+          ? 'Días específicos'
+          : _diasSemanaLabel(med.diasSemana),
+      _ => med.frecuencia.label,
+    };
+  }
+
+  String _diasSemanaLabel(List<int> days) {
+    const names = ['', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+    final sorted = List<int>.from(days)..sort();
+    return sorted.map((d) => names[d]).join(' · ');
+  }
 }
 
 class _MedicationDetailHero extends StatelessWidget {

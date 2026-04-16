@@ -615,6 +615,7 @@ class MedicationsRepository {
 
     final payload = <Map<String, dynamic>>[];
     for (final medication in meds) {
+      if (!_shouldTakeOnDay(medication, today)) continue;
       for (final hour in _scheduledHoursForMedication(medication)) {
         final scheduled = _dateForHour(dayStart, hour);
         final key = '${medication.id}|${scheduled.hour}|${scheduled.minute}';
@@ -757,44 +758,95 @@ class MedicationsRepository {
     return userId;
   }
 
+  /// Returns true when [medication] should be taken on [date].
+  /// All existing frequencies (cada8h, cada12h, cada24h, segunPrescripcion)
+  /// are treated as daily (backwards-compatible).
+  bool _shouldTakeOnDay(Medicamento medication, DateTime date) {
+    return switch (medication.frecuencia) {
+      FrecuenciaMed.diasSemana => medication.diasSemana.isEmpty
+          ? true
+          : medication.diasSemana.contains(date.weekday),
+      FrecuenciaMed.cadaDias => () {
+          if (medication.intervaloDias <= 1) return true;
+          final anchor = DateTime(
+            medication.fechaCreacion.year,
+            medication.fechaCreacion.month,
+            medication.fechaCreacion.day,
+          );
+          final target = DateTime(date.year, date.month, date.day);
+          final diff = target.difference(anchor).inDays;
+          return diff >= 0 && diff % medication.intervaloDias == 0;
+        }(),
+      _ => true,
+    };
+  }
+
+  /// Finds the next scheduled DateTime for [medication] after [from].
+  /// Looks up to 14 days ahead to handle weekly patterns.
+  DateTime? _nextScheduledDatetime(Medicamento medication, DateTime from) {
+    final horas = _scheduledHoursForMedication(medication);
+    if (horas.isEmpty) return null;
+
+    final fromMinutes = from.hour * 60 + from.minute;
+    final today = DateTime(from.year, from.month, from.day);
+
+    // Check remaining hours today (only if today is a scheduled day)
+    if (_shouldTakeOnDay(medication, from)) {
+      for (final hour in horas) {
+        if (_minutesForHour(hour) > fromMinutes) {
+          return _dateForHour(today, hour);
+        }
+      }
+    }
+
+    // Check next 14 days
+    for (var i = 1; i <= 14; i++) {
+      final candidate = from.add(Duration(days: i));
+      if (_shouldTakeOnDay(medication, candidate)) {
+        return _dateForHour(
+          DateTime(candidate.year, candidate.month, candidate.day),
+          horas.first,
+        );
+      }
+    }
+
+    return null;
+  }
+
   Medicamento? _deriveUpcomingMedicationFromSchedule(
     List<Medicamento> medications,
   ) {
-    final nowMinutes = DateTime.now().hour * 60 + DateTime.now().minute;
-    Medicamento? selectedMedication;
-    var selectedMinutes = 24 * 60 * 2;
+    final now = DateTime.now();
+    DateTime? nearestDate;
+    Medicamento? nearestMed;
 
     for (final medication in medications.where((item) => item.activo)) {
-      for (final hour in _scheduledHoursForMedication(medication)) {
-        final minutes = _minutesForHour(hour);
-        final adjustedMinutes = minutes > nowMinutes ? minutes : minutes + 1440;
-        if (adjustedMinutes < selectedMinutes) {
-          selectedMinutes = adjustedMinutes;
-          selectedMedication = medication;
-        }
+      final next = _nextScheduledDatetime(medication, now);
+      if (next == null) continue;
+      if (nearestDate == null || next.isBefore(nearestDate)) {
+        nearestDate = next;
+        nearestMed = medication;
       }
     }
 
-    return selectedMedication;
+    return nearestMed;
   }
 
   String? _deriveUpcomingHourFromSchedule(List<Medicamento> medications) {
-    final nowMinutes = DateTime.now().hour * 60 + DateTime.now().minute;
-    String? selectedHour;
-    var selectedMinutes = 24 * 60 * 2;
+    final now = DateTime.now();
+    DateTime? nearestDate;
+    String? nearestHour;
 
     for (final medication in medications.where((item) => item.activo)) {
-      for (final hour in _scheduledHoursForMedication(medication)) {
-        final minutes = _minutesForHour(hour);
-        final adjustedMinutes = minutes > nowMinutes ? minutes : minutes + 1440;
-        if (adjustedMinutes < selectedMinutes) {
-          selectedMinutes = adjustedMinutes;
-          selectedHour = hour;
-        }
+      final next = _nextScheduledDatetime(medication, now);
+      if (next == null) continue;
+      if (nearestDate == null || next.isBefore(nearestDate)) {
+        nearestDate = next;
+        nearestHour = _formatHour(next);
       }
     }
 
-    return selectedHour;
+    return nearestHour;
   }
 
   List<Toma> _pendingDoses(List<Toma> doses) {

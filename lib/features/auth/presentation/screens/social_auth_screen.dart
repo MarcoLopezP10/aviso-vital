@@ -4,11 +4,7 @@ import 'package:aviso_vital_2/app/router/app_routes.dart';
 import 'package:aviso_vital_2/data/models/models.dart';
 import 'package:aviso_vital_2/data/repositories/auth_repository.dart';
 import 'package:aviso_vital_2/data/repositories/user_repository.dart';
-import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_scaffold.dart';
 import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_social_row.dart';
-import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_text_field.dart';
-import 'package:aviso_vital_2/shared/theme/app_theme.dart';
-import 'package:aviso_vital_2/shared/widgets/shared_widgets.dart';
 
 class SocialAuthScreen extends StatefulWidget {
   final String providerId;
@@ -54,70 +50,17 @@ class _SocialAuthScreenState extends State<SocialAuthScreen> {
     super.dispose();
   }
 
-  _ProviderUi get _provider {
-    return switch (_providerId) {
-      'apple' => const _ProviderUi(
-        id: 'apple',
-        label: 'Apple',
-        icon: Icons.apple_rounded,
-        accent: Color(0xFFC8D7F1),
-        glow: Color(0xFF90A9D6),
-        panel: Color(0xFF161D2A),
-        emailHint: 'nombre@icloud.com',
-        providerSubtitle: 'Puedes usar tu dirección de iCloud o tu Apple ID.',
-      ),
-      'facebook' => const _ProviderUi(
-        id: 'facebook',
-        label: 'Facebook',
-        icon: Icons.facebook_rounded,
-        accent: Color(0xFF7CB5FF),
-        glow: Color(0xFF2D6CDF),
-        panel: Color(0xFF12294B),
-        emailHint: 'nombre@email.com',
-        providerSubtitle:
-            'Usa el email con el que accedes habitualmente a Facebook.',
-      ),
-      _ => const _ProviderUi(
-        id: 'google',
-        label: 'Google',
-        icon: Icons.g_mobiledata_rounded,
-        accent: Color(0xFFFFC83D),
-        glow: Color(0xFFE0A800),
-        panel: Color(0xFF2A2310),
-        emailHint: 'nombre@gmail.com',
-        providerSubtitle:
-            'Usa tu cuenta de Gmail o cualquier cuenta de Google Workspace.',
-      ),
-    };
-  }
-
   bool get _isAdmin => widget.roleId == 'admin';
   bool get _isSignup => widget.modeId == 'signup';
 
   RolUsuario get _selectedRole =>
       _isAdmin ? RolUsuario.administrador : RolUsuario.mayor;
 
-  TipoAccesoUsuario get _accessType => switch (_provider.id) {
+  TipoAccesoUsuario get _accessType => switch (_providerId) {
     'apple' => TipoAccesoUsuario.apple,
     'facebook' => TipoAccesoUsuario.facebook,
     _ => TipoAccesoUsuario.google,
   };
-
-  String get _roleLabel => _isAdmin ? 'administrador' : 'usuario';
-
-  String get _title => _isSignup
-      ? 'Crear cuenta con\n${_provider.label}'
-      : 'Iniciar sesion con\n${_provider.label}';
-
-  String get _description => _isSignup
-      ? 'Crea tu perfil usando tu cuenta de ${_provider.label}. ${_provider.providerSubtitle}'
-      : 'Introduce el email y contraseña que usaste al crear tu cuenta de ${_provider.label}. ${_provider.providerSubtitle}';
-
-  String get _switchPrompt => _isSignup
-      ? '¿Ya tienes cuenta con ${_provider.label}?'
-      : '¿Aun no tienes cuenta con ${_provider.label}?';
-
-  String get _switchLabel => _isSignup ? 'Iniciar sesion' : 'Crear cuenta';
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
@@ -211,403 +154,1056 @@ class _SocialAuthScreenState extends State<SocialAuthScreen> {
     );
   }
 
+  _AuthViewData get _viewData => _AuthViewData(
+    formKey: _formKey,
+    emailCtrl: _emailCtrl,
+    passCtrl: _passCtrl,
+    confirmCtrl: _confirmCtrl,
+    linkCodeCtrl: _linkCodeCtrl,
+    isSignup: _isSignup,
+    isAdmin: _isAdmin,
+    isLoading: _isLoading,
+    passVisible: _passVisible,
+    confirmVisible: _confirmVisible,
+    onTogglePass: () => setState(() => _passVisible = !_passVisible),
+    onToggleConfirm: () => setState(() => _confirmVisible = !_confirmVisible),
+    onSubmit: _submit,
+    onSwitchMode: _switchMode,
+    onSwitchProvider: _switchProvider,
+    currentProviderId: _providerId,
+  );
+
   @override
   Widget build(BuildContext context) {
-    return AuthScaffold(
-      variant: _isAdmin
-          ? PremiumBackgroundVariant.dashboard
-          : PremiumBackgroundVariant.warm,
-      primaryGlowColor: _provider.glow,
-      secondaryGlowColor: _provider.accent,
-      primaryGlowAlignment: const Alignment(0.15, -0.78),
-      secondaryGlowAlignment: const Alignment(0.98, 0.92),
-      intensity: 0.86,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          const SizedBox(height: AppSpacing.sm),
-          const Align(alignment: Alignment.centerLeft, child: AppBackButton()),
-          const SizedBox(height: AppSpacing.lg),
-          _ProviderHero(
-            provider: _provider,
-            isSignup: _isSignup,
-            roleLabel: _roleLabel,
-            title: _title,
-            description: _description,
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          _BottomProviderPanel(
-            provider: _provider,
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        _isSignup ? 'Crear cuenta' : 'Iniciar sesion',
-                        style: AppTextStyles.h4,
+    final data = _viewData;
+    return switch (_providerId) {
+      'facebook' => _FacebookAuthView(data: data),
+      'apple' => _AppleAuthView(data: data),
+      _ => _GoogleAuthView(data: data),
+    };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Data container
+// ---------------------------------------------------------------------------
+
+class _AuthViewData {
+  final GlobalKey<FormState> formKey;
+  final TextEditingController emailCtrl;
+  final TextEditingController passCtrl;
+  final TextEditingController confirmCtrl;
+  final TextEditingController linkCodeCtrl;
+  final bool isSignup;
+  final bool isAdmin;
+  final bool isLoading;
+  final bool passVisible;
+  final bool confirmVisible;
+  final VoidCallback onTogglePass;
+  final VoidCallback onToggleConfirm;
+  final VoidCallback onSubmit;
+  final VoidCallback onSwitchMode;
+  final ValueChanged<AuthSocialProvider> onSwitchProvider;
+  final String currentProviderId;
+
+  const _AuthViewData({
+    required this.formKey,
+    required this.emailCtrl,
+    required this.passCtrl,
+    required this.confirmCtrl,
+    required this.linkCodeCtrl,
+    required this.isSignup,
+    required this.isAdmin,
+    required this.isLoading,
+    required this.passVisible,
+    required this.confirmVisible,
+    required this.onTogglePass,
+    required this.onToggleConfirm,
+    required this.onSubmit,
+    required this.onSwitchMode,
+    required this.onSwitchProvider,
+    required this.currentProviderId,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Facebook view
+// ---------------------------------------------------------------------------
+
+class _FacebookAuthView extends StatelessWidget {
+  static const _bg = Color(0xFF1A2430);
+  static const _blue = Color(0xFF1877F2);
+  static const _fieldBorder = Color(0xFF3A4F66);
+  static const _textSub = Color(0xFF8B9BB4);
+
+  final _AuthViewData data;
+  const _FacebookAuthView({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: _bg,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: IconButton(
+                  icon: const Icon(
+                    Icons.arrow_back_rounded,
+                    color: Colors.white,
+                  ),
+                  onPressed: () => Navigator.maybePop(context),
+                ),
+              ),
+              const SizedBox(height: 28),
+              Center(
+                child: Container(
+                  width: 72,
+                  height: 72,
+                  decoration: const BoxDecoration(
+                    color: _blue,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Center(
+                    child: Text(
+                      'f',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 42,
+                        fontWeight: FontWeight.w700,
+                        height: 1.1,
                       ),
-                      const Spacer(),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 6,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              const Center(
+                child: Text(
+                  'Facebook',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Center(
+                child: Text(
+                  data.isSignup
+                      ? 'Crea tu cuenta con Facebook'
+                      : 'Accede con tu cuenta de Facebook',
+                  style: const TextStyle(color: _textSub, fontSize: 14),
+                ),
+              ),
+              const SizedBox(height: 32),
+              Form(
+                key: data.formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _FbField(
+                      controller: data.emailCtrl,
+                      hint: 'Correo electrónico o teléfono',
+                      keyboardType: TextInputType.emailAddress,
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) {
+                          return 'Introduce tu email';
+                        }
+                        if (!v.contains('@')) return 'Email no válido';
+                        return null;
+                      },
+                    ),
+                    if (data.isSignup && !data.isAdmin) ...[
+                      const SizedBox(height: 12),
+                      _FbField(
+                        controller: data.linkCodeCtrl,
+                        hint: 'Código del administrador',
+                        textCapitalization: TextCapitalization.characters,
+                        validator: (v) {
+                          final n = v
+                              ?.replaceAll(RegExp(r'[^A-Za-z0-9]'), '')
+                              .trim();
+                          if (n == null || n.isEmpty) {
+                            return 'Introduce el código';
+                          }
+                          if (n.length != 6) {
+                            return 'El código debe tener 6 caracteres';
+                          }
+                          return null;
+                        },
+                      ),
+                    ],
+                    const SizedBox(height: 12),
+                    _FbField(
+                      controller: data.passCtrl,
+                      hint: 'Contraseña',
+                      obscure: !data.passVisible,
+                      suffix: IconButton(
+                        icon: Icon(
+                          data.passVisible
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined,
+                          color: _textSub,
+                          size: 20,
                         ),
-                        decoration: BoxDecoration(
-                          color: _provider.accent.withValues(alpha: 0.14),
-                          borderRadius: AppRadius.chip,
-                          border: Border.all(
-                            color: _provider.accent.withValues(alpha: 0.28),
+                        onPressed: data.onTogglePass,
+                      ),
+                      validator: (v) {
+                        if (v == null || v.isEmpty) {
+                          return 'Introduce una contraseña';
+                        }
+                        if (v.length < 6) return 'Mínimo 6 caracteres';
+                        return null;
+                      },
+                    ),
+                    if (data.isSignup) ...[
+                      const SizedBox(height: 12),
+                      _FbField(
+                        controller: data.confirmCtrl,
+                        hint: 'Confirmar contraseña',
+                        obscure: !data.confirmVisible,
+                        suffix: IconButton(
+                          icon: Icon(
+                            data.confirmVisible
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined,
+                            color: _textSub,
+                            size: 20,
+                          ),
+                          onPressed: data.onToggleConfirm,
+                        ),
+                        validator: (v) {
+                          if (v == null || v.isEmpty) {
+                            return 'Confirma la contraseña';
+                          }
+                          if (v != data.passCtrl.text) {
+                            return 'Las contraseñas no coinciden';
+                          }
+                          return null;
+                        },
+                      ),
+                    ],
+                    const SizedBox(height: 20),
+                    SizedBox(
+                      height: 48,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _blue,
+                          foregroundColor: Colors.white,
+                          shape: const StadiumBorder(),
+                          textStyle: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
+                        onPressed: data.isLoading ? null : data.onSubmit,
+                        child: data.isLoading
+                            ? const SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.5,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : Text(
+                                data.isSignup ? 'Registrarse' : 'Continuar',
+                              ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    if (!data.isSignup)
+                      const Center(
                         child: Text(
-                          _accessType.label,
-                          style: AppTextStyles.caption.copyWith(
-                            color: _provider.accent,
+                          '¿Has olvidado tu contraseña?',
+                          style: TextStyle(color: _textSub, fontSize: 14),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 28),
+              Row(
+                children: [
+                  const Expanded(child: Divider(color: _fieldBorder)),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Text(
+                      'o',
+                      style: const TextStyle(color: _textSub),
+                    ),
+                  ),
+                  const Expanded(child: Divider(color: _fieldBorder)),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Center(
+                child: GestureDetector(
+                  onTap: data.onSwitchMode,
+                  child: Text(
+                    data.isSignup
+                        ? '¿Ya tienes cuenta? Inicia sesión'
+                        : '¿No tienes cuenta? Regístrate',
+                    style: const TextStyle(
+                      color: _blue,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 28),
+              _ProviderSwitcher(
+                onSwitchProvider: data.onSwitchProvider,
+                currentProviderId: data.currentProviderId,
+                dark: true,
+              ),
+              const SizedBox(height: 20),
+              const _PrivacyNote(dark: true),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: const [
+                  Icon(Icons.all_inclusive_rounded, color: _textSub, size: 14),
+                  SizedBox(width: 6),
+                  Text(
+                    'Meta',
+                    style: TextStyle(color: _textSub, fontSize: 12),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FbField extends StatelessWidget {
+  static const _fieldFill = Color(0xFF22303C);
+  static const _fieldBorder = Color(0xFF3A4F66);
+  static const _textSub = Color(0xFF8B9BB4);
+
+  final TextEditingController controller;
+  final String hint;
+  final bool obscure;
+  final Widget? suffix;
+  final TextInputType? keyboardType;
+  final TextCapitalization textCapitalization;
+  final String? Function(String?)? validator;
+
+  const _FbField({
+    required this.controller,
+    required this.hint,
+    this.obscure = false,
+    this.suffix,
+    this.keyboardType,
+    this.textCapitalization = TextCapitalization.none,
+    this.validator,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextFormField(
+      controller: controller,
+      obscureText: obscure,
+      keyboardType: keyboardType,
+      textCapitalization: textCapitalization,
+      validator: validator,
+      style: const TextStyle(color: Colors.white, fontSize: 15),
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: const TextStyle(color: _textSub, fontSize: 15),
+        filled: true,
+        fillColor: _fieldFill,
+        suffixIcon: suffix,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: _fieldBorder),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: _fieldBorder),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFF1877F2), width: 1.5),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFFFF5252)),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFFFF5252), width: 1.5),
+        ),
+        errorStyle: const TextStyle(color: Color(0xFFFF8A80)),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Apple view
+// ---------------------------------------------------------------------------
+
+class _AppleAuthView extends StatelessWidget {
+  static const _blue = Color(0xFF007AFF);
+  static const _textPrimary = Color(0xFF1C1C1E);
+  static const _textSub = Color(0xFF6C6C70);
+
+  final _AuthViewData data;
+  const _AppleAuthView({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 28),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: IconButton(
+                  icon: const Icon(
+                    Icons.arrow_back_ios_new_rounded,
+                    color: _blue,
+                    size: 20,
+                  ),
+                  onPressed: () => Navigator.maybePop(context),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Center(
+                child: Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1A3C5E),
+                    borderRadius: BorderRadius.circular(18),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.12),
+                        blurRadius: 16,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.health_and_safety_rounded,
+                    color: Colors.white,
+                    size: 40,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Center(
+                child: Text(
+                  'Aviso Vital',
+                  style: TextStyle(
+                    color: _textPrimary,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Center(
+                child: Text(
+                  data.isSignup
+                      ? 'Crea tu cuenta con Apple'
+                      : 'Continúa con tu Apple ID',
+                  style: const TextStyle(color: _textSub, fontSize: 15),
+                ),
+              ),
+              const SizedBox(height: 36),
+              Form(
+                key: data.formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _AppleField(
+                      controller: data.emailCtrl,
+                      label: 'Apple ID',
+                      hint: 'nombre@icloud.com',
+                      keyboardType: TextInputType.emailAddress,
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) {
+                          return 'Introduce tu email';
+                        }
+                        if (!v.contains('@')) return 'Email no válido';
+                        return null;
+                      },
+                    ),
+                    if (data.isSignup && !data.isAdmin) ...[
+                      const SizedBox(height: 4),
+                      _AppleField(
+                        controller: data.linkCodeCtrl,
+                        label: 'Código del administrador',
+                        hint: 'XXXXXX',
+                        textCapitalization: TextCapitalization.characters,
+                        validator: (v) {
+                          final n = v
+                              ?.replaceAll(RegExp(r'[^A-Za-z0-9]'), '')
+                              .trim();
+                          if (n == null || n.isEmpty) {
+                            return 'Introduce el código';
+                          }
+                          if (n.length != 6) {
+                            return 'El código debe tener 6 caracteres';
+                          }
+                          return null;
+                        },
+                      ),
+                    ],
+                    const SizedBox(height: 4),
+                    _AppleField(
+                      controller: data.passCtrl,
+                      label: 'Contraseña',
+                      hint: '',
+                      obscure: !data.passVisible,
+                      suffix: GestureDetector(
+                        onTap: data.onTogglePass,
+                        child: Text(
+                          data.passVisible ? 'Ocultar' : 'Mostrar',
+                          style: const TextStyle(color: _blue, fontSize: 14),
+                        ),
+                      ),
+                      validator: (v) {
+                        if (v == null || v.isEmpty) {
+                          return 'Introduce una contraseña';
+                        }
+                        if (v.length < 6) return 'Mínimo 6 caracteres';
+                        return null;
+                      },
+                    ),
+                    if (data.isSignup) ...[
+                      const SizedBox(height: 4),
+                      _AppleField(
+                        controller: data.confirmCtrl,
+                        label: 'Confirmar contraseña',
+                        hint: '',
+                        obscure: !data.confirmVisible,
+                        suffix: GestureDetector(
+                          onTap: data.onToggleConfirm,
+                          child: Text(
+                            data.confirmVisible ? 'Ocultar' : 'Mostrar',
+                            style: const TextStyle(color: _blue, fontSize: 14),
                           ),
+                        ),
+                        validator: (v) {
+                          if (v == null || v.isEmpty) {
+                            return 'Confirma la contraseña';
+                          }
+                          if (v != data.passCtrl.text) {
+                            return 'Las contraseñas no coinciden';
+                          }
+                          return null;
+                        },
+                      ),
+                    ],
+                    const SizedBox(height: 28),
+                    SizedBox(
+                      height: 50,
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.black,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          textStyle: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        icon: data.isLoading
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(Icons.apple_rounded, size: 22),
+                        label: Text(
+                          data.isSignup ? 'Crear cuenta' : 'Iniciar sesión',
+                        ),
+                        onPressed: data.isLoading ? null : data.onSubmit,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Center(
+                      child: GestureDetector(
+                        onTap: data.onSwitchMode,
+                        child: Text(
+                          data.isSignup
+                              ? '¿Ya tienes cuenta? Inicia sesión'
+                              : '¿No tienes cuenta? Regístrate',
+                          style: const TextStyle(color: _blue, fontSize: 14),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 28),
+                    const _PrivacyNote(dark: false),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 28),
+              _ProviderSwitcher(
+                onSwitchProvider: data.onSwitchProvider,
+                currentProviderId: data.currentProviderId,
+                dark: false,
+              ),
+              const SizedBox(height: 28),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AppleField extends StatelessWidget {
+  static const _textPrimary = Color(0xFF1C1C1E);
+  static const _textSub = Color(0xFF6C6C70);
+  static const _blue = Color(0xFF007AFF);
+  static const _divider = Color(0xFFD1D1D6);
+
+  final TextEditingController controller;
+  final String label;
+  final String hint;
+  final bool obscure;
+  final Widget? suffix;
+  final TextInputType? keyboardType;
+  final TextCapitalization textCapitalization;
+  final String? Function(String?)? validator;
+
+  const _AppleField({
+    required this.controller,
+    required this.label,
+    required this.hint,
+    this.obscure = false,
+    this.suffix,
+    this.keyboardType,
+    this.textCapitalization = TextCapitalization.none,
+    this.validator,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextFormField(
+      controller: controller,
+      obscureText: obscure,
+      keyboardType: keyboardType,
+      textCapitalization: textCapitalization,
+      validator: validator,
+      cursorColor: _blue,
+      style: const TextStyle(color: _textPrimary, fontSize: 16),
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint.isEmpty ? null : hint,
+        hintStyle: const TextStyle(color: _textSub),
+        labelStyle: const TextStyle(color: _textSub),
+        floatingLabelStyle: const TextStyle(color: _blue, fontSize: 13),
+        suffixIcon: suffix != null
+            ? Padding(
+                padding: const EdgeInsets.only(right: 4, bottom: 4),
+                child: suffix,
+              )
+            : null,
+        suffixIconConstraints: const BoxConstraints(minHeight: 0),
+        enabledBorder: const UnderlineInputBorder(
+          borderSide: BorderSide(color: _divider),
+        ),
+        focusedBorder: const UnderlineInputBorder(
+          borderSide: BorderSide(color: _blue, width: 1.5),
+        ),
+        errorBorder: const UnderlineInputBorder(
+          borderSide: BorderSide(color: Color(0xFFFF3B30)),
+        ),
+        focusedErrorBorder: const UnderlineInputBorder(
+          borderSide: BorderSide(color: Color(0xFFFF3B30), width: 1.5),
+        ),
+        errorStyle: const TextStyle(color: Color(0xFFFF3B30), fontSize: 12),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Google view
+// ---------------------------------------------------------------------------
+
+class _GoogleAuthView extends StatelessWidget {
+  static const _bg = Color(0xFFF1F3F4);
+  static const _blue = Color(0xFF4285F4);
+  static const _textPrimary = Color(0xFF202124);
+  static const _textSub = Color(0xFF5F6368);
+
+  final _AuthViewData data;
+  const _GoogleAuthView({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: _bg,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(4, 8, 16, 0),
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(
+                        Icons.arrow_back_rounded,
+                        color: _textSub,
+                      ),
+                      onPressed: () => Navigator.maybePop(context),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 4, 24, 24),
+                child: Container(
+                  padding: const EdgeInsets.fromLTRB(28, 32, 28, 28),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.08),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Center(child: _GoogleLogoWidget()),
+                      const SizedBox(height: 20),
+                      Center(
+                        child: Text(
+                          data.isSignup ? 'Crear cuenta' : 'Iniciar sesión',
+                          style: const TextStyle(
+                            color: _textPrimary,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      const Center(
+                        child: Text(
+                          'con tu cuenta de Google',
+                          style: TextStyle(color: _textSub, fontSize: 16),
+                        ),
+                      ),
+                      const SizedBox(height: 28),
+                      Form(
+                        key: data.formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            _GoogleField(
+                              controller: data.emailCtrl,
+                              label: 'Correo electrónico o teléfono',
+                              keyboardType: TextInputType.emailAddress,
+                              validator: (v) {
+                                if (v == null || v.trim().isEmpty) {
+                                  return 'Introduce tu email';
+                                }
+                                if (!v.contains('@')) return 'Email no válido';
+                                return null;
+                              },
+                            ),
+                            if (data.isSignup && !data.isAdmin) ...[
+                              const SizedBox(height: 20),
+                              _GoogleField(
+                                controller: data.linkCodeCtrl,
+                                label: 'Código del administrador',
+                                textCapitalization:
+                                    TextCapitalization.characters,
+                                validator: (v) {
+                                  final n = v
+                                      ?.replaceAll(RegExp(r'[^A-Za-z0-9]'), '')
+                                      .trim();
+                                  if (n == null || n.isEmpty) {
+                                    return 'Introduce el código';
+                                  }
+                                  if (n.length != 6) {
+                                    return 'El código debe tener 6 caracteres';
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ],
+                            const SizedBox(height: 20),
+                            _GoogleField(
+                              controller: data.passCtrl,
+                              label: 'Contraseña',
+                              obscure: !data.passVisible,
+                              suffix: TextButton(
+                                style: TextButton.styleFrom(
+                                  padding: EdgeInsets.zero,
+                                  minimumSize: Size.zero,
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                ),
+                                onPressed: data.onTogglePass,
+                                child: Text(
+                                  data.passVisible ? 'Ocultar' : 'Mostrar',
+                                  style: const TextStyle(
+                                    color: _blue,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
+                              validator: (v) {
+                                if (v == null || v.isEmpty) {
+                                  return 'Introduce una contraseña';
+                                }
+                                if (v.length < 6) return 'Mínimo 6 caracteres';
+                                return null;
+                              },
+                            ),
+                            if (data.isSignup) ...[
+                              const SizedBox(height: 20),
+                              _GoogleField(
+                                controller: data.confirmCtrl,
+                                label: 'Confirmar contraseña',
+                                obscure: !data.confirmVisible,
+                                suffix: TextButton(
+                                  style: TextButton.styleFrom(
+                                    padding: EdgeInsets.zero,
+                                    minimumSize: Size.zero,
+                                    tapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                  ),
+                                  onPressed: data.onToggleConfirm,
+                                  child: Text(
+                                    data.confirmVisible
+                                        ? 'Ocultar'
+                                        : 'Mostrar',
+                                    style: const TextStyle(
+                                      color: _blue,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ),
+                                validator: (v) {
+                                  if (v == null || v.isEmpty) {
+                                    return 'Confirma la contraseña';
+                                  }
+                                  if (v != data.passCtrl.text) {
+                                    return 'Las contraseñas no coinciden';
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ],
+                            const SizedBox(height: 28),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                TextButton(
+                                  onPressed: data.onSwitchMode,
+                                  child: Text(
+                                    data.isSignup
+                                        ? 'Iniciar sesión'
+                                        : 'Crear cuenta',
+                                    style: const TextStyle(
+                                      color: _blue,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(
+                                  height: 40,
+                                  child: ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: _blue,
+                                      foregroundColor: Colors.white,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 24,
+                                      ),
+                                      textStyle: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    onPressed:
+                                        data.isLoading ? null : data.onSubmit,
+                                    child: data.isLoading
+                                        ? const SizedBox(
+                                            width: 18,
+                                            height: 18,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: Colors.white,
+                                            ),
+                                          )
+                                        : Text(
+                                            data.isSignup
+                                                ? 'Registrarse'
+                                                : 'Siguiente',
+                                          ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: AppSpacing.sm),
-                  Text(
-                    _isSignup
-                        ? 'Tu cuenta quedará vinculada a ${_provider.label}. Usa el mismo email con el que sueles acceder.'
-                        : 'Accede con las credenciales de tu cuenta de ${_provider.label} en Aviso Vital.',
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.textSecondary,
-                      height: 1.4,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
-                  AuthTextField(
-                    controller: _emailCtrl,
-                    hint: _provider.emailHint,
-                    icon: Icons.alternate_email_rounded,
-                    keyboardType: TextInputType.emailAddress,
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Introduzca su email';
-                      }
-                      if (!value.contains('@')) return 'Email no válido';
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  if (_isSignup && !_isAdmin) ...[
-                    AuthTextField(
-                      controller: _linkCodeCtrl,
-                      hint: 'Código del administrador',
-                      icon: Icons.link_rounded,
-                      textCapitalization: TextCapitalization.characters,
-                      validator: (value) {
-                        final normalized = value
-                            ?.replaceAll(RegExp(r'[^A-Za-z0-9]'), '')
-                            .trim();
-                        if (normalized == null || normalized.isEmpty) {
-                          return 'Introduce el código del administrador';
-                        }
-                        if (normalized.length != 6) {
-                          return 'El código debe tener 6 caracteres';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                  ],
-                  AuthTextField(
-                    controller: _passCtrl,
-                    hint: 'Contraseña',
-                    icon: Icons.lock_outline_rounded,
-                    obscure: !_passVisible,
-                    suffix: IconButton(
-                      icon: Icon(
-                        _passVisible
-                            ? Icons.visibility_outlined
-                            : Icons.visibility_off_outlined,
-                        color: AppColors.textDisabled,
-                        size: 20,
-                      ),
-                      onPressed: () =>
-                          setState(() => _passVisible = !_passVisible),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Introduce una contraseña';
-                      }
-                      if (value.length < 6) return 'Mínimo 6 caracteres';
-                      return null;
-                    },
-                  ),
-                  if (_isSignup) ...[
-                    const SizedBox(height: AppSpacing.md),
-                    AuthTextField(
-                      controller: _confirmCtrl,
-                      hint: 'Confirmar contraseña',
-                      icon: Icons.verified_user_outlined,
-                      obscure: !_confirmVisible,
-                      suffix: IconButton(
-                        icon: Icon(
-                          _confirmVisible
-                              ? Icons.visibility_outlined
-                              : Icons.visibility_off_outlined,
-                          color: AppColors.textDisabled,
-                          size: 20,
-                        ),
-                        onPressed: () =>
-                            setState(() => _confirmVisible = !_confirmVisible),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Confirma la contraseña';
-                        }
-                        if (value != _passCtrl.text) {
-                          return 'Las contraseñas no coinciden';
-                        }
-                        return null;
-                      },
-                    ),
-                  ],
-                  const SizedBox(height: AppSpacing.lg),
-                  PrimaryButton(
-                    label: _isSignup
-                        ? 'Crear con ${_provider.label}'
-                        : 'Entrar con ${_provider.label}',
-                    backgroundColor: _provider.glow,
-                    foregroundColor: AppColors.textPrimary,
-                    isLoading: _isLoading,
-                    onPressed: _submit,
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  SecondaryButton(
-                    label: 'Volver',
-                    onPressed: () => Navigator.maybePop(context),
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
-                  const _PrivacyNote(),
-                  const SizedBox(height: AppSpacing.md),
-                  Center(
-                    child: Wrap(
-                      alignment: WrapAlignment.center,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      spacing: 6,
-                      runSpacing: 6,
-                      children: [
-                        Text(
-                          _switchPrompt,
-                          style: AppTextStyles.bodySmall.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        GestureDetector(
-                          onTap: _switchMode,
-                          child: Text(
-                            _switchLabel,
-                            style: AppTextStyles.labelLarge.copyWith(
-                              color: _provider.accent,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          Center(
-            child: Text(
-              'Cambiar de proveedor',
-              style: AppTextStyles.caption.copyWith(
-                color: AppColors.textTertiary,
-              ),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Center(child: AuthSocialRow(onProviderTap: _switchProvider)),
-          const SizedBox(height: AppSpacing.lg),
-        ],
-      ),
-    );
-  }
-}
-
-class _ProviderUi {
-  final String id;
-  final String label;
-  final IconData icon;
-  final Color accent;
-  final Color glow;
-  final Color panel;
-  final String emailHint;
-  final String providerSubtitle;
-
-  const _ProviderUi({
-    required this.id,
-    required this.label,
-    required this.icon,
-    required this.accent,
-    required this.glow,
-    required this.panel,
-    required this.emailHint,
-    required this.providerSubtitle,
-  });
-}
-
-class _ProviderHero extends StatelessWidget {
-  final _ProviderUi provider;
-  final bool isSignup;
-  final String roleLabel;
-  final String title;
-  final String description;
-
-  const _ProviderHero({
-    required this.provider,
-    required this.isSignup,
-    required this.roleLabel,
-    required this.title,
-    required this.description,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.xl),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            provider.panel,
-            provider.panel.withValues(alpha: 0.92),
-            AppColors.surfaceRaised,
-          ],
-        ),
-        borderRadius: AppRadius.modal,
-        border: Border.all(color: provider.accent.withValues(alpha: 0.28)),
-        boxShadow: [
-          BoxShadow(
-            color: provider.glow.withValues(alpha: 0.16),
-            blurRadius: 32,
-            offset: const Offset(0, 18),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 66,
-                height: 66,
-                decoration: BoxDecoration(
-                  color: provider.accent.withValues(alpha: 0.14),
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: provider.accent.withValues(alpha: 0.28),
-                  ),
-                ),
-                child: Icon(
-                  provider.icon,
-                  color: provider.accent,
-                  size: provider.id == 'google' ? 44 : 30,
                 ),
               ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      isSignup
-                          ? 'Alta ${provider.label}'
-                          : 'Acceso ${provider.label}',
-                      style: AppTextStyles.overline.copyWith(
-                        color: provider.accent,
-                        letterSpacing: 1.1,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      roleLabel == 'administrador'
-                          ? 'Panel profesional'
-                          : 'Cuenta personal',
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
+              _ProviderSwitcher(
+                onSwitchProvider: data.onSwitchProvider,
+                currentProviderId: data.currentProviderId,
+                dark: false,
               ),
+              const SizedBox(height: 16),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24),
+                child: _PrivacyNote(dark: false),
+              ),
+              const SizedBox(height: 24),
             ],
           ),
-          const SizedBox(height: AppSpacing.lg),
-          Text(title, style: AppTextStyles.h2),
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            description,
-            style: AppTextStyles.body.copyWith(
-              color: AppColors.textSecondary,
-              height: 1.45,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 }
 
-class _BottomProviderPanel extends StatelessWidget {
-  final _ProviderUi provider;
-  final Widget child;
+class _GoogleField extends StatelessWidget {
+  static const _blue = Color(0xFF4285F4);
+  static const _textPrimary = Color(0xFF202124);
+  static const _textSub = Color(0xFF5F6368);
 
-  const _BottomProviderPanel({required this.provider, required this.child});
+  final TextEditingController controller;
+  final String label;
+  final bool obscure;
+  final Widget? suffix;
+  final TextInputType? keyboardType;
+  final TextCapitalization textCapitalization;
+  final String? Function(String?)? validator;
+
+  const _GoogleField({
+    required this.controller,
+    required this.label,
+    this.obscure = false,
+    this.suffix,
+    this.keyboardType,
+    this.textCapitalization = TextCapitalization.none,
+    this.validator,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 350),
-      curve: Curves.easeInOut,
-      decoration: BoxDecoration(
-        color: AppColors.surfaceRaised,
-        borderRadius: AppRadius.modal,
-        border: Border.all(color: provider.accent.withValues(alpha: 0.18)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.18),
-            blurRadius: 24,
-            offset: const Offset(0, 14),
-          ),
-        ],
+    return TextFormField(
+      controller: controller,
+      obscureText: obscure,
+      keyboardType: keyboardType,
+      textCapitalization: textCapitalization,
+      validator: validator,
+      cursorColor: _blue,
+      style: const TextStyle(color: _textPrimary, fontSize: 16),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(color: _textSub, fontSize: 16),
+        floatingLabelStyle: const TextStyle(color: _blue, fontSize: 13),
+        suffixIcon: suffix != null
+            ? Padding(
+                padding: const EdgeInsets.only(right: 4),
+                child: suffix,
+              )
+            : null,
+        suffixIconConstraints: const BoxConstraints(minHeight: 0),
+        enabledBorder: const UnderlineInputBorder(
+          borderSide: BorderSide(color: Color(0xFFDADCE0)),
+        ),
+        focusedBorder: const UnderlineInputBorder(
+          borderSide: BorderSide(color: _blue, width: 2),
+        ),
+        errorBorder: const UnderlineInputBorder(
+          borderSide: BorderSide(color: Color(0xFFD93025)),
+        ),
+        focusedErrorBorder: const UnderlineInputBorder(
+          borderSide: BorderSide(color: Color(0xFFD93025), width: 2),
+        ),
+        errorStyle: const TextStyle(color: Color(0xFFD93025), fontSize: 12),
       ),
-      child: Column(
-        children: [
-          const SizedBox(height: AppSpacing.sm),
-          Center(
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 350),
-              curve: Curves.easeInOut,
-              width: 48,
-              height: 5,
-              decoration: BoxDecoration(
-                color: provider.accent.withValues(alpha: 0.36),
-                borderRadius: AppRadius.chip,
-              ),
+    );
+  }
+}
+
+class _GoogleLogoWidget extends StatelessWidget {
+  const _GoogleLogoWidget();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 40,
+      height: 40,
+      child: GridView.count(
+        crossAxisCount: 2,
+        crossAxisSpacing: 3,
+        mainAxisSpacing: 3,
+        physics: const NeverScrollableScrollPhysics(),
+        children: const [
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: Color(0xFFEA4335),
+              shape: BoxShape.circle,
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.xl,
-              AppSpacing.lg,
-              AppSpacing.xl,
-              AppSpacing.xl,
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: Color(0xFF4285F4),
+              shape: BoxShape.circle,
             ),
-            child: child,
+          ),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: Color(0xFFFBBC05),
+              shape: BoxShape.circle,
+            ),
+          ),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: Color(0xFF34A853),
+              shape: BoxShape.circle,
+            ),
           ),
         ],
       ),
@@ -615,16 +1211,95 @@ class _BottomProviderPanel extends StatelessWidget {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Shared: provider switcher
+// ---------------------------------------------------------------------------
+
+class _ProviderSwitcher extends StatelessWidget {
+  final ValueChanged<AuthSocialProvider> onSwitchProvider;
+  final String currentProviderId;
+  final bool dark;
+
+  const _ProviderSwitcher({
+    required this.onSwitchProvider,
+    required this.currentProviderId,
+    this.dark = true,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final labelColor = dark
+        ? const Color(0xFF8B9BB4)
+        : const Color(0xFF9AA0A6);
+    final providers = AuthSocialRow.providers;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Column(
+        children: [
+          Text(
+            'Cambiar de proveedor',
+            style: TextStyle(color: labelColor, fontSize: 13),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: providers.map((provider) {
+              final isCurrent = provider.id == currentProviderId;
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: GestureDetector(
+                  onTap: isCurrent ? null : () => onSwitchProvider(provider),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      color: isCurrent
+                          ? provider.background.withValues(alpha: 0.5)
+                          : provider.background,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: isCurrent
+                            ? provider.border.withValues(alpha: 0.8)
+                            : provider.border,
+                        width: isCurrent ? 2.0 : 1.0,
+                      ),
+                    ),
+                    child: Icon(
+                      provider.icon,
+                      color: isCurrent
+                          ? provider.foreground.withValues(alpha: 0.5)
+                          : provider.foreground,
+                      size: 24,
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Shared: privacy note
+// ---------------------------------------------------------------------------
+
 class _PrivacyNote extends StatelessWidget {
-  const _PrivacyNote();
+  final bool dark;
+  const _PrivacyNote({this.dark = true});
 
   @override
   Widget build(BuildContext context) {
     return Text(
       'Al continuar aceptas los términos de uso y la política de privacidad de Aviso Vital.',
       textAlign: TextAlign.center,
-      style: AppTextStyles.caption.copyWith(
-        color: AppColors.textTertiary,
+      style: TextStyle(
+        color: dark ? const Color(0xFF8B9BB4) : const Color(0xFF9AA0A6),
+        fontSize: 12,
         height: 1.4,
       ),
     );

@@ -165,11 +165,12 @@ class _AlertaMedicacionScreenState extends State<AlertaMedicacionScreen>
 
     final currentHour = formatAlertHour(DateTime.now());
 
+    final now = DateTime.now();
     return _MedicationAlertData(
       dose: dose,
       medication: med,
       currentHour: currentHour,
-      nextDoseLabel: _nextDoseLabel(med, currentHour),
+      nextDoseLabel: _formatNextDose(_nextDoseDatetime(med, now), now),
       userFirstName:
           (contextData.careRecipientProfile ?? contextData.viewerProfile)
               ?.nombre
@@ -179,19 +180,86 @@ class _AlertaMedicacionScreenState extends State<AlertaMedicacionScreen>
     );
   }
 
-  String _nextDoseLabel(Medicamento medication, String currentHour) {
-    final horas =
-        medication.horasToma
-            .map((item) => item.trim())
-            .where((item) => item.isNotEmpty)
-            .toList(growable: true)
-          ..sort((a, b) => _minutesForHour(a) - _minutesForHour(b));
-    if (horas.isEmpty) return '--:--';
-    final current = _minutesForHour(currentHour);
-    for (final hour in horas) {
-      if (_minutesForHour(hour) > current) return hour;
+  /// Finds the next scheduled DateTime for [medication] after [from].
+  DateTime? _nextDoseDatetime(Medicamento medication, DateTime from) {
+    final horas = medication.horasToma
+        .map((h) => h.trim())
+        .where((h) => h.isNotEmpty)
+        .toList(growable: true)
+      ..sort((a, b) => _minutesForHour(a) - _minutesForHour(b));
+    if (horas.isEmpty) return null;
+
+    final fromMinutes = from.hour * 60 + from.minute;
+    final today = DateTime(from.year, from.month, from.day);
+
+    // Remaining hours today (only if today is a scheduled day)
+    if (_shouldTakeOnDay(medication, from)) {
+      for (final hour in horas) {
+        if (_minutesForHour(hour) > fromMinutes) {
+          return _dateForHour(today, hour);
+        }
+      }
     }
-    return horas.first;
+
+    // Search up to 14 days ahead
+    for (var i = 1; i <= 14; i++) {
+      final candidate = from.add(Duration(days: i));
+      if (_shouldTakeOnDay(medication, candidate)) {
+        return _dateForHour(
+          DateTime(candidate.year, candidate.month, candidate.day),
+          horas.first,
+        );
+      }
+    }
+
+    return null;
+  }
+
+  bool _shouldTakeOnDay(Medicamento medication, DateTime date) {
+    return switch (medication.frecuencia) {
+      FrecuenciaMed.diasSemana => medication.diasSemana.isEmpty
+          ? true
+          : medication.diasSemana.contains(date.weekday),
+      FrecuenciaMed.cadaDias => () {
+          if (medication.intervaloDias <= 1) return true;
+          final anchor = DateTime(
+            medication.fechaCreacion.year,
+            medication.fechaCreacion.month,
+            medication.fechaCreacion.day,
+          );
+          final target = DateTime(date.year, date.month, date.day);
+          final diff = target.difference(anchor).inDays;
+          return diff >= 0 && diff % medication.intervaloDias == 0;
+        }(),
+      _ => true,
+    };
+  }
+
+  String _formatNextDose(DateTime? next, DateTime now) {
+    if (next == null) return '--:--';
+    final hourStr =
+        '${next.hour.toString().padLeft(2, '0')}:${next.minute.toString().padLeft(2, '0')}';
+    final isToday = next.year == now.year &&
+        next.month == now.month &&
+        next.day == now.day;
+    if (isToday) return 'Hoy a las $hourStr';
+    const weekdays = [
+      'lunes',
+      'martes',
+      'miércoles',
+      'jueves',
+      'viernes',
+      'sábado',
+      'domingo',
+    ];
+    return '${weekdays[next.weekday - 1]} ${next.day} a las $hourStr';
+  }
+
+  DateTime _dateForHour(DateTime date, String value) {
+    final parts = value.split(':');
+    final hour = int.tryParse(parts.firstOrNull ?? '') ?? 0;
+    final minute = int.tryParse(parts.length > 1 ? parts[1] : '') ?? 0;
+    return DateTime(date.year, date.month, date.day, hour, minute);
   }
 
   int _minutesForHour(String value) {
@@ -707,11 +775,13 @@ class _MedicationBottomActions extends StatelessWidget {
           Column(
             children: [
               Text(
-                'Siguiente toma a las $nextDose',
+                nextDose == '--:--'
+                    ? 'Sin tomas programadas'
+                    : 'Siguiente: $nextDose',
                 textAlign: TextAlign.center,
                 style: AppTextStyles.labelLarge.copyWith(
                   color: const Color(0xFFABABAB),
-                  fontSize: 16,
+                  fontSize: 15,
                   fontWeight: FontWeight.w600,
                 ),
               ),

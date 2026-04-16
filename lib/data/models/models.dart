@@ -26,10 +26,16 @@ enum FrecuenciaMed {
   cada8h('Cada 8h'),
   cada12h('Cada 12h'),
   cada24h('Cada 24h'),
+  cadaDias('Cada N días'),
+  diasSemana('Días específicos'),
   segunPrescripcion('Según prescripción');
 
   final String label;
   const FrecuenciaMed(this.label);
+
+  /// True cuando la frecuencia requiere campos adicionales en el modelo
+  bool get esCustom =>
+      this == FrecuenciaMed.cadaDias || this == FrecuenciaMed.diasSemana;
 }
 
 /// Forma de la pastilla — para visualización
@@ -66,6 +72,23 @@ bool _boolFromJson(Object? value, {bool fallback = false}) {
   final normalized = value?.toString().trim().toLowerCase();
   if (normalized == null || normalized.isEmpty) return fallback;
   return normalized == 'true' || normalized == '1';
+}
+
+List<int> _intListFromJson(Object? value) {
+  if (value is List) {
+    return value
+        .map((item) => _intFromJson(item))
+        .where((v) => v > 0)
+        .toList(growable: false);
+  }
+  if (value is String && value.trim().isNotEmpty) {
+    return value
+        .split(',')
+        .map((s) => int.tryParse(s.trim()) ?? 0)
+        .where((v) => v > 0)
+        .toList(growable: false);
+  }
+  return const <int>[];
 }
 
 List<String> _stringListFromJson(Object? value) {
@@ -247,6 +270,11 @@ class Medicamento {
   final bool activo;
   final DateTime fechaCreacion;
   final DateTime? ultimaEdicion;
+  /// Días entre tomas; solo relevante cuando frecuencia == cadaDias (ej. 2 = día sí, día no).
+  final int intervaloDias;
+  /// Días de la semana en que se toma; solo relevante cuando frecuencia == diasSemana.
+  /// Usa el convenio de DateTime.weekday: 1 = lunes … 7 = domingo.
+  final List<int> diasSemana;
 
   const Medicamento({
     required this.id,
@@ -264,14 +292,25 @@ class Medicamento {
     this.activo = true,
     required this.fechaCreacion,
     this.ultimaEdicion,
+    this.intervaloDias = 2,
+    this.diasSemana = const [],
   });
 
   bool get stockBajo => stockActual <= stockMinimo;
   bool get sinStock => stockActual == 0;
   int get tomasAlDia =>
       horasToma.where((item) => item.trim().isNotEmpty).length;
-  String get resumenTomas =>
-      tomasAlDia == 1 ? '1 toma al dia' : '$tomasAlDia tomas al dia';
+  String get resumenTomas {
+    final count = tomasAlDia;
+    final countLabel = count == 1 ? '1 toma' : '$count tomas';
+    return switch (frecuencia) {
+      FrecuenciaMed.cadaDias => '$countLabel cada $intervaloDias días',
+      FrecuenciaMed.diasSemana => diasSemana.isEmpty
+          ? '$countLabel diarias'
+          : '$countLabel · ${diasSemana.length} días/sem',
+      _ => count == 1 ? '1 toma al dia' : '$count tomas al dia',
+    };
+  }
 
   factory Medicamento.fromJson(Map<String, dynamic> json) => Medicamento(
     id: json['id'].toString(),
@@ -306,6 +345,8 @@ class Medicamento {
     ultimaEdicion: (json['updated_at'] ?? json['ultima_edicion']) == null
         ? null
         : _dateFromJson(json['updated_at'] ?? json['ultima_edicion']),
+    intervaloDias: _intFromJson(json['intervalo_dias'], fallback: 2),
+    diasSemana: _intListFromJson(json['dias_semana']),
   );
 
   Map<String, dynamic> toJson() => {
@@ -324,6 +365,8 @@ class Medicamento {
     'activo': activo,
     'created_at': fechaCreacion.toUtc().toIso8601String(),
     'updated_at': ultimaEdicion?.toUtc().toIso8601String(),
+    'intervalo_dias': intervaloDias,
+    'dias_semana': diasSemana,
   };
 
   Medicamento copyWith({
@@ -342,6 +385,8 @@ class Medicamento {
     bool? activo,
     DateTime? fechaCreacion,
     DateTime? ultimaEdicion,
+    int? intervaloDias,
+    List<int>? diasSemana,
   }) => Medicamento(
     id: id ?? this.id,
     idUsuario: idUsuario ?? this.idUsuario,
@@ -358,6 +403,8 @@ class Medicamento {
     activo: activo ?? this.activo,
     fechaCreacion: fechaCreacion ?? this.fechaCreacion,
     ultimaEdicion: ultimaEdicion ?? this.ultimaEdicion,
+    intervaloDias: intervaloDias ?? this.intervaloDias,
+    diasSemana: diasSemana ?? this.diasSemana,
   );
 }
 

@@ -309,8 +309,12 @@ class _MedicamentoFormState extends State<_MedicamentoForm> {
   FormaPastilla _formaPastilla = FormaPastilla.redonda;
   final _stockMinimoCtrl = TextEditingController(text: '7');
   final _notasCtrl = TextEditingController();
+  final _intervaloDiasCtrl = TextEditingController(text: '2');
   int _tomasAlDia = 1;
   List<String> _horasToma = const ['09:00'];
+  // Frequency pattern — 'daily' | 'cadaDias' | 'diasSemana'
+  String _frecuenciaPatron = 'daily';
+  List<int> _diasSemana = const [];
   bool _isLoading = false;
 
   @override
@@ -330,6 +334,13 @@ class _MedicamentoFormState extends State<_MedicamentoForm> {
         m.horasToma.isEmpty ? const ['09:00'] : m.horasToma,
       )..sort(_compareHours);
       _tomasAlDia = _horasToma.length;
+      if (m.frecuencia == FrecuenciaMed.cadaDias) {
+        _frecuenciaPatron = 'cadaDias';
+        _intervaloDiasCtrl.text = '${m.intervaloDias}';
+      } else if (m.frecuencia == FrecuenciaMed.diasSemana) {
+        _frecuenciaPatron = 'diasSemana';
+        _diasSemana = List<int>.from(m.diasSemana);
+      }
     }
   }
 
@@ -341,6 +352,7 @@ class _MedicamentoFormState extends State<_MedicamentoForm> {
     _instruccionesCtrl.dispose();
     _stockMinimoCtrl.dispose();
     _notasCtrl.dispose();
+    _intervaloDiasCtrl.dispose();
     super.dispose();
   }
 
@@ -432,12 +444,30 @@ class _MedicamentoFormState extends State<_MedicamentoForm> {
     setState(() => _isLoading = true);
     try {
       final existing = widget.medicamento;
+      final frecuencia = switch (_frecuenciaPatron) {
+        'cadaDias' => FrecuenciaMed.cadaDias,
+        'diasSemana' => FrecuenciaMed.diasSemana,
+        _ => _frequencyFromDoseCount(_tomasAlDia),
+      };
+      final intervaloDias =
+          int.tryParse(_intervaloDiasCtrl.text.trim()) ?? 2;
+
+      if (_frecuenciaPatron == 'diasSemana' && _diasSemana.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Seleccione al menos un día de la semana.'),
+          ),
+        );
+        setState(() => _isLoading = false);
+        return;
+      }
+
       final medication = Medicamento(
         id: existing?.id ?? '',
         idUsuario: existing?.idUsuario ?? '',
         nombre: _nombreCtrl.text.trim(),
         dosis: _dosisCtrl.text.trim(),
-        frecuencia: _frequencyFromDoseCount(_tomasAlDia),
+        frecuencia: frecuencia,
         horasToma: List.unmodifiable(_horasToma),
         stockActual: int.tryParse(_stockCtrl.text.trim()) ?? 0,
         stockMinimo: int.tryParse(_stockMinimoCtrl.text.trim()) ?? 7,
@@ -450,6 +480,8 @@ class _MedicamentoFormState extends State<_MedicamentoForm> {
         activo: existing?.activo ?? true,
         fechaCreacion: existing?.fechaCreacion ?? DateTime.now(),
         ultimaEdicion: existing == null ? null : DateTime.now(),
+        intervaloDias: intervaloDias,
+        diasSemana: List.unmodifiable(_diasSemana),
       );
 
       if (existing == null) {
@@ -565,6 +597,62 @@ class _MedicamentoFormState extends State<_MedicamentoForm> {
                         keyboardType: TextInputType.number,
                         compact: isCompactHeight,
                       ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+
+                _FormSection(
+                  title: 'Frecuencia',
+                  compact: isCompactHeight,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Patrón de repetición',
+                        style: AppTextStyles.label.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      _FrequencyPatternPicker(
+                        selected: _frecuenciaPatron,
+                        onChanged: (value) =>
+                            setState(() => _frecuenciaPatron = value),
+                        compact: isCompactHeight,
+                      ),
+                      if (_frecuenciaPatron == 'cadaDias') ...[
+                        const SizedBox(height: AppSpacing.md),
+                        _FormField(
+                          controller: _intervaloDiasCtrl,
+                          label: 'Cada cuántos días',
+                          hint: 'Ej: 2 (día sí, día no)',
+                          keyboardType: TextInputType.number,
+                          compact: isCompactHeight,
+                          validator: (v) {
+                            final n = int.tryParse(v?.trim() ?? '');
+                            if (n == null || n < 2) {
+                              return 'Introduce un número ≥ 2';
+                            }
+                            return null;
+                          },
+                        ),
+                      ],
+                      if (_frecuenciaPatron == 'diasSemana') ...[
+                        const SizedBox(height: AppSpacing.md),
+                        Text(
+                          'Días de la semana',
+                          style: AppTextStyles.label.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        _WeekdayChips(
+                          selected: _diasSemana,
+                          onChanged: (days) =>
+                              setState(() => _diasSemana = days),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -950,6 +1038,145 @@ class _HourPickerTile extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+// ── Frequency pattern selector ────────────────────────────────────
+
+class _FrequencyPatternPicker extends StatelessWidget {
+  final String selected;
+  final ValueChanged<String> onChanged;
+  final bool compact;
+
+  const _FrequencyPatternPicker({
+    required this.selected,
+    required this.onChanged,
+    this.compact = false,
+  });
+
+  static const _options = [
+    ('daily', 'Diaria'),
+    ('cadaDias', 'Cada N días'),
+    ('diasSemana', 'Días específicos'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: _options.map((opt) {
+        final isSelected = opt.$1 == selected;
+        return Expanded(
+          child: Padding(
+            padding: EdgeInsets.only(
+              right: opt.$1 == 'diasSemana' ? 0 : 6,
+            ),
+            child: GestureDetector(
+              onTap: () => onChanged(opt.$1),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                padding: EdgeInsets.symmetric(
+                  vertical: compact ? 8 : 10,
+                  horizontal: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppColors.amberSubtle
+                      : AppColors.surfaceRaised,
+                  borderRadius: AppRadius.chip,
+                  border: Border.all(
+                    color: isSelected
+                        ? AppColors.amber
+                        : AppColors.surfaceBorder,
+                    width: isSelected ? 1.5 : 1,
+                  ),
+                ),
+                child: Text(
+                  opt.$2,
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.label.copyWith(
+                    color: isSelected
+                        ? AppColors.amber
+                        : AppColors.textSecondary,
+                    fontSize: 11,
+                    fontWeight: isSelected
+                        ? FontWeight.w600
+                        : FontWeight.w500,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+}
+
+// ── Weekday chip selector ─────────────────────────────────────────
+
+class _WeekdayChips extends StatelessWidget {
+  final List<int> selected;
+  final ValueChanged<List<int>> onChanged;
+
+  const _WeekdayChips({required this.selected, required this.onChanged});
+
+  static const _days = [
+    (1, 'L'),
+    (2, 'M'),
+    (3, 'X'),
+    (4, 'J'),
+    (5, 'V'),
+    (6, 'S'),
+    (7, 'D'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: _days.map((day) {
+        final isSelected = selected.contains(day.$1);
+        return GestureDetector(
+          onTap: () {
+            final updated = List<int>.from(selected);
+            if (isSelected) {
+              updated.remove(day.$1);
+            } else {
+              updated.add(day.$1);
+              updated.sort();
+            }
+            onChanged(updated);
+          },
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: isSelected ? AppColors.amber : AppColors.surfaceRaised,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: isSelected
+                    ? AppColors.amber
+                    : AppColors.surfaceBorder,
+                width: isSelected ? 0 : 1,
+              ),
+            ),
+            child: Center(
+              child: Text(
+                day.$2,
+                style: AppTextStyles.label.copyWith(
+                  color: isSelected
+                      ? Colors.black87
+                      : AppColors.textSecondary,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                ),
+              ),
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 }
