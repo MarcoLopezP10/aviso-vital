@@ -226,67 +226,47 @@ class _GoogleLogoPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final canvasSize = size.shortestSide;
-    final padding = canvasSize * 0.06;
-    final outerRadius = (canvasSize / 2) - padding;
-    final thickness = canvasSize * 0.22;
-    final innerRadius = outerRadius - thickness;
+    final side = size.shortestSide;
+    final stroke = side * 0.22;
+    final radius = (side - stroke) / 2 - (side * 0.02);
     final center = Offset(size.width / 2, size.height / 2);
+    final rect = Rect.fromCircle(center: center, radius: radius);
 
-    final outerRect = Rect.fromCircle(center: center, radius: outerRadius);
-    final innerRect = Rect.fromCircle(center: center, radius: innerRadius);
-    final colors = [
-      muted ? _red.withValues(alpha: 0.45) : _red,
-      muted
-          ? const Color(0xFFFF7A00).withValues(alpha: 0.45)
-          : const Color(0xFFFF7A00),
-      muted ? _yellow.withValues(alpha: 0.45) : _yellow,
-      muted ? _green.withValues(alpha: 0.45) : _green,
-      muted
-          ? const Color(0xFF10B7E8).withValues(alpha: 0.45)
-          : const Color(0xFF10B7E8),
-      muted ? _blue.withValues(alpha: 0.45) : _blue,
-      muted ? _red.withValues(alpha: 0.45) : _red,
-    ];
+    Paint arcPaint(Color color) => Paint()
+      ..color = muted ? color.withValues(alpha: 0.45) : color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = stroke
+      ..strokeCap = StrokeCap.butt;
 
-    final ringPaint = Paint()
-      ..shader = SweepGradient(
-        startAngle: _deg(-38),
-        endAngle: _deg(322),
-        colors: colors,
-        stops: const [0.0, 0.15, 0.32, 0.56, 0.73, 0.90, 1.0],
-      ).createShader(outerRect)
-      ..style = PaintingStyle.fill;
+    canvas.drawArc(rect, _deg(-8), _deg(100), false, arcPaint(_blue));
+    canvas.drawArc(rect, _deg(92), _deg(88), false, arcPaint(_green));
+    canvas.drawArc(rect, _deg(180), _deg(58), false, arcPaint(_yellow));
+    canvas.drawArc(rect, _deg(238), _deg(96), false, arcPaint(_red));
 
-    final ringPath = Path()
-      ..arcTo(outerRect, _deg(-38), _deg(320), false)
-      ..arcTo(innerRect, _deg(282), _deg(-320), false)
-      ..close();
-    canvas.drawPath(ringPath, ringPaint);
-
-    final gapPaint = Paint()..color = Colors.white;
-    final notchPath = Path()
-      ..moveTo(center.dx + innerRadius * 0.72, center.dy - thickness * 1.05)
-      ..lineTo(center.dx + outerRadius * 1.02, center.dy - thickness * 0.88)
-      ..lineTo(center.dx + outerRadius * 1.02, center.dy - thickness * 0.08)
-      ..lineTo(center.dx + innerRadius * 0.88, center.dy - thickness * 0.12)
-      ..close();
-    canvas.drawPath(notchPath, gapPaint);
-
-    final barHeight = thickness * 0.92;
+    final innerRadius = radius - stroke / 2;
+    final barHeight = stroke * 0.82;
     final barTop = center.dy - (barHeight / 2);
-    final barLeft = center.dx + innerRadius * 0.08;
-    final barRight = center.dx + outerRadius * 0.95;
+    final barLeft = center.dx - side * 0.01;
+    final barRight = center.dx + radius + stroke * 0.10;
     final barPaint = Paint()
       ..color = muted ? _blue.withValues(alpha: 0.45) : _blue
       ..style = PaintingStyle.fill;
     canvas.drawRRect(
       RRect.fromRectAndRadius(
         Rect.fromLTRB(barLeft, barTop, barRight, barTop + barHeight),
-        Radius.circular(barHeight * 0.08),
+        Radius.circular(barHeight * 0.14),
       ),
       barPaint,
     );
+
+    final cutPaint = Paint()..color = Colors.white;
+    final cutout = Path()
+      ..moveTo(center.dx + innerRadius * 0.52, center.dy - stroke * 0.86)
+      ..lineTo(center.dx + radius + stroke * 0.22, center.dy - stroke * 0.86)
+      ..lineTo(center.dx + radius + stroke * 0.22, center.dy - stroke * 0.12)
+      ..lineTo(center.dx + innerRadius * 0.78, center.dy - stroke * 0.12)
+      ..close();
+    canvas.drawPath(cutout, cutPaint);
   }
 
   static double _deg(double value) => value * math.pi / 180;
