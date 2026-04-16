@@ -33,12 +33,15 @@ class _SimulacionAlertasScreenState extends State<SimulacionAlertasScreen> {
   void initState() {
     super.initState();
     _nowNotifier = ValueNotifier(DateTime.now());
+    // Asegura recordatorios de citas una sola vez al abrir la pantalla.
+    // Se lanza sin await para no bloquear la carga inicial del snapshot.
+    _simulationService.ensureReminders().catchError((_) {});
     _refreshSnapshot(initial: true);
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted) return;
       _tick += 1;
-      _nowNotifier.value = DateTime.now();
-      if (_tick % 5 == 0) {
+      _nowNotifier.value = DateTime.now(); // reloj visual — sin red
+      if (_tick % 30 == 0) {              // datos — cada 30 s
         _refreshSnapshot();
       }
     });

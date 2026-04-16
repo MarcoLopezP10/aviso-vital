@@ -10,8 +10,8 @@ import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_social_row
 import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_switch_link.dart';
 import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_text_field.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
+import 'package:aviso_vital_2/shared/utils/auth_error_mapper.dart';
 import 'package:aviso_vital_2/shared/widgets/shared_widgets.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'crear_cuenta_screen.dart';
 
 class AdminLoginScreen extends StatefulWidget {
@@ -58,23 +58,8 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(_mapAuthError(error))));
+      ).showSnackBar(SnackBar(content: Text(AuthErrorMapper.fromLogin(error))));
     }
-  }
-
-  String _mapAuthError(Object error) {
-    final message = error.toString();
-    if (message.contains('Invalid login credentials')) {
-      return 'Email o contraseña incorrectos.';
-    }
-    if (message.contains('Email not confirmed')) {
-      return 'Confirma tu email antes de iniciar sesión.';
-    }
-    if (error is AuthException && error.message.trim().isNotEmpty) {
-      return error.message;
-    }
-    if (error is StateError) return message.replaceFirst('Bad state: ', '');
-    return 'No se pudo iniciar sesión: $message';
   }
 
   void _openSocialLogin(AuthSocialProvider provider) {

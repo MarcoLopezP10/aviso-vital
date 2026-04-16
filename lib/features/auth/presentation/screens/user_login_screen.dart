@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:aviso_vital_2/app/router/app_routes.dart';
 import 'package:aviso_vital_2/data/models/models.dart';
 import 'package:aviso_vital_2/data/repositories/auth_repository.dart';
 import 'package:aviso_vital_2/data/repositories/user_repository.dart';
-import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_divider.dart';
+import 'package:aviso_vital_2/shared/utils/auth_error_mapper.dart';
 import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_form_card.dart';
 import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_hero_card.dart';
 import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_scaffold.dart';
-import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_social_row.dart';
 import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_switch_link.dart';
 import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_text_field.dart';
 import 'package:aviso_vital_2/features/user_home/presentation/screens/home_usuario_screen.dart';
@@ -71,35 +69,8 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(_mapAuthError(error))));
+      ).showSnackBar(SnackBar(content: Text(AuthErrorMapper.fromLogin(error))));
     }
-  }
-
-  String _mapAuthError(Object error) {
-    final message = error.toString();
-    if (message.contains('Invalid login credentials')) {
-      return 'Email o contraseña incorrectos.';
-    }
-    if (message.contains('Email not confirmed')) {
-      return 'Confirma tu email antes de iniciar sesión.';
-    }
-    if (error is AuthException && error.message.trim().isNotEmpty) {
-      return error.message;
-    }
-    if (error is StateError) return message.replaceFirst('Bad state: ', '');
-    return 'No se pudo iniciar sesión: $message';
-  }
-
-  void _openSocialLogin(AuthSocialProvider provider) {
-    Navigator.pushNamed(
-      context,
-      AppRoutes.socialAuth,
-      arguments: {
-        'providerId': provider.id,
-        'roleId': 'user',
-        'modeId': 'login',
-      },
-    );
   }
 
   @override
@@ -173,10 +144,6 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
               isLoading: _isLoading,
               onPressed: _login,
             ),
-            const SizedBox(height: AppSpacing.xl),
-            const AuthDivider(),
-            const SizedBox(height: AppSpacing.xl),
-            AuthSocialRow(onProviderTap: _openSocialLogin),
             const SizedBox(height: AppSpacing.lg),
             AuthSwitchLink(
               prompt: '¿No tienes cuenta? ',

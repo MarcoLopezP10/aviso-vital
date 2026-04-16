@@ -20,19 +20,23 @@ class AdminDashboardStatsGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final pct = (adherencia.adherencia * 100).round();
+    final adherenciaColor = pct >= 70
+        ? AppColors.success
+        : (pct >= 40 ? AppColors.warning : AppColors.orange);
+
     final cards = [
       SummaryStatCard(
         title: 'Adherencia',
         value: '$pct%',
         icon: Icons.trending_up_rounded,
-        color: pct >= 80 ? AppColors.success : AppColors.warning,
+        color: adherenciaColor,
         subtitle: 'Hoy',
       ),
       SummaryStatCard(
         title: 'Pendientes hoy',
         value: '$pendientesHoy',
         icon: Icons.schedule_rounded,
-        color: pendientesHoy > 0 ? AppColors.warning : AppColors.success,
+        color: AppColors.orange,
         subtitle: pendientesHoy > 0 ? 'Sin confirmar' : 'En orden',
       ),
       SummaryStatCard(
@@ -46,7 +50,7 @@ class AdminDashboardStatsGrid extends StatelessWidget {
         title: 'Cita hoy',
         value: citaHoy != null ? citaHoy!.hora : '—',
         icon: Icons.event_rounded,
-        color: citaHoy != null ? AppColors.orange : AppColors.textTertiary,
+        color: citaHoy != null ? AppColors.info : AppColors.textTertiary,
         subtitle: citaHoy?.especialidad ?? 'Sin citas',
       ),
     ];

@@ -1,8 +1,10 @@
+import 'package:aviso_vital_2/core/services/appointment_reminder_service.dart';
 import 'package:aviso_vital_2/core/services/care_plan_context_service.dart';
 import 'package:aviso_vital_2/data/models/models.dart';
 import 'package:aviso_vital_2/data/repositories/alerts_repository.dart';
 import 'package:aviso_vital_2/data/repositories/appointments_repository.dart';
 import 'package:aviso_vital_2/data/repositories/medications_repository.dart';
+import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 import 'package:aviso_vital_2/shared/utils/alert_formatters.dart';
 
 enum LiveNotificationType { medication, appointment }
@@ -86,6 +88,16 @@ class RealtimeSimulationService {
   final AppointmentsRepository appointmentsRepository;
   final AlertsRepository alertsRepository;
 
+  /// Llama a este método una sola vez al iniciar la sesión de simulación.
+  /// Crea los recordatorios de citas pendientes sin bloquear el snapshot.
+  Future<void> ensureReminders() async {
+    final context = await contextService.resolve();
+    if (!context.hasOwner) return;
+    await alertsRepository.ensureAppointmentReminders(
+      userId: context.ownerUserId!,
+    );
+  }
+
   Future<LiveSimulationSnapshot> loadSnapshot() async {
     final context = await contextService.resolve();
     if (!context.hasOwner) {
@@ -98,17 +110,14 @@ class RealtimeSimulationService {
 
     final ownerId = context.ownerUserId!;
     try {
-      await alertsRepository.ensureAppointmentReminders(userId: ownerId);
-    } catch (_) {}
-    try {
-      await _expireOverdueDoses(ownerId);
+      await medicationsRepository.expireOverdueDoses(userId: ownerId);
     } catch (_) {}
 
     final results = await Future.wait([
       medicationsRepository.fetchDailySnapshot(userId: ownerId),
       _safeLoad(() => appointmentsRepository.fetchAll(userId: ownerId)),
       _safeLoad(() => alertsRepository.fetchRecent(userId: ownerId)),
-    ]);
+    ]).timeout(AppDurations.networkTimeout);
 
     final medicationSnapshot = results[0] as MedicationDailySnapshot;
     final appointments = results[1] as List<Cita>;
@@ -177,7 +186,7 @@ class RealtimeSimulationService {
       id: 'dose:${dose.id}',
       type: LiveNotificationType.medication,
       scheduledAt: dose.fechaProgramada,
-      expiresAt: dose.fechaProgramada.add(const Duration(minutes: 15)),
+      expiresAt: dose.fechaProgramada.add(AppDurations.doseExpiration),
       title: medication.nombre,
       subtitle:
           '${formatMedicationDose(medication.dosis)} · ${medication.instrucciones ?? 'Revise la toma y confirme cuando la haya hecho'}',
@@ -191,7 +200,7 @@ class RealtimeSimulationService {
 
   LiveNotificationItem? _buildAppointmentNotification(
     Cita appointment,
-    _DerivedAppointmentReminder reminder, {
+    AppointmentReminder reminder, {
     Alerta? alert,
   }) {
     final appointmentAt = appointmentDateTime(appointment);
@@ -216,7 +225,7 @@ class RealtimeSimulationService {
       scheduledAt: reminder.when,
       expiresAt: (isConfirmedReminder || isFinalReminder)
           ? appointmentAt
-          : reminder.when.add(const Duration(minutes: 5)),
+          : reminder.when.add(AppDurations.reminderExpiration),
       title: isConfirmedReminder ? appointment.especialidad : reminder.title,
       subtitle: isConfirmedReminder
           ? 'Recordatorio confirmado'
@@ -240,7 +249,7 @@ class RealtimeSimulationService {
     final appointmentAt = appointmentDateTime(appointment);
     if (appointmentAt.isBefore(DateTime.now())) return;
 
-    for (final reminder in _derivedRemindersForAppointment(
+    for (final reminder in AppointmentReminderService.buildReminders(
       appointment,
       appointmentAt,
     )) {
@@ -258,68 +267,6 @@ class RealtimeSimulationService {
     }
   }
 
-  List<_DerivedAppointmentReminder> _derivedRemindersForAppointment(
-    Cita appointment,
-    DateTime appointmentAt,
-  ) {
-    final reminders = <_DerivedAppointmentReminder>[];
-
-    if (appointment.recordatorio24h) {
-      reminders.add(
-        _DerivedAppointmentReminder(
-          when: subtractOneLocalDayPreservingClock(appointmentAt),
-          title: 'Cita mañana: ${appointment.especialidad}',
-          message:
-              'Recordatorio 24h · ${appointment.lugar} a las ${appointment.hora}',
-          kind: '24h',
-        ),
-      );
-    }
-
-    if (appointment.recordatorio3h) {
-      reminders.add(
-        _DerivedAppointmentReminder(
-          when: appointmentAt.subtract(const Duration(hours: 3)),
-          title: 'Cita hoy: ${appointment.especialidad}',
-          message:
-              'Recordatorio 3h · ${appointment.lugar} a las ${appointment.hora}',
-          kind: '3h',
-        ),
-      );
-    }
-
-    reminders.add(
-      _DerivedAppointmentReminder(
-        when: appointmentAt.subtract(const Duration(minutes: 30)),
-        title: 'Cita en 30 min: ${appointment.especialidad}',
-        message:
-            'Recordatorio final · ${appointment.lugar} a las ${appointment.hora}',
-        isFinal: true,
-        kind: '30m',
-      ),
-    );
-
-    return reminders;
-  }
-
-  Future<void> _expireOverdueDoses(String ownerId) async {
-    final doses = await medicationsRepository.fetchTodayDoses(userId: ownerId);
-    final now = DateTime.now();
-    for (final dose in doses) {
-      final isPending =
-          dose.estado == EstadoToma.pendiente ||
-          dose.estado == EstadoToma.pospuesta;
-      if (!isPending) continue;
-      if (dose.fechaProgramada.add(const Duration(minutes: 15)).isAfter(now)) {
-        continue;
-      }
-      await medicationsRepository.expireDose(
-        dose.id,
-        note: 'Sin respuesta en 15 minutos desde la notificacion',
-      );
-    }
-  }
-
   Future<List<T>> _safeLoad<T>(Future<List<T>> Function() loader) async {
     try {
       return await loader();
@@ -331,7 +278,7 @@ class RealtimeSimulationService {
   Alerta? _latestMatchingReminderAlert(
     List<Alerta> alerts,
     Cita appointment,
-    _DerivedAppointmentReminder reminder,
+    AppointmentReminder reminder,
   ) {
     Alerta? latestMatch;
 
@@ -349,7 +296,7 @@ class RealtimeSimulationService {
   bool _matchesReminder(
     Alerta alert,
     Cita appointment,
-    _DerivedAppointmentReminder reminder,
+    AppointmentReminder reminder,
   ) {
     if (alert.idCita != null &&
         alert.idCita!.isNotEmpty &&
@@ -365,20 +312,4 @@ class RealtimeSimulationService {
         (alert.fechaHora.difference(reminder.when).inMinutes).abs() <= 1;
     return sameTitle && sameHour && closeSchedule;
   }
-}
-
-class _DerivedAppointmentReminder {
-  final DateTime when;
-  final String title;
-  final String message;
-  final bool isFinal;
-  final String kind;
-
-  const _DerivedAppointmentReminder({
-    required this.when,
-    required this.title,
-    required this.message,
-    this.isFinal = false,
-    required this.kind,
-  });
 }

@@ -78,6 +78,18 @@ class _AlertaCitaScreenState extends State<AlertaCitaScreen> {
     _appointmentFuture = _loadAppointmentData();
   }
 
+  Future<void> _handleBack() async {
+    final navigator = Navigator.of(context);
+    if (await navigator.maybePop()) return;
+    final contextData = await _carePlanContextService.resolve();
+    if (!mounted) return;
+    final fallbackRoute =
+        contextData.viewerProfile?.rol == RolUsuario.administrador
+        ? AppRoutes.homeAdmin
+        : AppRoutes.homeUsuario;
+    navigator.pushNamedAndRemoveUntil(fallbackRoute, (_) => false);
+  }
+
   @override
   Widget build(BuildContext context) {
     return PremiumScreenScaffold(
@@ -95,9 +107,19 @@ class _AlertaCitaScreenState extends State<AlertaCitaScreen> {
               return const Center(child: CircularProgressIndicator());
             }
 
+            if (snapshot.hasError) {
+              return _AppointmentUnavailableView(
+                message: 'No se pudo cargar la cita. ${snapshot.error}',
+                onBack: _handleBack,
+              );
+            }
+
             final data = snapshot.data;
             if (data == null) {
-              return const Center(child: Text('No hay citas próximas.'));
+              return _AppointmentUnavailableView(
+                message: 'No hay citas próximas.',
+                onBack: _handleBack,
+              );
             }
 
             final tiempoLabel = _tiempoHastaCita(data.appointment.hora);
@@ -109,7 +131,7 @@ class _AlertaCitaScreenState extends State<AlertaCitaScreen> {
                       key: const ValueKey('cita'),
                       cita: data.appointment,
                       tiempoLabel: tiempoLabel,
-                      onClose: () => Navigator.of(context).pop(),
+                      onClose: _handleBack,
                       onConfirm: () => _confirmar(data),
                     ),
             );
@@ -148,6 +170,63 @@ class _AppointmentAlertData {
   final String? alertId;
 
   const _AppointmentAlertData({required this.appointment, this.alertId});
+}
+
+class _AppointmentUnavailableView extends StatelessWidget {
+  final String message;
+  final VoidCallback onBack;
+
+  const _AppointmentUnavailableView({
+    required this.message,
+    required this.onBack,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xl,
+        vertical: AppSpacing.lg,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AppBackButton(onPressed: onBack),
+          const Spacer(),
+          Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.event_busy_outlined,
+                    size: 52,
+                    color: AppColors.textSecondary,
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  Text(
+                    message,
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.bodyLarge.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                  PrimaryButton(
+                    label: 'Volver',
+                    icon: Icons.arrow_back_rounded,
+                    onPressed: onBack,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const Spacer(),
+        ],
+      ),
+    );
+  }
 }
 
 // ── Vista principal de la alerta ────────────────────────────────────

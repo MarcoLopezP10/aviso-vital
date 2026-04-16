@@ -714,14 +714,14 @@ class SummaryStatCard extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              color.withValues(alpha: 0.24),
-              color.withValues(alpha: 0.1),
+              color.withValues(alpha: 0.16),
+              color.withValues(alpha: 0.07),
               AppColors.surfaceStrong,
             ],
             stops: const [0.0, 0.45, 1.0],
           ),
           borderRadius: AppRadius.cardLg,
-          border: Border.all(color: color.withValues(alpha: 0.18)),
+          border: Border.all(color: color.withValues(alpha: 0.22)),
           boxShadow: [
             BoxShadow(
               color: color.withValues(alpha: 0.05),

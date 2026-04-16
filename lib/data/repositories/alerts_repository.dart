@@ -1,8 +1,8 @@
+import 'package:aviso_vital_2/core/services/appointment_reminder_service.dart';
 import 'package:aviso_vital_2/core/services/supabase_service.dart';
 import 'package:aviso_vital_2/data/mock/mock_data.dart';
 import 'package:aviso_vital_2/data/models/models.dart';
 import 'package:aviso_vital_2/data/repositories/user_repository.dart';
-import 'package:aviso_vital_2/shared/utils/alert_formatters.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AlertsRepository {
@@ -95,7 +95,7 @@ class AlertsRepository {
             0,
       );
 
-      for (final reminder in _buildAppointmentReminderMoments(
+      for (final reminder in AppointmentReminderService.buildReminders(
         appointment,
         appointmentAt,
       )) {
@@ -440,41 +440,6 @@ class AlertsRepository {
     return isRead ? EstadoAlerta.confirmada : EstadoAlerta.pendiente;
   }
 
-  List<_AppointmentReminder> _buildAppointmentReminderMoments(
-    Cita appointment,
-    DateTime appointmentAt,
-  ) {
-    final reminders = <_AppointmentReminder>[];
-    if (appointment.recordatorio24h) {
-      reminders.add(
-        _AppointmentReminder(
-          when: subtractOneLocalDayPreservingClock(appointmentAt),
-          title: 'Cita mañana: ${appointment.especialidad}',
-          message:
-              'Recordatorio 24h · ${appointment.lugar} a las ${appointment.hora}',
-        ),
-      );
-    }
-    if (appointment.recordatorio3h) {
-      reminders.add(
-        _AppointmentReminder(
-          when: appointmentAt.subtract(const Duration(hours: 3)),
-          title: 'Cita hoy: ${appointment.especialidad}',
-          message:
-              'Recordatorio 3h · ${appointment.lugar} a las ${appointment.hora}',
-        ),
-      );
-    }
-    reminders.add(
-      _AppointmentReminder(
-        when: appointmentAt.subtract(const Duration(minutes: 30)),
-        title: 'Cita en 30 min: ${appointment.especialidad}',
-        message:
-            'Recordatorio final · ${appointment.lugar} a las ${appointment.hora}',
-      ),
-    );
-    return reminders;
-  }
 
   Alerta? _doseToAlert(Toma dose, Medicamento? medication) {
     if (medication == null) return null;
@@ -533,14 +498,3 @@ class AlertsRepository {
   }
 }
 
-class _AppointmentReminder {
-  final DateTime when;
-  final String title;
-  final String message;
-
-  const _AppointmentReminder({
-    required this.when,
-    required this.title,
-    required this.message,
-  });
-}

@@ -62,7 +62,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         medicationSnapshotFuture,
         appointmentsFuture,
         _alertsRepository.fetchAdherenceSummary(historyTimeline: alerts),
-      ]);
+      ]).timeout(AppDurations.networkTimeout);
 
       final medicationSnapshot = results[0] as MedicationDailySnapshot;
       final appointments = results[1] as List<Cita>;

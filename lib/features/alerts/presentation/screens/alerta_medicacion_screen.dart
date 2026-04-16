@@ -48,6 +48,18 @@ class _AlertaMedicacionScreenState extends State<AlertaMedicacionScreen>
     super.dispose();
   }
 
+  Future<void> _handleBack() async {
+    final navigator = Navigator.of(context);
+    if (await navigator.maybePop()) return;
+    final contextData = await _carePlanContextService.resolve();
+    if (!mounted) return;
+    final fallbackRoute =
+        contextData.viewerProfile?.rol == RolUsuario.administrador
+        ? AppRoutes.homeAdmin
+        : AppRoutes.homeUsuario;
+    navigator.pushNamedAndRemoveUntil(fallbackRoute, (_) => false);
+  }
+
   Future<void> _confirmar(_MedicationAlertData data) async {
     if (_isSubmitting) return;
     setState(() => _isSubmitting = true);
@@ -97,10 +109,19 @@ class _AlertaMedicacionScreenState extends State<AlertaMedicacionScreen>
                 return const Center(child: CircularProgressIndicator());
               }
 
+              if (snapshot.hasError) {
+                return _AlertUnavailableView(
+                  message:
+                      'No se pudo cargar la medicación pendiente. ${snapshot.error}',
+                  onBack: _handleBack,
+                );
+              }
+
               final data = snapshot.data;
               if (data == null) {
-                return const Center(
-                  child: Text('No hay medicación pendiente.'),
+                return _AlertUnavailableView(
+                  message: 'No hay medicación pendiente.',
+                  onBack: _handleBack,
                 );
               }
 
@@ -117,7 +138,7 @@ class _AlertaMedicacionScreenState extends State<AlertaMedicacionScreen>
                         pulseAnim: _pulseAnim,
                         pospuesto: _pospuesto,
                         isSubmitting: _isSubmitting,
-                        onClose: () => Navigator.maybePop(context),
+                        onClose: _handleBack,
                         onConfirm: () => _confirmar(data),
                         onSnooze: () => _posponer(data),
                       ),
@@ -182,11 +203,12 @@ class _AlertaMedicacionScreenState extends State<AlertaMedicacionScreen>
 
   /// Finds the next scheduled DateTime for [medication] after [from].
   DateTime? _nextDoseDatetime(Medicamento medication, DateTime from) {
-    final horas = medication.horasToma
-        .map((h) => h.trim())
-        .where((h) => h.isNotEmpty)
-        .toList(growable: true)
-      ..sort((a, b) => _minutesForHour(a) - _minutesForHour(b));
+    final horas =
+        medication.horasToma
+            .map((h) => h.trim())
+            .where((h) => h.isNotEmpty)
+            .toList(growable: true)
+          ..sort((a, b) => _minutesForHour(a) - _minutesForHour(b));
     if (horas.isEmpty) return null;
 
     final fromMinutes = from.hour * 60 + from.minute;
@@ -217,20 +239,21 @@ class _AlertaMedicacionScreenState extends State<AlertaMedicacionScreen>
 
   bool _shouldTakeOnDay(Medicamento medication, DateTime date) {
     return switch (medication.frecuencia) {
-      FrecuenciaMed.diasSemana => medication.diasSemana.isEmpty
-          ? true
-          : medication.diasSemana.contains(date.weekday),
+      FrecuenciaMed.diasSemana =>
+        medication.diasSemana.isEmpty
+            ? true
+            : medication.diasSemana.contains(date.weekday),
       FrecuenciaMed.cadaDias => () {
-          if (medication.intervaloDias <= 1) return true;
-          final anchor = DateTime(
-            medication.fechaCreacion.year,
-            medication.fechaCreacion.month,
-            medication.fechaCreacion.day,
-          );
-          final target = DateTime(date.year, date.month, date.day);
-          final diff = target.difference(anchor).inDays;
-          return diff >= 0 && diff % medication.intervaloDias == 0;
-        }(),
+        if (medication.intervaloDias <= 1) return true;
+        final anchor = DateTime(
+          medication.fechaCreacion.year,
+          medication.fechaCreacion.month,
+          medication.fechaCreacion.day,
+        );
+        final target = DateTime(date.year, date.month, date.day);
+        final diff = target.difference(anchor).inDays;
+        return diff >= 0 && diff % medication.intervaloDias == 0;
+      }(),
       _ => true,
     };
   }
@@ -239,9 +262,8 @@ class _AlertaMedicacionScreenState extends State<AlertaMedicacionScreen>
     if (next == null) return '--:--';
     final hourStr =
         '${next.hour.toString().padLeft(2, '0')}:${next.minute.toString().padLeft(2, '0')}';
-    final isToday = next.year == now.year &&
-        next.month == now.month &&
-        next.day == now.day;
+    final isToday =
+        next.year == now.year && next.month == now.month && next.day == now.day;
     if (isToday) return 'Hoy a las $hourStr';
     const weekdays = [
       'lunes',
@@ -285,6 +307,60 @@ class _MedicationAlertData {
     required this.nextDoseLabel,
     required this.userFirstName,
   });
+}
+
+class _AlertUnavailableView extends StatelessWidget {
+  final String message;
+  final VoidCallback onBack;
+
+  const _AlertUnavailableView({required this.message, required this.onBack});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xl,
+        vertical: AppSpacing.lg,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AppBackButton(onPressed: onBack),
+          const Spacer(),
+          Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.medication_outlined,
+                    size: 52,
+                    color: AppColors.textSecondary,
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  Text(
+                    message,
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.bodyLarge.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                  PrimaryButton(
+                    label: 'Volver',
+                    icon: Icons.arrow_back_rounded,
+                    onPressed: onBack,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const Spacer(),
+        ],
+      ),
+    );
+  }
 }
 
 class _MedicationAlertView extends StatelessWidget {

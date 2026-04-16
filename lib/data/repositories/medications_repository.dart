@@ -1,4 +1,7 @@
+import 'dart:math' as math;
+
 import 'package:aviso_vital_2/core/services/supabase_service.dart';
+import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 import 'package:aviso_vital_2/data/mock/mock_data.dart';
 import 'package:aviso_vital_2/data/models/models.dart';
 import 'package:aviso_vital_2/data/repositories/user_repository.dart';
@@ -486,6 +489,41 @@ class MedicationsRepository {
     return updated;
   }
 
+  /// Expira todas las tomas vencidas de [userId] en una sola operación.
+  /// Sustituye el patrón N+1 de llamadas individuales a [expireDose].
+  Future<void> expireOverdueDoses({required String userId}) async {
+    final threshold = DateTime.now().subtract(AppDurations.doseExpiration);
+    const note = 'Sin respuesta en 15 minutos desde la notificacion';
+
+    if (!SupabaseService.isReady) {
+      final updated = _cachedTodayDoses.map((dose) {
+        final isPending =
+            dose.estado == EstadoToma.pendiente ||
+            dose.estado == EstadoToma.pospuesta;
+        if (isPending && dose.fechaProgramada.isBefore(threshold)) {
+          return dose.copyWith(estado: EstadoToma.expirada, nota: note);
+        }
+        return dose;
+      }).toList(growable: false);
+      _cachedTodayDoses = List.unmodifiable(updated);
+      _invalidateDailySnapshot();
+      return;
+    }
+
+    await SupabaseService.client
+        .from('tomas')
+        .update({'estado': EstadoToma.expirada.name, 'notas': note})
+        .eq('id_usuario', userId)
+        .inFilter('estado', [
+          EstadoToma.pendiente.name,
+          EstadoToma.pospuesta.name,
+        ])
+        .lt('fecha_programada', threshold.toUtc().toIso8601String());
+
+    _clearTodayDoseCache();
+    _invalidateDailySnapshot();
+  }
+
   List<Medicamento> getAll() => _cachedMedications.isNotEmpty
       ? List.unmodifiable(_cachedMedications)
       : List.unmodifiable(
@@ -799,8 +837,9 @@ class MedicationsRepository {
       }
     }
 
-    // Check next 14 days
-    for (var i = 1; i <= 14; i++) {
+    // Check enough days ahead to cover any interval pattern (min 14, or 2× the medication interval)
+    final lookahead = math.max(AppDurations.medicationLookaheadDays, medication.intervaloDias * 2);
+    for (var i = 1; i <= lookahead; i++) {
       final candidate = from.add(Duration(days: i));
       if (_shouldTakeOnDay(medication, candidate)) {
         return _dateForHour(

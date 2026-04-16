@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:aviso_vital_2/app/router/app_routes.dart';
 import 'package:aviso_vital_2/data/models/models.dart';
 import 'package:aviso_vital_2/data/repositories/auth_repository.dart';
-import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_divider.dart';
+import 'package:aviso_vital_2/shared/utils/auth_error_mapper.dart';
 import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_form_card.dart';
 import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_hero_card.dart';
 import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_scaffold.dart';
-import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_social_row.dart';
 import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_switch_link.dart';
 import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_text_field.dart';
 import 'package:aviso_vital_2/features/user_home/presentation/screens/home_usuario_screen.dart';
@@ -67,35 +65,8 @@ class _UserSignupScreenState extends State<UserSignupScreen> {
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(_mapAuthError(error))));
+      ).showSnackBar(SnackBar(content: Text(AuthErrorMapper.fromSignup(error))));
     }
-  }
-
-  String _mapAuthError(Object error) {
-    final message = error.toString();
-    if (message.contains('User already registered')) {
-      return 'Ya existe una cuenta con ese email.';
-    }
-    if (message.contains('Password should be at least')) {
-      return 'La contraseña no cumple la longitud mínima requerida.';
-    }
-    if (error is AuthException && error.message.trim().isNotEmpty) {
-      return error.message;
-    }
-    if (error is StateError) return message.replaceFirst('Bad state: ', '');
-    return 'No se pudo crear la cuenta: $message';
-  }
-
-  void _openSocialSignup(AuthSocialProvider provider) {
-    Navigator.pushNamed(
-      context,
-      AppRoutes.socialAuth,
-      arguments: {
-        'providerId': provider.id,
-        'roleId': 'user',
-        'modeId': 'signup',
-      },
-    );
   }
 
   @override
@@ -215,10 +186,6 @@ class _UserSignupScreenState extends State<UserSignupScreen> {
               isLoading: _isLoading,
               onPressed: _crear,
             ),
-            const SizedBox(height: AppSpacing.xl),
-            const AuthDivider(),
-            const SizedBox(height: AppSpacing.xl),
-            AuthSocialRow(onProviderTap: _openSocialSignup),
             const SizedBox(height: AppSpacing.lg),
             AuthSwitchLink(
               prompt: '¿Ya tienes cuenta? ',

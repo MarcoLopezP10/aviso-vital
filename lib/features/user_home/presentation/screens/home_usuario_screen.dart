@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:aviso_vital_2/app/router/app_routes.dart';
 import 'package:aviso_vital_2/core/services/care_plan_context_service.dart';
 import 'package:aviso_vital_2/data/models/models.dart';
+import 'package:aviso_vital_2/data/repositories/auth_repository.dart';
 import 'package:aviso_vital_2/data/repositories/appointments_repository.dart';
 import 'package:aviso_vital_2/data/repositories/medications_repository.dart';
 import 'package:aviso_vital_2/features/alerts/presentation/screens/alerta_cita_screen.dart';
@@ -22,6 +23,7 @@ class HomeUsuarioScreen extends StatefulWidget {
 }
 
 class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
+  static const _authRepository = AuthRepository();
   static const _appointmentsRepository = AppointmentsRepository();
   static const _medicationsRepository = MedicationsRepository();
   static const _carePlanContextService = CarePlanContextService();
@@ -53,85 +55,131 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
             }
 
             if (snapshot.hasError) {
-              return Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.xl),
-                  child: Text(
+              return _buildErrorState(
+                screenH: screenH,
+                message:
                     'No se pudo cargar el inicio del usuario: ${snapshot.error}',
-                    textAlign: TextAlign.center,
-                  ),
-                ),
               );
             }
 
             final data = snapshot.data!;
-            return RefreshIndicator(
-              onRefresh: () async {
-                final future = _buildViewData(forceRefresh: true);
-                setState(() => _viewDataFuture = future);
-                await future;
-              },
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    minHeight:
-                        MediaQuery.of(context).size.height -
-                        MediaQuery.of(context).padding.top,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SizedBox(height: math.max(screenH * 0.05, AppSpacing.minSection)),
-                      UserHomeHeader(
-                        greeting: data.greeting,
-                        dateLabel: data.dateLabel,
-                        avatarInitial: data.avatarInitial,
-                      ),
-                      SizedBox(height: math.max(screenH * 0.05, AppSpacing.minSection)),
-                      if (data.nextMedication != null) ...[
-                        NextMedicationCard(
-                          medication: data.nextMedication!,
-                          timeLabel: data.nextMedicationTime,
-                          onTap: () => Navigator.pushNamed(
-                            context,
-                            AlertaMedicacionScreen.routeName,
-                          ),
-                        ),
-                        SizedBox(height: math.max(screenH * 0.04, AppSpacing.minSection)),
-                      ],
-                      if (data.todayAppointment != null) ...[
-                        NextAppointmentCard(
-                          appointment: data.todayAppointment,
-                          onTap: () => Navigator.pushNamed(
-                            context,
-                            AlertaCitaScreen.routeName,
-                            arguments: {
-                              'appointmentId': data.todayAppointment!.id,
-                            },
-                          ),
-                        ),
-                        SizedBox(height: math.max(screenH * 0.04, AppSpacing.minSection)),
-                      ],
-                      PrimaryButton.large(
-                        label: 'Ver mi móvil en pruebas',
-                        icon: Icons.smartphone_rounded,
-                        onPressed: () => Navigator.pushNamed(
-                          context,
-                          AppRoutes.simulacionAlertas,
-                        ),
-                      ),
-                      SizedBox(height: math.max(screenH * 0.05, AppSpacing.minSection)),
-                    ],
-                  ),
-                ),
-              ),
-            );
+            return _buildLoadedState(screenH: screenH, data: data);
           },
         ),
       ),
     );
+  }
+
+  Widget _buildErrorState({required double screenH, required String message}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(height: math.max(screenH * 0.05, AppSpacing.minSection)),
+          AppBackButton(onPressed: _handleUserAreaBack),
+          const SizedBox(height: AppSpacing.lg),
+          Expanded(
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.xl),
+                child: Text(message, textAlign: TextAlign.center),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoadedState({
+    required double screenH,
+    required _UserHomeViewData data,
+  }) {
+    return RefreshIndicator(
+      onRefresh: () async {
+        final future = _buildViewData(forceRefresh: true);
+        setState(() => _viewDataFuture = future);
+        await future;
+      },
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            minHeight:
+                MediaQuery.of(context).size.height -
+                MediaQuery.of(context).padding.top,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(height: math.max(screenH * 0.05, AppSpacing.minSection)),
+              AppBackButton(onPressed: _handleUserAreaBack),
+              SizedBox(
+                height: math.max(screenH * 0.028, AppSpacing.minSection * 0.7),
+              ),
+              UserHomeHeader(
+                greeting: data.greeting,
+                dateLabel: data.dateLabel,
+                avatarInitial: data.avatarInitial,
+              ),
+              SizedBox(height: math.max(screenH * 0.05, AppSpacing.minSection)),
+              if (data.nextMedication != null) ...[
+                NextMedicationCard(
+                  medication: data.nextMedication!,
+                  timeLabel: data.nextMedicationTime,
+                  onTap: () => Navigator.pushNamed(
+                    context,
+                    AlertaMedicacionScreen.routeName,
+                  ),
+                ),
+                SizedBox(
+                  height: math.max(screenH * 0.04, AppSpacing.minSection),
+                ),
+              ],
+              if (data.todayAppointment != null) ...[
+                NextAppointmentCard(
+                  appointment: data.todayAppointment,
+                  onTap: () => Navigator.pushNamed(
+                    context,
+                    AlertaCitaScreen.routeName,
+                    arguments: {'appointmentId': data.todayAppointment!.id},
+                  ),
+                ),
+                SizedBox(
+                  height: math.max(screenH * 0.04, AppSpacing.minSection),
+                ),
+              ],
+              PrimaryButton.large(
+                label: 'Ver mi móvil en pruebas',
+                icon: Icons.smartphone_rounded,
+                onPressed: () =>
+                    Navigator.pushNamed(context, AppRoutes.simulacionAlertas),
+              ),
+              SizedBox(height: math.max(screenH * 0.05, AppSpacing.minSection)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleUserAreaBack() async {
+    final navigator = Navigator.of(context);
+    if (await navigator.maybePop()) return;
+    final contextData = await _carePlanContextService.resolve();
+    if (!mounted) return;
+    final viewerIsAdmin =
+        contextData.viewerProfile?.rol == RolUsuario.administrador;
+    if (viewerIsAdmin) {
+      navigator.pushNamedAndRemoveUntil(AppRoutes.homeAdmin, (_) => false);
+      return;
+    }
+
+    await _authRepository.signOut();
+    if (!mounted) return;
+    navigator.pushNamedAndRemoveUntil(AppRoutes.adminLogin, (_) => false);
   }
 
   Future<_UserHomeViewData> _buildViewData({bool forceRefresh = false}) async {
@@ -147,7 +195,7 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
         forceRefresh: forceRefresh,
       ),
       _medicationsRepository.fetchWeekDoses(userId: ownerId),
-    ]);
+    ]).timeout(AppDurations.networkTimeout);
 
     final medicationSnapshot = results[0] as MedicationDailySnapshot;
     final appointments = results[1] as List<Cita>;

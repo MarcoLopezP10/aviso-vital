@@ -69,8 +69,9 @@ abstract class AppRadius {
   );
 }
 
-/// AppDurations — duraciones de animación consistentes
+/// AppDurations — duraciones de animación consistentes y constantes de negocio
 abstract class AppDurations {
+  // ── Animación ─────────────────────────────────────────────────────
   static const Duration instant  = Duration(milliseconds: 100);
   static const Duration fast     = Duration(milliseconds: 200);
   static const Duration normal   = Duration(milliseconds: 300);
@@ -80,6 +81,24 @@ abstract class AppDurations {
   static const Duration loading  = Duration(milliseconds: 800);
   static const Duration success  = Duration(seconds: 2);
   static const Duration longPress = Duration(milliseconds: 500);
+
+  // ── Tomas de medicación ───────────────────────────────────────────
+  /// Tiempo que tiene el usuario para confirmar una toma antes de que expire.
+  static const Duration doseExpiration     = Duration(minutes: 15);
+  /// Ventana de visibilidad de un recordatorio de cita no final.
+  static const Duration reminderExpiration = Duration(minutes: 5);
+
+  // ── Recordatorios de citas ────────────────────────────────────────
+  static const Duration appointmentBefore3h  = Duration(hours: 3);
+  static const Duration appointmentBefore30m = Duration(minutes: 30);
+
+  // ── Lookahead de medicación ───────────────────────────────────────
+  /// Días mínimos hacia adelante para buscar la próxima toma programada.
+  static const int medicationLookaheadDays = 14;
+
+  // ── Red ───────────────────────────────────────────────────────────
+  /// Timeout máximo para peticiones de red paralelas (Future.wait).
+  static const Duration networkTimeout = Duration(seconds: 10);
 }
 
 /// AppShadows — sombras sutiles para profundidad

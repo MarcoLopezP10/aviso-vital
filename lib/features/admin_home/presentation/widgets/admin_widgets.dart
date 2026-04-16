@@ -521,28 +521,15 @@ class SearchFilterBar extends StatelessWidget {
                   child: AnimatedContainer(
                     duration: AppDurations.fast,
                     decoration: BoxDecoration(
-                      gradient: active
-                          ? LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                AppColors.amber.withValues(alpha: 0.16),
-                                AppColors.amber.withValues(alpha: 0.06),
-                              ],
-                            )
-                          : const LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                AppColors.surfaceRaised,
-                                AppColors.surface,
-                              ],
-                            ),
+                      color: active
+                          ? AppColors.amber.withValues(alpha: 0.20)
+                          : Colors.transparent,
                       borderRadius: AppRadius.chip,
                       border: Border.all(
                         color: active
-                            ? AppColors.amber.withValues(alpha: 0.95)
-                            : AppColors.surfaceBorder,
+                            ? AppColors.amber
+                            : AppColors.surfaceBorder.withValues(alpha: 0.60),
+                        width: active ? 1.4 : 1.0,
                       ),
                     ),
                     child: FilterChip(
@@ -558,8 +545,8 @@ class SearchFilterBar extends StatelessWidget {
                       labelStyle: AppTextStyles.label.copyWith(
                         color: active
                             ? AppColors.amber
-                            : AppColors.textSecondary,
-                        fontWeight: active ? FontWeight.w700 : FontWeight.w600,
+                            : AppColors.textTertiary,
+                        fontWeight: active ? FontWeight.w700 : FontWeight.w500,
                         fontSize: compact ? 12 : null,
                       ),
                       visualDensity: compact

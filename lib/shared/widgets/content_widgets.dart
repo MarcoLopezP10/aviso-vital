@@ -163,7 +163,7 @@ class _StockBar extends StatelessWidget {
         ),
         const SizedBox(width: 8),
         Text(
-          '${med.stockActual} uds',
+          '${med.stockActual} / mín ${med.stockMinimo}',
           style: AppTextStyles.caption.copyWith(
             color: med.stockBajo ? AppColors.danger : AppColors.textTertiary,
             fontWeight: FontWeight.w600,
