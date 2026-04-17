@@ -197,7 +197,7 @@ class _CodigoManualScreenState extends State<CodigoManualScreen> {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      'AV1234',
+                      'AV-1234',
                       style: AppTextStyles.h3.copyWith(
                         color: AppColors.amber,
                         letterSpacing: 2.2,

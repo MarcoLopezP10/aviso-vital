@@ -10,6 +10,7 @@ class AdminSectionScaffold extends StatelessWidget {
   final Widget? filters;
   final Widget body;
   final Widget? floatingActionButton;
+  final Widget? headerTrailing;
   final bool compactHeader;
   final Color primaryGlowColor;
   final Color secondaryGlowColor;
@@ -26,6 +27,7 @@ class AdminSectionScaffold extends StatelessWidget {
     this.stats,
     this.filters,
     this.floatingActionButton,
+    this.headerTrailing,
     this.compactHeader = false,
     this.primaryGlowColor = AppColors.amber,
     this.secondaryGlowColor = AppColors.haloSoft,
@@ -72,6 +74,10 @@ class AdminSectionScaffold extends StatelessWidget {
                           ],
                         ),
                       ),
+                      if (headerTrailing != null) ...[
+                        const SizedBox(width: AppSpacing.sm),
+                        headerTrailing!,
+                      ],
                     ],
                   ),
                   if (stats != null) ...[

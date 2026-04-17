@@ -117,12 +117,14 @@ class _SimulacionAlertasScreenState extends State<SimulacionAlertasScreen> {
       secondaryGlowAlignment: const Alignment(-0.95, 0.1),
       intensity: 0.72,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: const Color(0xFF0A0A12),
         surfaceTintColor: Colors.transparent,
+        elevation: 0,
         leading: const AppBackButton(),
         title: const Text('Pantalla de pruebas'),
       ),
       body: SafeArea(
+        top: false, // el AppBar ya gestiona la zona de la barra de estado
         child: _isLoading
             ? const Center(child: CircularProgressIndicator())
             : _loadError != null
@@ -270,113 +272,158 @@ class _PhoneFrame extends StatelessWidget {
     required this.onTapNotification,
   });
 
+  static const _frameColor    = Color(0xFF0A0A12);
+  static const _frameBorder   = Color(0xFF3E4559);
+  static const _buttonColor   = Color(0xFF252B3A);
+  static const _screenGradStart = Color(0xFF151B2A);
+  static const _screenGradEnd   = Color(0xFF0D111C);
+
   @override
   Widget build(BuildContext context) {
     final dateLabel = _formatDate(now);
     final hasManyNotifications = visibleNotifications.length > 2;
 
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFF0A0A12),
-        borderRadius: BorderRadius.circular(38),
-        border: Border.all(color: const Color(0xFF3E4559), width: 1.4),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.38),
-            blurRadius: 30,
-            offset: const Offset(0, 18),
+    return Stack(
+      clipBehavior: Clip.none,
+      alignment: Alignment.center,
+      children: [
+        // ── Phone body ──────────────────────────────────────────────
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: _frameColor,
+            borderRadius: BorderRadius.circular(38),
+            border: Border.all(color: _frameBorder, width: 1.4),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.42),
+                blurRadius: 36,
+                offset: const Offset(0, 20),
+              ),
+              BoxShadow(
+                color: AppColors.amber.withValues(alpha: 0.06),
+                blurRadius: 60,
+                offset: const Offset(0, 10),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF151B2A), Color(0xFF0D111C)],
-          ),
-          borderRadius: BorderRadius.circular(30),
-        ),
-        child: Column(
-          children: [
-            const SizedBox(height: 10),
-            Container(
-              width: 132,
-              height: 28,
-              decoration: BoxDecoration(
-                color: const Color(0xFF05070C),
-                borderRadius: BorderRadius.circular(18),
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [_screenGradStart, _screenGradEnd],
               ),
+              borderRadius: BorderRadius.circular(30),
             ),
-            const SizedBox(height: 18),
-            Text(
-              _formatTime(now),
-              style: AppTextStyles.display1.copyWith(
-                color: Colors.white,
-                fontSize: 52,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              dateLabel,
-              style: AppTextStyles.body.copyWith(
-                color: const Color(0xFFABABAB),
-                fontSize: 17,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            Container(
-              width: double.infinity,
-              height: 420,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(24),
-                color: Colors.white.withValues(alpha: 0.04),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: visibleNotifications.isEmpty
-                  ? Padding(
-                      padding: const EdgeInsets.fromLTRB(14, 10, 14, 18),
-                      child: _WaitingState(nextNotification: nextNotification),
-                    )
-                  : Scrollbar(
-                      thumbVisibility: hasManyNotifications,
-                      child: SingleChildScrollView(
-                        physics: const BouncingScrollPhysics(),
-                        padding: const EdgeInsets.fromLTRB(14, 10, 14, 18),
-                        child: Column(
-                          children: [
-                            if (hasManyNotifications)
-                              Padding(
-                                padding: const EdgeInsets.only(bottom: 10),
-                                child: Text(
-                                  'Deslice para ver más notificaciones',
-                                  textAlign: TextAlign.center,
-                                  style: AppTextStyles.label.copyWith(
-                                    color: AppColors.textSecondary,
-                                    fontSize: 13,
+            child: Column(
+              children: [
+                // ── Status bar + Dynamic Island ──
+                _StatusBar(now: now),
+                const SizedBox(height: 14),
+                // ── Lock screen time ──
+                Text(
+                  _formatTime(now),
+                  style: AppTextStyles.display1.copyWith(
+                    color: Colors.white,
+                    fontSize: 52,
+                    fontWeight: FontWeight.w700,
+                    height: 1,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  dateLabel,
+                  style: AppTextStyles.body.copyWith(
+                    color: const Color(0xFFABABAB),
+                    fontSize: 17,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                // ── Notification area ──
+                Container(
+                  width: double.infinity,
+                  height: 420,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(24),
+                    color: Colors.white.withValues(alpha: 0.04),
+                    border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.06)),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: visibleNotifications.isEmpty
+                      ? Padding(
+                          padding:
+                              const EdgeInsets.fromLTRB(14, 10, 14, 18),
+                          child: _WaitingState(
+                              nextNotification: nextNotification),
+                        )
+                      : Scrollbar(
+                          thumbVisibility: hasManyNotifications,
+                          child: SingleChildScrollView(
+                            physics: const BouncingScrollPhysics(),
+                            padding:
+                                const EdgeInsets.fromLTRB(14, 10, 14, 18),
+                            child: Column(
+                              children: [
+                                if (hasManyNotifications)
+                                  Padding(
+                                    padding:
+                                        const EdgeInsets.only(bottom: 10),
+                                    child: Text(
+                                      'Deslice para ver más notificaciones',
+                                      textAlign: TextAlign.center,
+                                      style: AppTextStyles.label.copyWith(
+                                        color: AppColors.textSecondary,
+                                        fontSize: 13,
+                                      ),
+                                    ),
                                   ),
-                                ),
-                              ),
-                            for (final item in visibleNotifications) ...[
-                              SimulationNotificationCard(
-                                item: item,
-                                onTap: () => onTapNotification(item),
-                              ),
-                              if (item != visibleNotifications.last)
-                                const SizedBox(height: 10),
-                            ],
-                          ],
+                                for (final item
+                                    in visibleNotifications) ...[
+                                  SimulationNotificationCard(
+                                    item: item,
+                                    onTap: () => onTapNotification(item),
+                                  ),
+                                  if (item != visibleNotifications.last)
+                                    const SizedBox(height: 10),
+                                ],
+                              ],
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
+                ),
+                // ── Home indicator ──
+                const _HomeIndicator(),
+              ],
             ),
-            const SizedBox(height: 18),
-          ],
+          ),
         ),
-      ),
+
+        // ── Left side buttons (mute · vol+ · vol−) ──────────────────
+        Positioned(
+          left: -4,
+          top: 72,
+          child: _SideButton(height: 24, color: _buttonColor),
+        ),
+        Positioned(
+          left: -4,
+          top: 108,
+          child: _SideButton(height: 44, color: _buttonColor),
+        ),
+        Positioned(
+          left: -4,
+          top: 164,
+          child: _SideButton(height: 44, color: _buttonColor),
+        ),
+
+        // ── Right side button (power) ────────────────────────────────
+        Positioned(
+          right: -4,
+          top: 120,
+          child: _SideButton(height: 64, color: _buttonColor),
+        ),
+      ],
     );
   }
 
@@ -385,29 +432,112 @@ class _PhoneFrame extends StatelessWidget {
 
   String _formatDate(DateTime value) {
     const weekdays = [
-      'lunes',
-      'martes',
-      'miércoles',
-      'jueves',
-      'viernes',
-      'sábado',
-      'domingo',
+      'lunes', 'martes', 'miércoles', 'jueves',
+      'viernes', 'sábado', 'domingo',
     ];
     const months = [
-      'enero',
-      'febrero',
-      'marzo',
-      'abril',
-      'mayo',
-      'junio',
-      'julio',
-      'agosto',
-      'septiembre',
-      'octubre',
-      'noviembre',
-      'diciembre',
+      'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+      'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
     ];
     return '${weekdays[value.weekday - 1]}, ${value.day} de ${months[value.month - 1]}';
+  }
+}
+
+/// Status bar: Dynamic Island pill + clock (left) + system icons (right)
+class _StatusBar extends StatelessWidget {
+  final DateTime now;
+  const _StatusBar({required this.now});
+
+  @override
+  Widget build(BuildContext context) {
+    final timeStr =
+        '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Dynamic Island
+          Container(
+            width: 126,
+            height: 30,
+            decoration: BoxDecoration(
+              color: const Color(0xFF05070C),
+              borderRadius: BorderRadius.circular(20),
+            ),
+          ),
+          // Left: time
+          Positioned(
+            left: 0,
+            child: Text(
+              timeStr,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                fontFamily: 'Inter',
+              ),
+            ),
+          ),
+          // Right: signal + wifi + battery
+          Positioned(
+            right: 0,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: const [
+                Icon(Icons.signal_cellular_alt_rounded,
+                    color: Colors.white, size: 14),
+                SizedBox(width: 4),
+                Icon(Icons.wifi_rounded, color: Colors.white, size: 14),
+                SizedBox(width: 4),
+                Icon(Icons.battery_full_rounded,
+                    color: Colors.white, size: 16),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Thin home indicator pill at the bottom of the screen
+class _HomeIndicator extends StatelessWidget {
+  const _HomeIndicator();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 10, bottom: 10),
+      child: Container(
+        width: 120,
+        height: 4,
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.28),
+          borderRadius: BorderRadius.circular(4),
+        ),
+      ),
+    );
+  }
+}
+
+/// Physical side button (volume / power)
+class _SideButton extends StatelessWidget {
+  final double height;
+  final Color color;
+  const _SideButton({required this.height, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 4,
+      height: height,
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(3),
+      ),
+    );
   }
 }
 

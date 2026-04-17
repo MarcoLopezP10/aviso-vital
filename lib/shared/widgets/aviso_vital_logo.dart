@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 
 class AvisoVitalLogo extends StatefulWidget {
@@ -64,52 +64,32 @@ class _AvisoVitalLogoState extends State<AvisoVitalLogo>
       height: widget.size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [AppColors.amberLight, AppColors.orange],
-        ),
         boxShadow: widget.showGlow
             ? [
                 BoxShadow(
-                  color: AppColors.amber.withValues(alpha: 0.28),
-                  blurRadius: 20,
-                  spreadRadius: 2,
+                  color: AppColors.amber.withValues(alpha: 0.32),
+                  blurRadius: 24,
+                  spreadRadius: 3,
+                ),
+                BoxShadow(
+                  color: AppColors.orange.withValues(alpha: 0.14),
+                  blurRadius: 40,
+                  spreadRadius: 6,
                 ),
               ]
             : null,
       ),
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Container(
-            width: widget.size * 0.72,
-            height: widget.size * 0.72,
-            decoration: const BoxDecoration(
-              color: AppColors.background,
-              shape: BoxShape.circle,
-            ),
-          ),
-          Icon(
-            Icons.favorite_rounded,
-            size: widget.size * 0.36,
-            color: AppColors.amber,
-          ),
-          Positioned(
-            bottom: widget.size * 0.2,
-            child: Container(
-              width: widget.size * 0.34,
-              height: widget.size * 0.1,
-              decoration: BoxDecoration(
-                color: AppColors.textPrimary,
-                borderRadius: BorderRadius.circular(AppRadius.full),
-              ),
-            ),
-          ),
-        ],
+      child: ClipOval(
+        child: SvgPicture.asset(
+          'assets/images/aviso_vital_logo.svg',
+          width: widget.size,
+          height: widget.size,
+          fit: BoxFit.cover,
+        ),
       ),
     );
 
     return ScaleTransition(scale: _scale, child: logo);
   }
 }
+

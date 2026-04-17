@@ -10,6 +10,8 @@ import 'package:aviso_vital_2/features/alerts/presentation/screens/alerta_cita_s
 import 'package:aviso_vital_2/features/alerts/presentation/screens/alerta_medicacion_screen.dart';
 import 'package:aviso_vital_2/features/user_home/presentation/widgets/next_appointment_card.dart';
 import 'package:aviso_vital_2/features/user_home/presentation/widgets/next_medication_card.dart';
+import 'package:aviso_vital_2/features/user_home/presentation/widgets/daily_progress_card.dart';
+import 'package:aviso_vital_2/features/user_home/presentation/widgets/quick_actions_strip.dart';
 import 'package:aviso_vital_2/features/user_home/presentation/widgets/user_home_header.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 import 'package:aviso_vital_2/shared/widgets/shared_widgets.dart';
@@ -123,8 +125,17 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
                 greeting: data.greeting,
                 dateLabel: data.dateLabel,
                 avatarInitial: data.avatarInitial,
+                trailing: _LogoutButton(onPressed: _handleUserAreaBack),
               ),
-              SizedBox(height: math.max(screenH * 0.05, AppSpacing.minSection)),
+              SizedBox(height: math.max(screenH * 0.035, AppSpacing.minSection)),
+              DailyProgressCard(
+                confirmed: data.confirmedToday,
+                total: data.totalToday,
+                pending: data.pendingToday,
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              QuickActionsStrip(pendingCount: data.pendingToday),
+              SizedBox(height: math.max(screenH * 0.04, AppSpacing.minSection)),
               if (data.nextMedication != null) ...[
                 NextMedicationCard(
                   medication: data.nextMedication!,
@@ -135,7 +146,7 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
                   ),
                 ),
                 SizedBox(
-                  height: math.max(screenH * 0.04, AppSpacing.minSection),
+                  height: math.max(screenH * 0.03, AppSpacing.sm),
                 ),
               ],
               if (data.todayAppointment != null) ...[
@@ -147,6 +158,12 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
                     arguments: {'appointmentId': data.todayAppointment!.id},
                   ),
                 ),
+                SizedBox(
+                  height: math.max(screenH * 0.03, AppSpacing.sm),
+                ),
+              ],
+              if (data.weekDoses.isNotEmpty) ...[
+                WeeklyAdherenceStrip(weekDoses: data.weekDoses),
                 SizedBox(
                   height: math.max(screenH * 0.04, AppSpacing.minSection),
                 ),
@@ -179,7 +196,7 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
 
     await _authRepository.signOut();
     if (!mounted) return;
-    navigator.pushNamedAndRemoveUntil(AppRoutes.adminLogin, (_) => false);
+    navigator.pushNamedAndRemoveUntil(AppRoutes.roleSelection, (_) => false);
   }
 
   Future<_UserHomeViewData> _buildViewData({bool forceRefresh = false}) async {
@@ -291,4 +308,32 @@ class _UserHomeViewData {
     required this.totalToday,
     required this.weekDoses,
   });
+}
+
+class _LogoutButton extends StatelessWidget {
+  final VoidCallback? onPressed;
+  const _LogoutButton({this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: 'Cerrar sesión',
+      button: true,
+      child: IconButton(
+        icon: const Icon(Icons.logout_rounded, size: 20),
+        color: AppColors.textTertiary,
+        tooltip: 'Cerrar sesión',
+        onPressed: onPressed,
+        style: IconButton.styleFrom(
+          backgroundColor: AppColors.surfaceRaised,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+            side: const BorderSide(color: AppColors.surfaceBorder),
+          ),
+          padding: const EdgeInsets.all(8),
+          minimumSize: const Size(36, 36),
+        ),
+      ),
+    );
+  }
 }

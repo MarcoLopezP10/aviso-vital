@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 
 export 'premium_background.dart';
+export 'stock_progress_bar.dart';
 export 'weekly_adherence_strip.dart';
 
 // ════════════════════════════════════════════════════════════════════

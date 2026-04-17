@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:aviso_vital_2/app/router/app_routes.dart';
+import 'package:aviso_vital_2/core/services/pdf_export_service.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 import 'package:aviso_vital_2/shared/widgets/shared_widgets.dart';
 import 'package:aviso_vital_2/shared/widgets/content_widgets.dart';
@@ -26,6 +27,8 @@ class AdminMedicamentosScreen extends StatefulWidget {
 class _AdminMedicamentosScreenState extends State<AdminMedicamentosScreen> {
   static const _medicationsRepository = MedicationsRepository();
   static const _userRepository = UserRepository();
+  static const _pdfExportService = PdfExportService();
+  bool _isExporting = false;
   final _searchCtrl = TextEditingController();
   List<Medicamento> _medicamentos = const [];
   String _filtro = 'todos';
@@ -99,6 +102,25 @@ class _AdminMedicamentosScreenState extends State<AdminMedicamentosScreen> {
     }
   }
 
+  Future<void> _exportPdf() async {
+    if (_isExporting) return;
+    setState(() => _isExporting = true);
+    try {
+      final user = _userRepository.getCurrentUser();
+      await _pdfExportService.exportMedicamentos(
+        _medicamentos,
+        nombrePaciente: user.nombre,
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo exportar el PDF: $error')),
+      );
+    } finally {
+      if (mounted) setState(() => _isExporting = false);
+    }
+  }
+
   Future<void> _deleteMedication(String id) async {
     try {
       await _medicationsRepository.delete(id);
@@ -126,6 +148,27 @@ class _AdminMedicamentosScreenState extends State<AdminMedicamentosScreen> {
       subtitle: '${allMedications.length} activos · ${user.nombre}',
       compactHeader: true,
       onBack: widget.showBackButton ? () => Navigator.maybePop(context) : null,
+      headerTrailing: _isExporting
+          ? const SizedBox(
+              width: 32,
+              height: 32,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : IconButton(
+              icon: const Icon(Icons.picture_as_pdf_rounded),
+              color: AppColors.textSecondary,
+              tooltip: 'Exportar PDF',
+              onPressed: _medicamentos.isEmpty ? null : _exportPdf,
+              style: IconButton.styleFrom(
+                backgroundColor: AppColors.surfaceRaised,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  side: const BorderSide(color: AppColors.surfaceBorder),
+                ),
+                padding: const EdgeInsets.all(6),
+                minimumSize: const Size(34, 34),
+              ),
+            ),
       stats: Row(
         children: [
           Expanded(
@@ -216,8 +259,8 @@ class _AdminMedicamentosScreenState extends State<AdminMedicamentosScreen> {
                               AppSpacing.lg,
                               0,
                               AppSpacing.lg,
-                              // FAB (56px) + bottom nav (80px) = 136px
-                              136,
+                              // FAB (56px) + margen (16px) + bottom nav (56px) + extra (32px) = 160px
+                              160,
                             ),
                             itemCount: lista.length,
                             itemBuilder: (_, i) => MedicationCard(
@@ -361,13 +404,16 @@ class _MedicamentoFormState extends State<_MedicamentoForm> {
     final selected = await showTimePicker(
       context: context,
       initialTime: _timeOfDayFromString(_horasToma[index]),
-      builder: (context, child) => Theme(
-        data: Theme.of(context).copyWith(
-          colorScheme: Theme.of(
-            context,
-          ).colorScheme.copyWith(primary: AppColors.amber),
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+        child: Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: Theme.of(
+              context,
+            ).colorScheme.copyWith(primary: AppColors.amber),
+          ),
+          child: child!,
         ),
-        child: child!,
       ),
     );
     if (selected == null) return;

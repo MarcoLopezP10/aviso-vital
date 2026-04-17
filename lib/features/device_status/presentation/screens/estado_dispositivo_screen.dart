@@ -106,7 +106,7 @@ class _EstadoDispositivoScreenState extends State<EstadoDispositivoScreen> {
               ),
               const SizedBox(height: AppSpacing.sm),
               Text(
-                'Comparta este código exactamente como aparece: dos letras y cuatro números.',
+                'Comparta este código exactamente como aparece: dos letras, guion y cuatro números (ej. AV-1234).',
                 style: AppTextStyles.caption.copyWith(
                   color: AppColors.textSecondary,
                 ),
@@ -136,7 +136,11 @@ class _EstadoDispositivoScreenState extends State<EstadoDispositivoScreen> {
   Future<void> _copyCode(BuildContext context, String? code) async {
     final normalized = code?.replaceAll('-', '').trim().toUpperCase();
     if (normalized == null || normalized.isEmpty) return;
-    await Clipboard.setData(ClipboardData(text: normalized));
+    // Copiar siempre CON guion: AV-XXXX
+    final withDash = normalized.length == 6
+        ? '${normalized.substring(0, 2)}-${normalized.substring(2)}'
+        : normalized;
+    await Clipboard.setData(ClipboardData(text: withDash));
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Código copiado al portapapeles')),

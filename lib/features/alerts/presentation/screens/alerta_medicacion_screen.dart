@@ -27,7 +27,7 @@ class _AlertaMedicacionScreenState extends State<AlertaMedicacionScreen>
   late final Animation<double> _pulseAnim;
   late Future<_MedicationAlertData?> _alertFuture;
   bool _confirmado = false;
-  bool _pospuesto = false;
+  final bool _pospuesto = false;
   bool _isSubmitting = false;
 
   @override
@@ -79,16 +79,10 @@ class _AlertaMedicacionScreenState extends State<AlertaMedicacionScreen>
     setState(() => _isSubmitting = true);
     await _medicationsRepository.snoozeDose(data.dose.id);
     if (!mounted) return;
-    setState(() {
-      _pospuesto = true;
-      _isSubmitting = false;
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Se lo recordaremos de nuevo en 15 minutos'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    // Cerrar la pantalla: la notificación desaparece del simulador y reaparece
+    // en 10 min cuando el servicio recarga el snapshot y la toma pospuesta
+    // pase el umbral scheduledAt.
+    Navigator.of(context).pop();
   }
 
   @override
@@ -655,7 +649,9 @@ class _MedicationAlertCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(compact ? AppSpacing.xl : AppSpacing.xxl),
+      // compact: reducir padding para que las dos filas de info sean visibles sin scroll
+      padding: EdgeInsets.all(compact ? AppSpacing.md : AppSpacing.xxl),
+      clipBehavior: Clip.none,
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           begin: Alignment.topLeft,

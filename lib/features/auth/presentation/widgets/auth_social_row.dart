@@ -248,6 +248,11 @@ class _GoogleLogoPainter extends CustomPainter {
     final barTop = center.dy - (barHeight / 2);
     final barLeft = center.dx - side * 0.01;
     final barRight = center.dx + radius + stroke * 0.10;
+
+    // Barra horizontal + recorte en una capa aislada para que el cutout sea
+    // transparente de verdad independientemente del fondo.
+    canvas.saveLayer(Rect.fromLTWH(0, 0, size.width, size.height), Paint());
+
     final barPaint = Paint()
       ..color = muted ? _blue.withValues(alpha: 0.45) : _blue
       ..style = PaintingStyle.fill;
@@ -259,7 +264,10 @@ class _GoogleLogoPainter extends CustomPainter {
       barPaint,
     );
 
-    final cutPaint = Paint()..color = Colors.white;
+    // Recorte con BlendMode.dstOut: borra los píxeles de la capa (transparente)
+    final cutPaint = Paint()
+      ..color = Colors.black
+      ..blendMode = BlendMode.dstOut;
     final cutout = Path()
       ..moveTo(center.dx + innerRadius * 0.52, center.dy - stroke * 0.86)
       ..lineTo(center.dx + radius + stroke * 0.22, center.dy - stroke * 0.86)
@@ -267,6 +275,8 @@ class _GoogleLogoPainter extends CustomPainter {
       ..lineTo(center.dx + innerRadius * 0.78, center.dy - stroke * 0.12)
       ..close();
     canvas.drawPath(cutout, cutPaint);
+
+    canvas.restore();
   }
 
   static double _deg(double value) => value * math.pi / 180;

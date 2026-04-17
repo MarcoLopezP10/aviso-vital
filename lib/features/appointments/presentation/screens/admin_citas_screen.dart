@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:aviso_vital_2/app/router/app_routes.dart';
+import 'package:aviso_vital_2/core/services/pdf_export_service.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 import 'package:aviso_vital_2/shared/widgets/shared_widgets.dart';
 import 'package:aviso_vital_2/shared/widgets/content_widgets.dart';
@@ -25,10 +26,12 @@ class AdminCitasScreen extends StatefulWidget {
 class _AdminCitasScreenState extends State<AdminCitasScreen> {
   static const _appointmentsRepository = AppointmentsRepository();
   static const _userRepository = UserRepository();
+  static const _pdfExportService = PdfExportService();
   final _searchCtrl = TextEditingController();
   String _filtro = 'proximas';
   List<Cita> _citas = const [];
   bool _isLoading = true;
+  bool _isExporting = false;
   String? _loadError;
 
   static const _filtros = [
@@ -98,6 +101,25 @@ class _AdminCitasScreenState extends State<AdminCitasScreen> {
     }
   }
 
+  Future<void> _exportPdf() async {
+    if (_isExporting) return;
+    setState(() => _isExporting = true);
+    try {
+      final user = _userRepository.getCurrentUser();
+      await _pdfExportService.exportCitas(
+        _citas,
+        nombrePaciente: user.nombre,
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo exportar el PDF: $error')),
+      );
+    } finally {
+      if (mounted) setState(() => _isExporting = false);
+    }
+  }
+
   Future<void> _deleteAppointment(String id) async {
     try {
       await _appointmentsRepository.delete(id);
@@ -130,6 +152,27 @@ class _AdminCitasScreenState extends State<AdminCitasScreen> {
       subtitle: '${allAppointments.length} registradas · ${user.nombre}',
       onBack: widget.showBackButton ? () => Navigator.maybePop(context) : null,
       compactHeader: true,
+      headerTrailing: _isExporting
+          ? const SizedBox(
+              width: 32,
+              height: 32,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : IconButton(
+              icon: const Icon(Icons.picture_as_pdf_rounded),
+              color: AppColors.textSecondary,
+              tooltip: 'Exportar PDF',
+              onPressed: _citas.isEmpty ? null : _exportPdf,
+              style: IconButton.styleFrom(
+                backgroundColor: AppColors.surfaceRaised,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  side: const BorderSide(color: AppColors.surfaceBorder),
+                ),
+                padding: const EdgeInsets.all(6),
+                minimumSize: const Size(34, 34),
+              ),
+            ),
       stats: Row(
         children: [
           Expanded(
@@ -206,9 +249,7 @@ class _AdminCitasScreenState extends State<AdminCitasScreen> {
                   child: lista.isEmpty
                       ? Padding(
                           padding: const EdgeInsets.all(AppSpacing.xl),
-                          child: EmptyStateCard.noAppointments(
-                            onAdd: () => _showAddForm(context),
-                          ),
+                          child: EmptyStateCard.noAppointments(),
                         )
                       : RefreshIndicator(
                           onRefresh: () =>
@@ -250,8 +291,8 @@ class _AdminCitasScreenState extends State<AdminCitasScreen> {
       secondaryGlowAlignment: const Alignment(-1, 0.18),
       intensity: 0.66,
       floatingActionButton: AdminSectionFab(
-        color: AppColors.orange,
-        foregroundColor: Colors.white,
+        color: AppColors.amber,
+        foregroundColor: AppColors.textOnAmber,
         hasBottomNav: hasBottomNav,
         compact: true,
         onPressed: () => _showAddForm(context),
@@ -353,11 +394,14 @@ class _CitaFormState extends State<_CitaForm> {
     final t = await showTimePicker(
       context: context,
       initialTime: const TimeOfDay(hour: 10, minute: 0),
-      builder: (ctx, child) => Theme(
-        data: ThemeData.dark().copyWith(
-          colorScheme: const ColorScheme.dark(primary: AppColors.orange),
+      builder: (ctx, child) => MediaQuery(
+        data: MediaQuery.of(ctx).copyWith(alwaysUse24HourFormat: true),
+        child: Theme(
+          data: ThemeData.dark().copyWith(
+            colorScheme: const ColorScheme.dark(primary: AppColors.orange),
+          ),
+          child: child!,
         ),
-        child: child!,
       ),
     );
     if (t != null) setState(() => _hora = t);

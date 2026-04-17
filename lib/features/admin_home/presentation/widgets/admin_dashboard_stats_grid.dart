@@ -20,9 +20,9 @@ class AdminDashboardStatsGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final pct = (adherencia.adherencia * 100).round();
-    final adherenciaColor = pct >= 70
+    final adherenciaColor = pct >= 80
         ? AppColors.success
-        : (pct >= 40 ? AppColors.warning : AppColors.orange);
+        : (pct >= 50 ? AppColors.warning : AppColors.danger);
 
     final cards = [
       SummaryStatCard(

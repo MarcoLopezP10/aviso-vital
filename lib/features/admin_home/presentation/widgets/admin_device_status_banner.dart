@@ -39,7 +39,7 @@ class _AdminDeviceStatusBannerState extends State<AdminDeviceStatusBanner> {
         final data = snapshot.data ?? const _DeviceBannerData();
         final color = data.connected ? AppColors.success : AppColors.warning;
         final label = data.connected
-            ? '${data.userName ?? 'Usuario vinculado'} · Sync hace ${_syncLabel(data.lastSync)}'
+            ? '${data.userName ?? 'Usuario vinculado'} · Conectado'
             : 'Sin usuario mayor vinculado todavía';
 
         return GestureDetector(
@@ -126,11 +126,3 @@ class _DeviceBannerData {
   });
 }
 
-String _syncLabel(DateTime? ultima) {
-  if (ultima == null) return 'desconocido';
-  final diff = DateTime.now().difference(ultima);
-  if (diff.inMinutes < 1) return 'ahora mismo';
-  if (diff.inMinutes < 60) return '${diff.inMinutes} min';
-  if (diff.inHours < 24) return '${diff.inHours}h';
-  return '${diff.inDays}d';
-}

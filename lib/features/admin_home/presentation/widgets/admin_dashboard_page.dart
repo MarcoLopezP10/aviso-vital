@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:aviso_vital_2/core/services/realtime_service.dart';
 import 'package:aviso_vital_2/data/models/models.dart';
 import 'package:aviso_vital_2/data/repositories/alerts_repository.dart';
 import 'package:aviso_vital_2/data/repositories/appointments_repository.dart';
@@ -41,11 +43,36 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
 
   late Future<_DashboardData> _dashboardFuture;
   int _deviceBannerRefreshSeed = 0;
+  final _realtimeService = RealtimeService();
+  StreamSubscription<RealtimeChangeType>? _realtimeSub;
+  Timer? _debounce;
 
   @override
   void initState() {
     super.initState();
     _dashboardFuture = _loadDashboardData();
+    _realtimeService.start();
+    _realtimeSub = _realtimeService.changes.listen(_onRealtimeChange);
+  }
+
+  void _onRealtimeChange(RealtimeChangeType _) {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(seconds: 2), () {
+      if (!mounted) return;
+      final future = _loadDashboardData(forceRefresh: true);
+      setState(() {
+        _dashboardFuture = future;
+        _deviceBannerRefreshSeed++;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _realtimeSub?.cancel();
+    _realtimeService.dispose();
+    super.dispose();
   }
 
   Future<_DashboardData> _loadDashboardData({bool forceRefresh = false}) async {
@@ -158,10 +185,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                   isWide ? AppSpacing.xxl : AppSpacing.xl,
                   isWide ? AppSpacing.xxl : AppSpacing.xl,
                   // Sin bottom nav en layout wide; con bottom nav añadir su
-                  // altura (kBottomNavigationBarHeight ≈ 80px) + 24px margen
-                  isWide
-                      ? AppSpacing.xxl
-                      : kBottomNavigationBarHeight + AppSpacing.xxl,
+                  // altura + margen suficiente para el último card
+                  isWide ? AppSpacing.xxl : kBottomNavigationBarHeight + 80,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

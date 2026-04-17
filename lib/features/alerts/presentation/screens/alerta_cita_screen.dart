@@ -5,6 +5,7 @@ import 'package:aviso_vital_2/data/models/models.dart';
 import 'package:aviso_vital_2/data/repositories/alerts_repository.dart';
 import 'package:aviso_vital_2/data/repositories/appointments_repository.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
+import 'package:aviso_vital_2/shared/utils/plural_helper.dart';
 import 'package:aviso_vital_2/shared/widgets/shared_widgets.dart';
 
 /// Pantalla: Alerta de Cita Médica — flujo Carmen
@@ -42,10 +43,10 @@ class _AlertaCitaScreenState extends State<AlertaCitaScreen> {
     final nowMin = now.hour * 60 + now.minute;
     final diff = citaMin - nowMin;
     if (diff <= 0) return 'Ahora';
-    if (diff < 60) return 'en $diff minutos';
+    if (diff < 60) return PluralHelper.minutesUntil(diff);
     final h = diff ~/ 60;
     final m = diff % 60;
-    return m == 0 ? 'en $h hora${h > 1 ? 's' : ''}' : 'en ${h}h ${m}min';
+    return PluralHelper.hoursUntil(h, m);
   }
 
   Future<void> _confirmar(_AppointmentAlertData data) async {

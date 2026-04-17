@@ -26,6 +26,9 @@ class AuthSwitchLink extends StatelessWidget {
           ),
         ),
         child: RichText(
+          textAlign: TextAlign.center,
+          softWrap: true,
+          overflow: TextOverflow.visible,
           text: TextSpan(
             style: AppTextStyles.bodySmall,
             children: [

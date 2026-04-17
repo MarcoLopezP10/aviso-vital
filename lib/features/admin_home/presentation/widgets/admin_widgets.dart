@@ -685,7 +685,10 @@ class ConnectionStatusCard extends StatelessWidget {
     final diff = DateTime.now().difference(dt);
     if (diff.inMinutes < 1) return 'ahora mismo';
     if (diff.inMinutes < 60) return 'hace ${diff.inMinutes} min';
-    return 'hace ${diff.inHours}h';
+    if (diff.inHours < 24) return 'hace ${diff.inHours} h';
+    if (diff.inDays < 7) return 'hace ${diff.inDays} días';
+    if (diff.inDays < 30) return 'hace ${(diff.inDays / 7).floor()} semanas';
+    return 'hace mucho tiempo · revisa la conexión';
   }
 
   String _formatDate(DateTime dt) => '${dt.day}/${dt.month}/${dt.year}';

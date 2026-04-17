@@ -104,7 +104,10 @@ class MedicationCard extends StatelessWidget {
                   if ((!compact || forceStockBar) &&
                       medicamento.horasToma.isNotEmpty) ...[
                     SizedBox(height: compact ? 5 : 6),
-                    _StockBar(medicamento: medicamento),
+                    StockProgressBar(
+                      stockActual: medicamento.stockActual,
+                      stockMinimo: medicamento.stockMinimo,
+                    ),
                   ],
                 ],
               ),
@@ -133,45 +136,6 @@ class MedicationCard extends StatelessWidget {
     FormaPastilla.ovalada => FormShape.oval,
     FormaPastilla.capsula => FormShape.capsule,
   };
-}
-
-class _StockBar extends StatelessWidget {
-  final Medicamento med;
-  const _StockBar({required this.medicamento}) : med = medicamento;
-  final Medicamento medicamento;
-
-  @override
-  Widget build(BuildContext context) {
-    final ratio = (med.stockActual / (med.stockMinimo * 4)).clamp(0.0, 1.0);
-    final color = med.stockBajo ? AppColors.danger : AppColors.success;
-
-    return Row(
-      children: [
-        Expanded(
-          child: ClipRRect(
-            borderRadius: AppRadius.chip,
-            child: SizedBox(
-              height: 6,
-              child: LinearProgressIndicator(
-                value: ratio,
-                minHeight: 6,
-                backgroundColor: AppColors.surfaceBorder,
-                valueColor: AlwaysStoppedAnimation(color),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Text(
-          '${med.stockActual} / mín ${med.stockMinimo}',
-          style: AppTextStyles.caption.copyWith(
-            color: med.stockBajo ? AppColors.danger : AppColors.textTertiary,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ],
-    );
-  }
 }
 
 class _ActionsMenu extends StatelessWidget {
