@@ -111,10 +111,20 @@ class _AdminMedicamentosScreenState extends State<AdminMedicamentosScreen> {
         _medicamentos,
         nombrePaciente: user.nombre,
       );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('PDF descargado correctamente'),
+          backgroundColor: Color(0xFF16A34A),
+        ),
+      );
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('No se pudo exportar el PDF: $error')),
+        SnackBar(
+          content: Text('No se pudo generar el archivo: $error'),
+          backgroundColor: const Color(0xFFDC2626),
+        ),
       );
     } finally {
       if (mounted) setState(() => _isExporting = false);

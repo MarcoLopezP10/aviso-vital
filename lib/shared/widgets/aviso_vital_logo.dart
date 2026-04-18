@@ -67,14 +67,9 @@ class _AvisoVitalLogoState extends State<AvisoVitalLogo>
         boxShadow: widget.showGlow
             ? [
                 BoxShadow(
-                  color: AppColors.amber.withValues(alpha: 0.32),
-                  blurRadius: 24,
-                  spreadRadius: 3,
-                ),
-                BoxShadow(
-                  color: AppColors.orange.withValues(alpha: 0.14),
-                  blurRadius: 40,
-                  spreadRadius: 6,
+                  color: const Color(0xFFFF7A00).withValues(alpha: 0.50),
+                  blurRadius: 60,
+                  spreadRadius: 10,
                 ),
               ]
             : null,

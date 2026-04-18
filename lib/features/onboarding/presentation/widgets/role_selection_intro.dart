@@ -8,7 +8,7 @@ class RoleSelectionIntro extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Text(
-      'Elige cómo quieres acceder a Aviso Vital.',
+      'Elija cómo quiere acceder a Aviso Vital.',
       textAlign: TextAlign.center,
       style: AppTextStyles.body.copyWith(
         color: AppColors.textSecondary,

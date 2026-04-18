@@ -1002,7 +1002,7 @@ class _ConfirmedMedicationView extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              'La toma ha quedado registrada.\nPuedes continuar con tranquilidad.',
+              'La toma ha quedado registrada.\nPuede continuar con tranquilidad.',
               textAlign: TextAlign.center,
               style: AppTextStyles.bodyLarge.copyWith(
                 color: AppColors.textSecondary,

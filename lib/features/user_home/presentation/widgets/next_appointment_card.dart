@@ -2,6 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:aviso_vital_2/data/models/models.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 
+String _daysBadge(Cita c) {
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  final citaDay = DateTime(c.fecha.year, c.fecha.month, c.fecha.day);
+  final diff = citaDay.difference(today).inDays;
+  if (diff <= 0) return 'Hoy';
+  if (diff == 1) return 'Mañana';
+  return 'En $diff días';
+}
+
 class NextAppointmentCard extends StatelessWidget {
   final Cita? appointment;
   final VoidCallback? onTap;
@@ -13,10 +23,8 @@ class NextAppointmentCard extends StatelessWidget {
     // Sin cita próxima: no mostrar nada — la sección entera queda oculta
     if (appointment == null) return const SizedBox.shrink();
 
-    final statusLabel = appointment!.esHoy ? 'Hoy' : 'Próxima';
-    final secondaryLabel = appointment!.esHoy
-        ? appointment!.lugar
-        : '${appointment!.lugar} · ${appointment!.fecha.day}/${appointment!.fecha.month}';
+    final statusLabel = _daysBadge(appointment!);
+    final secondaryLabel = appointment!.lugar;
 
     return GestureDetector(
       onTap: onTap,
@@ -59,7 +67,7 @@ class NextAppointmentCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(appointment!.especialidad, style: AppTextStyles.h4),
+                  Text(appointment!.especialidad, style: AppTextStyles.h2),
                   const SizedBox(height: 3),
                   Text(
                     secondaryLabel,

@@ -9,7 +9,7 @@ abstract class AuthErrorMapper {
       return 'Email o contraseña incorrectos.';
     }
     if (message.contains('Email not confirmed')) {
-      return 'Confirma tu email antes de iniciar sesión.';
+      return 'Confirme su email antes de iniciar sesión.';
     }
     if (error is AuthException && error.message.trim().isNotEmpty) {
       return error.message;

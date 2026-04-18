@@ -53,7 +53,7 @@ class RoleSelectionScreen extends StatelessWidget {
                             const RoleSelectionBenefits(),
                             const Spacer(),
                             Text(
-                              'Selecciona tu perfil',
+                              'Seleccione su perfil',
                               style: AppTextStyles.label.copyWith(
                                 color: AppColors.textTertiary,
                                 letterSpacing: 0.3,

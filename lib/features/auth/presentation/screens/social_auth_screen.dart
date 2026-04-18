@@ -122,7 +122,7 @@ class _SocialAuthScreenState extends State<SocialAuthScreen> {
       return 'La contraseña no cumple la longitud mínima requerida.';
     }
     if (message.contains('Email not confirmed')) {
-      return 'Confirma tu email antes de iniciar sesión.';
+      return 'Confirme su email antes de iniciar sesión.';
     }
     if (error is AuthException && error.message.trim().isNotEmpty) {
       return error.message;
@@ -297,8 +297,8 @@ class _FacebookAuthView extends StatelessWidget {
               Center(
                 child: Text(
                   data.isSignup
-                      ? 'Crea tu cuenta con Facebook'
-                      : 'Accede con tu cuenta de Facebook',
+                      ? 'Cree su cuenta con Facebook'
+                      : 'Acceda con su cuenta de Facebook',
                   style: const TextStyle(color: _textSub, fontSize: 14),
                 ),
               ),
@@ -314,7 +314,7 @@ class _FacebookAuthView extends StatelessWidget {
                       keyboardType: TextInputType.emailAddress,
                       validator: (v) {
                         if (v == null || v.trim().isEmpty) {
-                          return 'Introduce tu email';
+                          return 'Introduzca su email';
                         }
                         if (!v.contains('@')) return 'Email no válido';
                         return null;
@@ -331,7 +331,7 @@ class _FacebookAuthView extends StatelessWidget {
                               ?.replaceAll(RegExp(r'[^A-Za-z0-9]'), '')
                               .trim();
                           if (n == null || n.isEmpty) {
-                            return 'Introduce el código';
+                            return 'Introduzca el código';
                           }
                           if (n.length != 6) {
                             return 'El código debe tener 6 caracteres';
@@ -357,7 +357,7 @@ class _FacebookAuthView extends StatelessWidget {
                       ),
                       validator: (v) {
                         if (v == null || v.isEmpty) {
-                          return 'Introduce una contraseña';
+                          return 'Introduzca una contraseña';
                         }
                         if (v.length < 6) return 'Mínimo 6 caracteres';
                         return null;
@@ -381,7 +381,7 @@ class _FacebookAuthView extends StatelessWidget {
                         ),
                         validator: (v) {
                           if (v == null || v.isEmpty) {
-                            return 'Confirma la contraseña';
+                            return 'Confirme la contraseña';
                           }
                           if (v != data.passCtrl.text) {
                             return 'Las contraseñas no coinciden';
@@ -420,7 +420,7 @@ class _FacebookAuthView extends StatelessWidget {
                     if (!data.isSignup)
                       const Center(
                         child: Text(
-                          '¿Has olvidado tu contraseña?',
+                          '¿Ha olvidado su contraseña?',
                           style: TextStyle(color: _textSub, fontSize: 14),
                         ),
                       ),
@@ -444,8 +444,8 @@ class _FacebookAuthView extends StatelessWidget {
                   onTap: data.onSwitchMode,
                   child: Text(
                     data.isSignup
-                        ? '¿Ya tienes cuenta? Inicia sesión'
-                        : '¿No tienes cuenta? Regístrate',
+                        ? '¿Ya tiene cuenta? Inicie sesión'
+                        : '¿No tiene cuenta? Regístrese',
                     style: const TextStyle(
                       color: _blue,
                       fontSize: 14,
@@ -660,8 +660,8 @@ class _AppleAuthView extends StatelessWidget {
                           Center(
                             child: Text(
                               data.isSignup
-                                  ? 'Crea tu cuenta con Apple'
-                                  : 'Continúa con tu Apple ID',
+                                  ? 'Cree su cuenta con Apple'
+                                  : 'Continúe con su Apple ID',
                               textAlign: TextAlign.center,
                               style: const TextStyle(
                                 color: _textSub,
@@ -716,7 +716,7 @@ class _AppleAuthView extends StatelessWidget {
                                   keyboardType: TextInputType.emailAddress,
                                   validator: (v) {
                                     if (v == null || v.trim().isEmpty) {
-                                      return 'Introduce tu email';
+                                      return 'Introduzca su email';
                                     }
                                     if (!v.contains('@')) {
                                       return 'Email no válido';
@@ -740,7 +740,7 @@ class _AppleAuthView extends StatelessWidget {
                                           )
                                           .trim();
                                       if (n == null || n.isEmpty) {
-                                        return 'Introduce el código';
+                                        return 'Introduzca el código';
                                       }
                                       if (n.length != 6) {
                                         return 'El código debe tener 6 caracteres';
@@ -768,7 +768,7 @@ class _AppleAuthView extends StatelessWidget {
                                   ),
                                   validator: (v) {
                                     if (v == null || v.isEmpty) {
-                                      return 'Introduce una contraseña';
+                                      return 'Introduzca una contraseña';
                                     }
                                     if (v.length < 6) {
                                       return 'Mínimo 6 caracteres';
@@ -798,7 +798,7 @@ class _AppleAuthView extends StatelessWidget {
                                     ),
                                     validator: (v) {
                                       if (v == null || v.isEmpty) {
-                                        return 'Confirma la contraseña';
+                                        return 'Confirme la contraseña';
                                       }
                                       if (v != data.passCtrl.text) {
                                         return 'Las contraseñas no coinciden';
@@ -852,8 +852,8 @@ class _AppleAuthView extends StatelessWidget {
                                     onTap: data.onSwitchMode,
                                     child: Text(
                                       data.isSignup
-                                          ? '¿Ya tienes cuenta? Inicia sesión'
-                                          : '¿No tienes cuenta? Regístrate',
+                                          ? '¿Ya tiene cuenta? Inicie sesión'
+                                          : '¿No tiene cuenta? Regístrese',
                                       style: const TextStyle(
                                         color: _blue,
                                         fontSize: 15,
@@ -1032,8 +1032,8 @@ class _GoogleAuthView extends StatelessWidget {
                               ? 'Crear cuenta'
                               : 'Iniciar sesión';
                           final subtitle = data.isSignup
-                              ? 'con Google para sincronizar tu cuenta de Aviso Vital'
-                              : 'con Google para seguir con tus recordatorios';
+                              ? 'con Google para sincronizar su cuenta de Aviso Vital'
+                              : 'con Google para seguir con sus recordatorios';
 
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1191,7 +1191,7 @@ class _GoogleAuthView extends StatelessWidget {
                                       keyboardType: TextInputType.emailAddress,
                                       validator: (v) {
                                         if (v == null || v.trim().isEmpty) {
-                                          return 'Introduce tu email';
+                                          return 'Introduzca su email';
                                         }
                                         if (!v.contains('@')) {
                                           return 'Email no válido';
@@ -1214,7 +1214,7 @@ class _GoogleAuthView extends StatelessWidget {
                                               )
                                               .trim();
                                           if (n == null || n.isEmpty) {
-                                            return 'Introduce el código';
+                                            return 'Introduzca el código';
                                           }
                                           if (n.length != 6) {
                                             return 'El código debe tener 6 caracteres';
@@ -1249,7 +1249,7 @@ class _GoogleAuthView extends StatelessWidget {
                                       ),
                                       validator: (v) {
                                         if (v == null || v.isEmpty) {
-                                          return 'Introduce una contraseña';
+                                          return 'Introduzca una contraseña';
                                         }
                                         if (v.length < 6) {
                                           return 'Mínimo 6 caracteres';
@@ -1284,7 +1284,7 @@ class _GoogleAuthView extends StatelessWidget {
                                         ),
                                         validator: (v) {
                                           if (v == null || v.isEmpty) {
-                                            return 'Confirma la contraseña';
+                                            return 'Confirme la contraseña';
                                           }
                                           if (v != data.passCtrl.text) {
                                             return 'Las contraseñas no coinciden';

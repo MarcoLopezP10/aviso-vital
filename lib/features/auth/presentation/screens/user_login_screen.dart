@@ -87,9 +87,9 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
             const AuthHeroCard(
               eyebrow: 'Acceso Usuario',
               eyebrowColor: AppColors.amberLight,
-              title: 'Tu espacio\nde avisos',
+              title: 'Su espacio\nde avisos',
               description:
-                  'Accede a tus recordatorios y a la simulación en tiempo real con tu cuenta.',
+                  'Acceda a sus recordatorios y a la simulación en tiempo real con su cuenta.',
             ),
             const SizedBox(height: AppSpacing.xl),
             AuthFormCard(
@@ -146,7 +146,7 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
             ),
             const SizedBox(height: AppSpacing.lg),
             AuthSwitchLink(
-              prompt: '¿No tienes cuenta? ',
+              prompt: '¿No tiene cuenta? ',
               actionLabel: 'Crear cuenta',
               onPressed: () =>
                   Navigator.pushNamed(context, UserSignupScreen.routeName),

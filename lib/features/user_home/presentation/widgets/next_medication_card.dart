@@ -48,23 +48,23 @@ class NextMedicationCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Hora — elemento más prominente
+            // Hora — elemento más prominente (40sp)
             Text(
               'A las $timeLabel',
-              style: AppTextStyles.userHour,
+              style: AppTextStyles.userHour.copyWith(fontSize: 40),
             ),
             const SizedBox(height: AppSpacing.sm),
-            // Nombre del medicamento
+            // Nombre del medicamento (28sp)
             Text(
               medication.nombre,
-              style: AppTextStyles.userMedName,
+              style: AppTextStyles.userMedName.copyWith(fontSize: 28),
               overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: AppSpacing.xs),
-            // Dosis o instrucciones como contexto secundario
+            // Dosis o instrucciones como contexto secundario (18sp)
             Text(
               medication.instrucciones ?? medication.dosis,
-              style: AppTextStyles.userMedDose,
+              style: AppTextStyles.userMedDose.copyWith(fontSize: 18),
               overflow: TextOverflow.ellipsis,
             ),
           ],

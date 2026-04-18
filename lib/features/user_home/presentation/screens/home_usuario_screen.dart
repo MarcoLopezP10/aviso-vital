@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:aviso_vital_2/app/router/app_routes.dart';
 import 'package:aviso_vital_2/core/services/care_plan_context_service.dart';
@@ -10,8 +9,6 @@ import 'package:aviso_vital_2/features/alerts/presentation/screens/alerta_cita_s
 import 'package:aviso_vital_2/features/alerts/presentation/screens/alerta_medicacion_screen.dart';
 import 'package:aviso_vital_2/features/user_home/presentation/widgets/next_appointment_card.dart';
 import 'package:aviso_vital_2/features/user_home/presentation/widgets/next_medication_card.dart';
-import 'package:aviso_vital_2/features/user_home/presentation/widgets/daily_progress_card.dart';
-import 'package:aviso_vital_2/features/user_home/presentation/widgets/quick_actions_strip.dart';
 import 'package:aviso_vital_2/features/user_home/presentation/widgets/user_home_header.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 import 'package:aviso_vital_2/shared/widgets/shared_widgets.dart';
@@ -40,8 +37,6 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final screenH = MediaQuery.of(context).size.height;
-
     return PremiumScreenScaffold(
       variant: PremiumBackgroundVariant.soft,
       primaryGlowColor: AppColors.amber,
@@ -58,46 +53,28 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
 
             if (snapshot.hasError) {
               return _buildErrorState(
-                screenH: screenH,
                 message:
                     'No se pudo cargar el inicio del usuario: ${snapshot.error}',
               );
             }
 
-            final data = snapshot.data!;
-            return _buildLoadedState(screenH: screenH, data: data);
+            return _buildLoadedState(data: snapshot.data!);
           },
         ),
       ),
     );
   }
 
-  Widget _buildErrorState({required double screenH, required String message}) {
+  Widget _buildErrorState({required String message}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(height: math.max(screenH * 0.05, AppSpacing.minSection)),
-          AppBackButton(onPressed: _handleUserAreaBack),
-          const SizedBox(height: AppSpacing.lg),
-          Expanded(
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.xl),
-                child: Text(message, textAlign: TextAlign.center),
-              ),
-            ),
-          ),
-        ],
+      padding: const EdgeInsets.all(AppSpacing.xxl),
+      child: Center(
+        child: Text(message, textAlign: TextAlign.center),
       ),
     );
   }
 
-  Widget _buildLoadedState({
-    required double screenH,
-    required _UserHomeViewData data,
-  }) {
+  Widget _buildLoadedState({required _UserHomeViewData data}) {
     return RefreshIndicator(
       onRefresh: () async {
         final future = _buildViewData(forceRefresh: true);
@@ -116,27 +93,22 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SizedBox(height: math.max(screenH * 0.05, AppSpacing.minSection)),
-              AppBackButton(onPressed: _handleUserAreaBack),
-              SizedBox(
-                height: math.max(screenH * 0.028, AppSpacing.minSection * 0.7),
-              ),
+              const SizedBox(height: AppSpacing.xl),
+
+              // ── ZONA A: Header ──────────────────────────────────────
               UserHomeHeader(
                 greeting: data.greeting,
                 dateLabel: data.dateLabel,
                 avatarInitial: data.avatarInitial,
                 trailing: _LogoutButton(onPressed: _handleUserAreaBack),
               ),
-              SizedBox(height: math.max(screenH * 0.035, AppSpacing.minSection)),
-              DailyProgressCard(
-                confirmed: data.confirmedToday,
-                total: data.totalToday,
-                pending: data.pendingToday,
-              ),
+
+              const SizedBox(height: AppSpacing.xxl),
+
+              // ── ZONA B: Próxima medicación ──────────────────────────
+              const _SectionLabel('Próxima medicación'),
               const SizedBox(height: AppSpacing.sm),
-              QuickActionsStrip(pendingCount: data.pendingToday),
-              SizedBox(height: math.max(screenH * 0.04, AppSpacing.minSection)),
-              if (data.nextMedication != null) ...[
+              if (data.nextMedication != null)
                 NextMedicationCard(
                   medication: data.nextMedication!,
                   timeLabel: data.nextMedicationTime,
@@ -144,12 +116,16 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
                     context,
                     AlertaMedicacionScreen.routeName,
                   ),
-                ),
-                SizedBox(
-                  height: math.max(screenH * 0.03, AppSpacing.sm),
-                ),
-              ],
+                )
+              else
+                const _EmptyMedicationCard(),
+
+              const SizedBox(height: AppSpacing.xxl),
+
+              // ── ZONA C: Próxima cita (solo si existe) ───────────────
               if (data.todayAppointment != null) ...[
+                const _SectionLabel('Próxima cita médica'),
+                const SizedBox(height: AppSpacing.sm),
                 NextAppointmentCard(
                   appointment: data.todayAppointment,
                   onTap: () => Navigator.pushNamed(
@@ -158,23 +134,20 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
                     arguments: {'appointmentId': data.todayAppointment!.id},
                   ),
                 ),
-                SizedBox(
-                  height: math.max(screenH * 0.03, AppSpacing.sm),
-                ),
+                const SizedBox(height: AppSpacing.xxl),
               ],
-              if (data.weekDoses.isNotEmpty) ...[
-                WeeklyAdherenceStrip(weekDoses: data.weekDoses),
-                SizedBox(
-                  height: math.max(screenH * 0.04, AppSpacing.minSection),
-                ),
-              ],
+
+              // ── ZONA D: Botón simulador ─────────────────────────────
               PrimaryButton.large(
-                label: 'Ver mi móvil en pruebas',
+                label: 'Ver su móvil en pruebas',
                 icon: Icons.smartphone_rounded,
-                onPressed: () =>
-                    Navigator.pushNamed(context, AppRoutes.simulacionAlertas),
+                onPressed: () => Navigator.pushNamed(
+                  context,
+                  AppRoutes.simulacionAlertas,
+                ),
               ),
-              SizedBox(height: math.max(screenH * 0.05, AppSpacing.minSection)),
+
+              const SizedBox(height: AppSpacing.xxl),
             ],
           ),
         ),
@@ -211,24 +184,16 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
         userId: ownerId,
         forceRefresh: forceRefresh,
       ),
-      _medicationsRepository.fetchWeekDoses(userId: ownerId),
     ]).timeout(AppDurations.networkTimeout);
 
     final medicationSnapshot = results[0] as MedicationDailySnapshot;
     final appointments = results[1] as List<Cita>;
-    final weekDoses = results[2] as List<Toma>;
-    final sortedUpcomingAppointments =
-        appointments.where((item) => !item.esPasada).toList(growable: false)
+    final sortedUpcoming =
+        appointments.where((c) => !c.esPasada).toList(growable: false)
           ..sort((a, b) => a.fechaHora.compareTo(b.fechaHora));
-    final todayAppointment = sortedUpcomingAppointments.firstOrNull;
-    final pendingToday = medicationSnapshot.pendingTodayCount;
-    final dosesToday = medicationSnapshot.doses;
+    final nextAppointment = sortedUpcoming.firstOrNull;
     final profile =
         contextData.careRecipientProfile ?? contextData.viewerProfile;
-    final confirmedToday = dosesToday
-        .where((dose) => dose.estado == EstadoToma.confirmada)
-        .length;
-    final totalToday = dosesToday.length;
     final now = DateTime.now();
     final firstName = (profile?.nombre ?? '').split(' ').first;
     final greeting = firstName.isEmpty || firstName.toLowerCase() == 'usuario'
@@ -241,11 +206,7 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
       avatarInitial: firstName.isNotEmpty ? firstName[0] : null,
       nextMedication: medicationSnapshot.upcomingMedication,
       nextMedicationTime: medicationSnapshot.upcomingTime,
-      todayAppointment: todayAppointment,
-      pendingToday: pendingToday,
-      confirmedToday: confirmedToday,
-      totalToday: totalToday,
-      weekDoses: weekDoses,
+      todayAppointment: nextAppointment,
     );
   }
 
@@ -257,32 +218,18 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
 
   String _formatDate(DateTime date) {
     const months = [
-      'enero',
-      'febrero',
-      'marzo',
-      'abril',
-      'mayo',
-      'junio',
-      'julio',
-      'agosto',
-      'septiembre',
-      'octubre',
-      'noviembre',
-      'diciembre',
+      'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+      'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
     ];
     const days = [
-      'lunes',
-      'martes',
-      'miércoles',
-      'jueves',
-      'viernes',
-      'sábado',
-      'domingo',
+      'lunes', 'martes', 'miércoles', 'jueves',
+      'viernes', 'sábado', 'domingo',
     ];
-
     return '${days[date.weekday - 1]}, ${date.day} de ${months[date.month - 1]}';
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 class _UserHomeViewData {
   final String greeting;
@@ -291,10 +238,6 @@ class _UserHomeViewData {
   final Medicamento? nextMedication;
   final String nextMedicationTime;
   final Cita? todayAppointment;
-  final int pendingToday;
-  final int confirmedToday;
-  final int totalToday;
-  final List<Toma> weekDoses;
 
   const _UserHomeViewData({
     required this.greeting,
@@ -303,12 +246,60 @@ class _UserHomeViewData {
     required this.nextMedication,
     required this.nextMedicationTime,
     required this.todayAppointment,
-    required this.pendingToday,
-    required this.confirmedToday,
-    required this.totalToday,
-    required this.weekDoses,
   });
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _SectionLabel extends StatelessWidget {
+  final String text;
+  const _SectionLabel(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: AppTextStyles.body.copyWith(
+        color: AppColors.textTertiary,
+        fontSize: 16,
+        fontWeight: FontWeight.w500,
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _EmptyMedicationCard extends StatelessWidget {
+  const _EmptyMedicationCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xxl,
+        vertical: AppSpacing.xl,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceFloating,
+        borderRadius: AppRadius.cardLg,
+        border: Border.all(color: AppColors.surfaceBorder),
+      ),
+      child: Text(
+        'No tiene medicación pendiente hoy',
+        textAlign: TextAlign.center,
+        style: AppTextStyles.body.copyWith(
+          color: AppColors.textSecondary,
+          fontSize: 18,
+          height: 1.4,
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 class _LogoutButton extends StatelessWidget {
   final VoidCallback? onPressed;
@@ -330,8 +321,8 @@ class _LogoutButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(10),
             side: const BorderSide(color: AppColors.surfaceBorder),
           ),
-          padding: const EdgeInsets.all(8),
-          minimumSize: const Size(36, 36),
+          padding: const EdgeInsets.all(10),
+          minimumSize: const Size(48, 48),
         ),
       ),
     );

@@ -85,7 +85,7 @@ class _UserSignupScreenState extends State<UserSignupScreen> {
               eyebrowColor: AppColors.amberLight,
               title: 'Crear cuenta\ny vincular',
               description:
-                  'Crea tu cuenta y enlázala al administrador usando su código de vinculación.',
+                  'Cree su cuenta y enlácela al administrador usando su código de vinculación.',
             ),
             const SizedBox(height: AppSpacing.xl),
             AuthFormCard(
@@ -115,7 +115,7 @@ class _UserSignupScreenState extends State<UserSignupScreen> {
                           ?.replaceAll(RegExp(r'[^A-Za-z0-9]'), '')
                           .trim();
                       if (normalized == null || normalized.isEmpty) {
-                        return 'Introduce el código del administrador';
+                        return 'Introduzca el código del administrador';
                       }
                       if (normalized.length != 6) {
                         return 'El código debe tener 6 caracteres';
@@ -142,7 +142,7 @@ class _UserSignupScreenState extends State<UserSignupScreen> {
                     ),
                     validator: (v) {
                       if (v == null || v.isEmpty) {
-                        return 'Introduce una contraseña';
+                        return 'Introduzca una contraseña';
                       }
                       if (v.length < 6) return 'Mínimo 6 caracteres';
                       return null;
@@ -167,7 +167,7 @@ class _UserSignupScreenState extends State<UserSignupScreen> {
                     ),
                     validator: (v) {
                       if (v == null || v.isEmpty) {
-                        return 'Confirma la contraseña';
+                        return 'Confirme la contraseña';
                       }
                       if (v != _passCtrl.text) {
                         return 'Las contraseñas no coinciden';
@@ -188,7 +188,7 @@ class _UserSignupScreenState extends State<UserSignupScreen> {
             ),
             const SizedBox(height: AppSpacing.lg),
             AuthSwitchLink(
-              prompt: '¿Ya tienes cuenta? ',
+              prompt: '¿Ya tiene cuenta? ',
               actionLabel: 'Iniciar sesión',
               onPressed: () => Navigator.pushReplacementNamed(
                 context,
