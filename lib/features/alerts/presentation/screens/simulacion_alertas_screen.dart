@@ -145,13 +145,11 @@ class _SimulacionAlertasScreenState extends State<SimulacionAlertasScreen> {
                         AppSpacing.xl,
                       ),
                       children: [
-                        _SimulationHintCard(
-                          syncedAt: _snapshot?.syncedAt,
-                          visibleCount: visibleNotifications.length,
-                        ),
+                        _SimulationHintCard(syncedAt: _snapshot?.syncedAt),
                         const SizedBox(height: AppSpacing.lg),
                         Center(
                           child: _PhoneFrame(
+                            currentTime: now,
                             visibleNotifications: visibleNotifications,
                             onTapNotification: _openNotification,
                           ),
@@ -232,12 +230,8 @@ class _SimulationErrorState extends StatelessWidget {
 
 class _SimulationHintCard extends StatelessWidget {
   final DateTime? syncedAt;
-  final int visibleCount;
 
-  const _SimulationHintCard({
-    required this.syncedAt,
-    required this.visibleCount,
-  });
+  const _SimulationHintCard({required this.syncedAt});
 
   @override
   Widget build(BuildContext context) {
@@ -250,30 +244,30 @@ class _SimulationHintCard extends StatelessWidget {
       children: [
         const Icon(Icons.sync_rounded, color: AppColors.textTertiary, size: 14),
         const SizedBox(width: 6),
-        Text(
-          'Última actualización: $syncLabel',
-          style: AppTextStyles.caption,
-        ),
+        Text('Última actualización: $syncLabel', style: AppTextStyles.caption),
       ],
     );
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Phone frame — tamaño dinámico: 65 % del ancho disponible (máx 400 px)
-//               altura = ancho × 19.5/9, máx 720 px
+// Phone frame — se adapta tanto al ancho como a la altura visible para que
+// el mockup entre completo en la pantalla de simulación.
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _PhoneFrame extends StatelessWidget {
+  static const _phoneAspectRatio = 17.8 / 9.0;
+  final DateTime currentTime;
   final List<LiveNotificationItem> visibleNotifications;
   final Future<void> Function(LiveNotificationItem item) onTapNotification;
 
   const _PhoneFrame({
+    required this.currentTime,
     required this.visibleNotifications,
     required this.onTapNotification,
   });
 
-  static const _frameColor  = Color(0xFF0A0A0A);
+  static const _frameColor = Color(0xFF0A0A0A);
   static const _frameBorder = Color(0xFF2A2A2A);
   static const _buttonColor = Color(0xFF1A1A1A);
 
@@ -281,103 +275,104 @@ class _PhoneFrame extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final phoneWidth =
-            (constraints.maxWidth * 0.65).clamp(280.0, 400.0);
-        final phoneHeight =
-            (phoneWidth * 19.5 / 9.0).clamp(0.0, 720.0);
+        final phoneWidth = (constraints.maxWidth * 0.55).clamp(320.0, 360.0);
+        final phoneHeight = phoneWidth * _phoneAspectRatio;
 
-    return SizedBox(
-      width: phoneWidth,
-      height: phoneHeight,
-      child: Stack(
-        clipBehavior: Clip.none,
-        alignment: Alignment.center,
-        children: [
-          // ── Phone body ──────────────────────────────────────────────
-          Container(
-            width: phoneWidth,
-            height: phoneHeight,
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: _frameColor,
-              borderRadius: BorderRadius.circular(44),
-              border: Border.all(color: _frameBorder, width: 2),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.50),
-                  blurRadius: 40,
-                  offset: const Offset(0, 24),
-                ),
-                BoxShadow(
-                  color: AppColors.amber.withValues(alpha: 0.06),
-                  blurRadius: 70,
-                  offset: const Offset(0, 10),
-                ),
-              ],
-            ),
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  begin: Alignment(-0.2, -1.0),
-                  end: Alignment(0.2, 1.0),
-                  colors: [
-                    Color(0xFF1A1A2E),
-                    Color(0xFF16213E),
-                    Color(0xFF0F1729),
+        return SizedBox(
+          width: phoneWidth,
+          height: phoneHeight,
+          child: Stack(
+            clipBehavior: Clip.none,
+            alignment: Alignment.center,
+            children: [
+              // ── Phone body ──────────────────────────────────────────────
+              Container(
+                width: phoneWidth,
+                height: phoneHeight,
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: _frameColor,
+                  borderRadius: BorderRadius.circular(44),
+                  border: Border.all(color: _frameBorder, width: 2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.50),
+                      blurRadius: 40,
+                      offset: const Offset(0, 24),
+                    ),
+                    BoxShadow(
+                      color: AppColors.amber.withValues(alpha: 0.06),
+                      blurRadius: 70,
+                      offset: const Offset(0, 10),
+                    ),
                   ],
-                  stops: [0.0, 0.5, 1.0],
                 ),
-                borderRadius: BorderRadius.circular(36),
-              ),
-              // Column fills the fixed-height screen exactly
-              child: Column(
-                children: [
-                  // ── Dynamic Island + system icons ── siempre visible
-                  const _StatusBar(),
-                  // ── Área de notificaciones — ocupa todo el espacio libre ──
-                  Expanded(
-                    child: visibleNotifications.isEmpty
-                        // Estado vacío: solo se ve el wallpaper oscuro
-                        ? const SizedBox.shrink()
-                        // Estado con notificaciones: slide-in desde arriba
-                        : _NotificationList(
-                            notifications: visibleNotifications,
-                            onTap: onTapNotification,
-                          ),
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      begin: Alignment(-0.2, -1.0),
+                      end: Alignment(0.2, 1.0),
+                      colors: [
+                        Color(0xFF1A1A2E),
+                        Color(0xFF16213E),
+                        Color(0xFF0F1729),
+                      ],
+                      stops: [0.0, 0.5, 1.0],
+                    ),
+                    borderRadius: BorderRadius.circular(36),
                   ),
-                  // ── Home indicator ── siempre visible
-                  const _HomeIndicator(),
-                ],
+                  child: Column(
+                    children: [
+                      // ── Dynamic Island ── siempre visible
+                      const _StatusBar(),
+                      SizedBox(height: 14 * (phoneWidth / 320)),
+                      _LockScreenHeader(
+                        now: currentTime,
+                        scale: phoneWidth / 320,
+                      ),
+                      SizedBox(height: 18 * (phoneWidth / 320)),
+                      // ── Área de notificaciones — ocupa todo el espacio libre ──
+                      Expanded(
+                        child: visibleNotifications.isEmpty
+                            ? const SizedBox.shrink()
+                            : _NotificationList(
+                                notifications: visibleNotifications,
+                                onTap: onTapNotification,
+                              ),
+                      ),
+                      // ── Home indicator ── siempre visible
+                      const _HomeIndicator(),
+                    ],
+                  ),
+                ),
               ),
-            ),
-          ),
 
-          // ── Left side buttons (mute · vol+ · vol−) ──────────────────
-          const Positioned(
-            left: -4,
-            top: 72,
-            child: _SideButton(height: 24, color: _buttonColor),
-          ),
-          const Positioned(
-            left: -4,
-            top: 108,
-            child: _SideButton(height: 44, color: _buttonColor),
-          ),
-          const Positioned(
-            left: -4,
-            top: 164,
-            child: _SideButton(height: 44, color: _buttonColor),
-          ),
+              // ── Left side buttons (mute · vol+ · vol−) ──────────────────
+              const Positioned(
+                left: -4,
+                top: 72,
+                child: _SideButton(height: 24, color: _buttonColor),
+              ),
+              const Positioned(
+                left: -4,
+                top: 108,
+                child: _SideButton(height: 44, color: _buttonColor),
+              ),
+              const Positioned(
+                left: -4,
+                top: 164,
+                child: _SideButton(height: 44, color: _buttonColor),
+              ),
 
-          // ── Right side button (power) ────────────────────────────────
-          const Positioned(
-            right: -4,
-            top: 120,
-            child: _SideButton(height: 64, color: _buttonColor),
+              // ── Right side button (power) ────────────────────────────────
+              const Positioned(
+                right: -4,
+                top: 120,
+                child: _SideButton(height: 64, color: _buttonColor),
+              ),
+            ],
           ),
-        ],
-      ),
-    );
+        );
       },
     );
   }
@@ -394,32 +389,81 @@ class _StatusBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-      child: Stack(
-        alignment: Alignment.center,
+      child: Center(
+        child: Container(
+          width: 100,
+          height: 26,
+          decoration: BoxDecoration(
+            color: const Color(0xFF050505),
+            borderRadius: BorderRadius.circular(20),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LockScreenHeader extends StatelessWidget {
+  final DateTime now;
+  final double scale;
+
+  const _LockScreenHeader({required this.now, required this.scale});
+
+  static const _weekdays = <String>[
+    'lunes',
+    'martes',
+    'miercoles',
+    'jueves',
+    'viernes',
+    'sabado',
+    'domingo',
+  ];
+
+  static const _months = <String>[
+    'enero',
+    'febrero',
+    'marzo',
+    'abril',
+    'mayo',
+    'junio',
+    'julio',
+    'agosto',
+    'septiembre',
+    'octubre',
+    'noviembre',
+    'diciembre',
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final timeLabel =
+        '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+    final dateLabel =
+        '${_weekdays[now.weekday - 1]}, ${now.day} de ${_months[now.month - 1]}';
+
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 20 * scale),
+      child: Column(
         children: [
-          // Dynamic Island pill — 100 × 26
-          Container(
-            width: 100,
-            height: 26,
-            decoration: BoxDecoration(
-              color: const Color(0xFF050505),
-              borderRadius: BorderRadius.circular(20),
+          Text(
+            timeLabel,
+            textAlign: TextAlign.center,
+            style: AppTextStyles.display1.copyWith(
+              color: Colors.white,
+              fontSize: 46 * scale,
+              fontWeight: FontWeight.w700,
+              height: 1,
             ),
           ),
-          // Right: signal + wifi + battery
-          const Positioned(
-            right: 0,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.signal_cellular_alt_rounded,
-                    color: Colors.white, size: 14),
-                SizedBox(width: 4),
-                Icon(Icons.wifi_rounded, color: Colors.white, size: 14),
-                SizedBox(width: 4),
-                Icon(Icons.battery_full_rounded,
-                    color: Colors.white, size: 16),
-              ],
+          SizedBox(height: 10 * scale),
+          Text(
+            dateLabel,
+            textAlign: TextAlign.center,
+            style: AppTextStyles.bodyLarge.copyWith(
+              color: Colors.white.withValues(alpha: 0.72),
+              fontSize: 16 * scale,
+              fontWeight: FontWeight.w600,
+              height: 1.2,
             ),
           ),
         ],
@@ -481,16 +525,13 @@ class _NotificationList extends StatelessWidget {
   final List<LiveNotificationItem> notifications;
   final Future<void> Function(LiveNotificationItem) onTap;
 
-  const _NotificationList({
-    required this.notifications,
-    required this.onTap,
-  });
+  const _NotificationList({required this.notifications, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+      padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
       child: Column(
         children: [
           for (int i = 0; i < notifications.length; i++) ...[
@@ -501,10 +542,7 @@ class _NotificationList extends StatelessWidget {
               curve: Curves.easeOutCubic,
               builder: (context, value, child) => Transform.translate(
                 offset: Offset(0, (1 - value) * -20),
-                child: Opacity(
-                  opacity: value.clamp(0.0, 1.0),
-                  child: child,
-                ),
+                child: Opacity(opacity: value.clamp(0.0, 1.0), child: child),
               ),
               child: SimulationNotificationCard(
                 item: notifications[i],

@@ -128,6 +128,8 @@ class _ExpandedNotificationContent extends StatelessWidget {
             Expanded(
               child: Text(
                 eyebrow,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: AppTextStyles.labelLarge.copyWith(
                   color: _secondaryText,
                   fontSize: 16,
