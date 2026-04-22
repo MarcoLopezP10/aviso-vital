@@ -68,9 +68,7 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
   Widget _buildErrorState({required String message}) {
     return Padding(
       padding: const EdgeInsets.all(AppSpacing.xxl),
-      child: Center(
-        child: Text(message, textAlign: TextAlign.center),
-      ),
+      child: Center(child: Text(message, textAlign: TextAlign.center)),
     );
   }
 
@@ -138,13 +136,9 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
               ],
 
               // ── ZONA D: Botón simulador ─────────────────────────────
-              PrimaryButton.large(
-                label: 'Ver su móvil en pruebas',
-                icon: Icons.smartphone_rounded,
-                onPressed: () => Navigator.pushNamed(
-                  context,
-                  AppRoutes.simulacionAlertas,
-                ),
+              _SimulationButtonCard(
+                onTap: () =>
+                    Navigator.pushNamed(context, AppRoutes.simulacionAlertas),
               ),
 
               const SizedBox(height: AppSpacing.xxl),
@@ -218,12 +212,27 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
 
   String _formatDate(DateTime date) {
     const months = [
-      'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-      'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
+      'enero',
+      'febrero',
+      'marzo',
+      'abril',
+      'mayo',
+      'junio',
+      'julio',
+      'agosto',
+      'septiembre',
+      'octubre',
+      'noviembre',
+      'diciembre',
     ];
     const days = [
-      'lunes', 'martes', 'miércoles', 'jueves',
-      'viernes', 'sábado', 'domingo',
+      'lunes',
+      'martes',
+      'miércoles',
+      'jueves',
+      'viernes',
+      'sábado',
+      'domingo',
     ];
     return '${days[date.weekday - 1]}, ${date.day} de ${months[date.month - 1]}';
   }
@@ -293,6 +302,85 @@ class _EmptyMedicationCard extends StatelessWidget {
           color: AppColors.textSecondary,
           fontSize: 18,
           height: 1.4,
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _SimulationButtonCard extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _SimulationButtonCard({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Ink(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 18),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: AppColors.info.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(13),
+                ),
+                child: const Icon(
+                  Icons.smartphone_rounded,
+                  color: AppColors.info,
+                  size: 23,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Ver pantalla de avisos',
+                      style: AppTextStyles.labelLarge.copyWith(
+                        color: AppColors.textPrimary,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      'Simulación del móvil',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.textSecondary,
+                        fontSize: 13,
+                        height: 1.2,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Text(
+                '›',
+                style: TextStyle(
+                  color: AppColors.textDisabled,
+                  fontSize: 20,
+                  height: 1,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

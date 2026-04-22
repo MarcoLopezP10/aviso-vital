@@ -277,6 +277,17 @@ class _AlertaCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (color, icon) = _style();
+    final rowAlpha = switch (alerta.estado) {
+      EstadoAlerta.confirmada ||
+      EstadoAlerta.omitida ||
+      EstadoAlerta.expirada ||
+      EstadoAlerta.pendiente => 0.08,
+      _ => 0.04,
+    };
+    final iconAlpha = switch (alerta.estado) {
+      EstadoAlerta.omitida || EstadoAlerta.expirada => 0.15,
+      _ => 0.12,
+    };
 
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
@@ -285,9 +296,9 @@ class _AlertaCard extends StatelessWidget {
         vertical: AppSpacing.sm,
       ),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.05),
+        color: color.withValues(alpha: rowAlpha),
         borderRadius: AppRadius.card,
-        border: Border.all(color: color.withValues(alpha: 0.18)),
+        border: Border.all(color: color.withValues(alpha: 0.14)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -296,7 +307,7 @@ class _AlertaCard extends StatelessWidget {
             width: 34,
             height: 34,
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.12),
+              color: color.withValues(alpha: iconAlpha),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, size: 16, color: color),
@@ -353,13 +364,52 @@ class _AlertaCard extends StatelessWidget {
   };
 
   Widget _estadoBadge() => switch (alerta.estado) {
-    EstadoAlerta.confirmada => StatusBadge.confirmed(small: true),
-    EstadoAlerta.omitida => StatusBadge.missed(small: true),
-    EstadoAlerta.expirada => StatusBadge.expired(small: true),
-    EstadoAlerta.pendiente => StatusBadge.pending(small: true),
+    EstadoAlerta.confirmada => const _HistoryStatusBadge(
+      label: 'Confirmada',
+      color: AppColors.success,
+    ),
+    EstadoAlerta.omitida => const _HistoryStatusBadge(
+      label: 'Omitida',
+      color: AppColors.danger,
+    ),
+    EstadoAlerta.expirada => const _HistoryStatusBadge(
+      label: 'Expirada',
+      color: AppColors.danger,
+    ),
+    EstadoAlerta.pendiente => const _HistoryStatusBadge(
+      label: 'Pendiente',
+      color: AppColors.warning,
+    ),
     _ => const SizedBox.shrink(),
   };
 
   String _formatHora(DateTime dt) =>
       '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+}
+
+class _HistoryStatusBadge extends StatelessWidget {
+  final String label;
+  final Color color;
+
+  const _HistoryStatusBadge({required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.2),
+        borderRadius: AppRadius.chip,
+      ),
+      child: Text(
+        label,
+        style: AppTextStyles.caption.copyWith(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          height: 1.1,
+        ),
+      ),
+    );
+  }
 }

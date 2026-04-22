@@ -22,7 +22,11 @@ class AlertsRepository {
   String _appointmentReminderKey(String appointmentId, String reminderKind) =>
       '$appointmentId|$reminderKind';
 
-  Future<List<Alerta>> fetchRecent({String? userId}) async {
+  Future<List<Alerta>> fetchRecent({
+    String? userId,
+    bool forceRefresh = false,
+  }) async {
+    if (forceRefresh) _cachedAlerts = const [];
     if (!SupabaseService.isReady) return getRecent();
 
     dynamic query = SupabaseService.client.from('alertas').select();
@@ -173,7 +177,10 @@ class AlertsRepository {
     );
   }
 
-  Future<List<Alerta>> fetchHistoryTimeline({String? userId}) async {
+  Future<List<Alerta>> fetchHistoryTimeline({
+    String? userId,
+    bool forceRefresh = false,
+  }) async {
     if (!SupabaseService.isReady) return getRecent();
 
     final resolvedUserId = await _userRepository.resolveCareRecipientUserId(
@@ -184,7 +191,10 @@ class AlertsRepository {
       return const [];
     }
 
-    final rawAlerts = await fetchRecent(userId: resolvedUserId);
+    final rawAlerts = await fetchRecent(
+      userId: resolvedUserId,
+      forceRefresh: forceRefresh,
+    );
     final dosesResponse = await SupabaseService.client
         .from('tomas')
         .select()
@@ -440,7 +450,6 @@ class AlertsRepository {
     return isRead ? EstadoAlerta.confirmada : EstadoAlerta.pendiente;
   }
 
-
   Alerta? _doseToAlert(Toma dose, Medicamento? medication) {
     if (medication == null) return null;
 
@@ -497,4 +506,3 @@ class AlertsRepository {
     _cachedAlerts = List.unmodifiable(mutable);
   }
 }
-

@@ -98,7 +98,9 @@ class RealtimeSimulationService {
     );
   }
 
-  Future<LiveSimulationSnapshot> loadSnapshot() async {
+  Future<LiveSimulationSnapshot> loadSnapshot({
+    bool forceRefresh = false,
+  }) async {
     final context = await contextService.resolve();
     if (!context.hasOwner) {
       return LiveSimulationSnapshot(
@@ -114,9 +116,22 @@ class RealtimeSimulationService {
     } catch (_) {}
 
     final results = await Future.wait([
-      medicationsRepository.fetchDailySnapshot(userId: ownerId),
-      _safeLoad(() => appointmentsRepository.fetchAll(userId: ownerId)),
-      _safeLoad(() => alertsRepository.fetchRecent(userId: ownerId)),
+      medicationsRepository.fetchDailySnapshot(
+        userId: ownerId,
+        forceRefresh: forceRefresh,
+      ),
+      _safeLoad(
+        () => appointmentsRepository.fetchAll(
+          userId: ownerId,
+          forceRefresh: forceRefresh,
+        ),
+      ),
+      _safeLoad(
+        () => alertsRepository.fetchRecent(
+          userId: ownerId,
+          forceRefresh: forceRefresh,
+        ),
+      ),
     ]).timeout(AppDurations.networkTimeout);
 
     final medicationSnapshot = results[0] as MedicationDailySnapshot;

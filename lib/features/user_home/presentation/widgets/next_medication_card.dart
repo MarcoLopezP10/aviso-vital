@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:aviso_vital_2/data/models/models.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
+import 'package:aviso_vital_2/shared/widgets/shared_widgets.dart';
 
 /// Tarjeta de próxima medicación — diseñada para adultos mayores.
 ///
-/// Muestra una frase natural y legible: "A las HH:MM · Nombre · Dosis"
-/// con tipografía accesible (≥22sp en cuerpo, hora destacada en ámbar).
+/// Prioriza lo esencial para la persona mayor: medicamento y hora.
 class NextMedicationCard extends StatelessWidget {
   final Medicamento medication;
   final String timeLabel;
@@ -20,26 +20,34 @@ class NextMedicationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final instructions = medication.instrucciones?.trim();
+    final doseLabel = _doseLabel(medication.dosis);
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.xxl,
-          vertical: AppSpacing.xl,
-        ),
+        constraints: const BoxConstraints(minHeight: 260),
+        padding: const EdgeInsets.fromLTRB(22, 22, 22, 20),
         decoration: BoxDecoration(
-          color: AppColors.surfaceFloating,
-          borderRadius: AppRadius.cardLg,
-          border: Border.all(color: AppColors.amber.withValues(alpha: 0.22)),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              const Color(0xFF252516),
+              const Color(0xFF1C1D18),
+              const Color(0xFF181A17),
+            ],
+            stops: const [0.0, 0.54, 1.0],
+          ),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: AppColors.amber.withValues(alpha: 0.2),
+            width: 1.2,
+          ),
           boxShadow: [
             BoxShadow(
-              color: AppColors.amber.withValues(alpha: 0.06),
-              blurRadius: 24,
-              offset: const Offset(0, 8),
-            ),
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.18),
+              color: Colors.black.withValues(alpha: 0.16),
               blurRadius: 18,
               offset: const Offset(0, 10),
             ),
@@ -48,28 +56,128 @@ class NextMedicationCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Hora — elemento más prominente (40sp)
-            Text(
-              'A las $timeLabel',
-              style: AppTextStyles.userHour.copyWith(fontSize: 40),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 7,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.amber.withValues(alpha: 0.11),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    'Próxima toma',
+                    style: AppTextStyles.label.copyWith(
+                      color: AppColors.amber,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0,
+                    ),
+                  ),
+                ),
+                PillVisual(
+                  color: medication.colorPastilla,
+                  shape: _toFormShape(medication.formaPastilla),
+                  size: 42,
+                ),
+              ],
             ),
-            const SizedBox(height: AppSpacing.sm),
-            // Nombre del medicamento (28sp)
+            const SizedBox(height: 24),
             Text(
               medication.nombre,
-              style: AppTextStyles.userMedName.copyWith(fontSize: 28),
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
+              style: AppTextStyles.userMedName.copyWith(
+                color: AppColors.textPrimary,
+                fontSize: 40,
+                fontWeight: FontWeight.w800,
+                height: 1.03,
+                letterSpacing: 0,
+              ),
             ),
-            const SizedBox(height: AppSpacing.xs),
-            // Dosis o instrucciones como contexto secundario (18sp)
+            const SizedBox(height: 8),
             Text(
-              medication.instrucciones ?? medication.dosis,
-              style: AppTextStyles.userMedDose.copyWith(fontSize: 18),
-              overflow: TextOverflow.ellipsis,
+              doseLabel,
+              style: AppTextStyles.userMedDose.copyWith(
+                color: AppColors.textSecondary,
+                fontSize: 22,
+                fontWeight: FontWeight.w400,
+                height: 1.2,
+                letterSpacing: 0,
+              ),
+            ),
+            if (instructions != null && instructions.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.025),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  instructions,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.body.copyWith(
+                    color: AppColors.textSecondary,
+                    fontSize: 17,
+                    height: 1.25,
+                  ),
+                ),
+              ),
+            ],
+            const SizedBox(height: 22),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    'A las',
+                    style: AppTextStyles.label.copyWith(
+                      color: AppColors.amber.withValues(alpha: 0.7),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0,
+                    ),
+                  ),
+                  Text(
+                    timeLabel,
+                    style: AppTextStyles.display1.copyWith(
+                      color: AppColors.amber,
+                      fontSize: 48,
+                      fontWeight: FontWeight.w800,
+                      height: 0.98,
+                      letterSpacing: 0,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  FormShape _toFormShape(FormaPastilla shape) => switch (shape) {
+    FormaPastilla.redonda => FormShape.round,
+    FormaPastilla.ovalada => FormShape.oval,
+    FormaPastilla.capsula => FormShape.capsule,
+  };
+
+  String _doseLabel(String dose) {
+    final trimmed = dose.trim();
+    if (trimmed.isEmpty) return trimmed;
+    if (RegExp(r'[a-zA-ZáéíóúÁÉÍÓÚ]').hasMatch(trimmed)) return trimmed;
+    return '$trimmed mg';
   }
 }

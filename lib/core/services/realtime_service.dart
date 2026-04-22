@@ -4,9 +4,10 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Eventos de cambio en tiempo real.
-enum RealtimeChangeType { tomas, citas, alertas }
+enum RealtimeChangeType { tomas, citas, alertas, medicamentos }
 
-/// Servicio de Supabase Realtime — suscripción a cambios en tomas, citas y alertas.
+/// Servicio de Supabase Realtime — suscripción a cambios en tomas, citas,
+/// alertas y medicamentos.
 ///
 /// Uso:
 /// ```dart
@@ -19,7 +20,10 @@ enum RealtimeChangeType { tomas, citas, alertas }
 class RealtimeService {
   RealtimeService();
 
+  static int _channelCounter = 0;
+
   final _controller = StreamController<RealtimeChangeType>.broadcast();
+  final String _channelName = 'aviso_vital_changes_${_channelCounter++}';
   RealtimeChannel? _channel;
   bool _running = false;
 
@@ -34,7 +38,7 @@ class RealtimeService {
     _running = true;
     try {
       _channel = SupabaseService.client
-          .channel('aviso_vital_changes')
+          .channel(_channelName)
           .onPostgresChanges(
             event: PostgresChangeEvent.all,
             schema: 'public',
@@ -52,6 +56,12 @@ class RealtimeService {
             schema: 'public',
             table: 'alertas',
             callback: (_) => _emit(RealtimeChangeType.alertas),
+          )
+          .onPostgresChanges(
+            event: PostgresChangeEvent.all,
+            schema: 'public',
+            table: 'medicamentos',
+            callback: (_) => _emit(RealtimeChangeType.medicamentos),
           )
           .subscribe((status, [error]) {
             if (kDebugMode) {

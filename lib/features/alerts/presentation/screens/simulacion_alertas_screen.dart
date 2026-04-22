@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:aviso_vital_2/app/router/app_routes.dart';
+import 'package:aviso_vital_2/core/services/realtime_service.dart';
 import 'package:aviso_vital_2/core/services/realtime_simulation_service.dart';
 import 'package:aviso_vital_2/features/alerts/presentation/widgets/simulation_notification_widgets.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
@@ -20,12 +21,15 @@ class SimulacionAlertasScreen extends StatefulWidget {
 class _SimulacionAlertasScreenState extends State<SimulacionAlertasScreen> {
   static const _simulationService = RealtimeSimulationService();
 
+  final _realtimeService = RealtimeService();
+  StreamSubscription<RealtimeChangeType>? _realtimeSub;
   LiveSimulationSnapshot? _snapshot;
   bool _isLoading = true;
   bool _isRefreshing = false;
   String? _loadError;
   int _tick = 0;
   Timer? _timer;
+  Timer? _realtimeDebounce;
   late final ValueNotifier<DateTime> _nowNotifier;
 
   @override
@@ -33,25 +37,41 @@ class _SimulacionAlertasScreenState extends State<SimulacionAlertasScreen> {
     super.initState();
     _nowNotifier = ValueNotifier(DateTime.now());
     _simulationService.ensureReminders().catchError((_) {});
-    _refreshSnapshot(initial: true);
+    _refreshSnapshot(initial: true, forceRefresh: true);
+    _realtimeService.start();
+    _realtimeSub = _realtimeService.changes.listen(_onRealtimeChange);
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted) return;
       _tick += 1;
       _nowNotifier.value = DateTime.now();
       if (_tick % 30 == 0) {
-        _refreshSnapshot();
+        _refreshSnapshot(forceRefresh: true);
       }
+    });
+  }
+
+  void _onRealtimeChange(RealtimeChangeType _) {
+    _realtimeDebounce?.cancel();
+    _realtimeDebounce = Timer(const Duration(milliseconds: 500), () {
+      if (!mounted) return;
+      _refreshSnapshot(forceRefresh: true);
     });
   }
 
   @override
   void dispose() {
+    _realtimeDebounce?.cancel();
+    _realtimeSub?.cancel();
+    _realtimeService.dispose();
     _timer?.cancel();
     _nowNotifier.dispose();
     super.dispose();
   }
 
-  Future<void> _refreshSnapshot({bool initial = false}) async {
+  Future<void> _refreshSnapshot({
+    bool initial = false,
+    bool forceRefresh = false,
+  }) async {
     if (_isRefreshing) return;
     _isRefreshing = true;
     if (initial) {
@@ -62,7 +82,9 @@ class _SimulacionAlertasScreenState extends State<SimulacionAlertasScreen> {
     }
 
     try {
-      final snapshot = await _simulationService.loadSnapshot();
+      final snapshot = await _simulationService.loadSnapshot(
+        forceRefresh: forceRefresh,
+      );
       if (!mounted) return;
       setState(() {
         _snapshot = snapshot;
@@ -101,7 +123,7 @@ class _SimulacionAlertasScreenState extends State<SimulacionAlertasScreen> {
     }
 
     if (!mounted) return;
-    await _refreshSnapshot();
+    await _refreshSnapshot(forceRefresh: true);
   }
 
   @override
@@ -130,7 +152,7 @@ class _SimulacionAlertasScreenState extends State<SimulacionAlertasScreen> {
                 onRetry: () => _refreshSnapshot(initial: true),
               )
             : RefreshIndicator(
-                onRefresh: _refreshSnapshot,
+                onRefresh: () => _refreshSnapshot(forceRefresh: true),
                 child: ValueListenableBuilder<DateTime>(
                   valueListenable: _nowNotifier,
                   builder: (context, now, _) {
@@ -268,14 +290,21 @@ class _PhoneFrame extends StatelessWidget {
   });
 
   static const _frameColor = Color(0xFF0A0A0A);
-  static const _frameBorder = Color(0xFF2A2A2A);
-  static const _buttonColor = Color(0xFF1A1A1A);
+  static const _frameBorder = Color(0x14FFFFFF);
+  static const _buttonColor = Color(0xFF2A2A2A);
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final phoneWidth = (constraints.maxWidth * 0.55).clamp(320.0, 360.0);
+        final availableWidth = constraints.maxWidth.isFinite
+            ? constraints.maxWidth
+            : 360.0;
+        final phoneWidth =
+            (availableWidth >= 320.0
+                    ? availableWidth.clamp(320.0, 360.0)
+                    : availableWidth)
+                .toDouble();
         final phoneHeight = phoneWidth * _phoneAspectRatio;
 
         return SizedBox(
@@ -293,7 +322,7 @@ class _PhoneFrame extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: _frameColor,
                   borderRadius: BorderRadius.circular(44),
-                  border: Border.all(color: _frameBorder, width: 2),
+                  border: Border.all(color: _frameBorder),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.50),
@@ -314,8 +343,8 @@ class _PhoneFrame extends StatelessWidget {
                       end: Alignment(0.2, 1.0),
                       colors: [
                         Color(0xFF1A1A2E),
-                        Color(0xFF16213E),
-                        Color(0xFF0F1729),
+                        Color(0xFF0D0D1A),
+                        Color(0xFF0A0A14),
                       ],
                       stops: [0.0, 0.5, 1.0],
                     ),
@@ -351,7 +380,7 @@ class _PhoneFrame extends StatelessWidget {
               const Positioned(
                 left: -4,
                 top: 72,
-                child: _SideButton(height: 24, color: _buttonColor),
+                child: _SideButton(height: 28, color: _buttonColor),
               ),
               const Positioned(
                 left: -4,
@@ -368,7 +397,7 @@ class _PhoneFrame extends StatelessWidget {
               const Positioned(
                 right: -4,
                 top: 120,
-                child: _SideButton(height: 64, color: _buttonColor),
+                child: _SideButton(height: 44, color: _buttonColor),
               ),
             ],
           ),
@@ -391,8 +420,8 @@ class _StatusBar extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
       child: Center(
         child: Container(
-          width: 100,
-          height: 26,
+          width: 110,
+          height: 32,
           decoration: BoxDecoration(
             color: const Color(0xFF050505),
             borderRadius: BorderRadius.circular(20),
@@ -412,10 +441,10 @@ class _LockScreenHeader extends StatelessWidget {
   static const _weekdays = <String>[
     'lunes',
     'martes',
-    'miercoles',
+    'miércoles',
     'jueves',
     'viernes',
-    'sabado',
+    'sábado',
     'domingo',
   ];
 
@@ -449,9 +478,10 @@ class _LockScreenHeader extends StatelessWidget {
             timeLabel,
             textAlign: TextAlign.center,
             style: AppTextStyles.display1.copyWith(
-              color: Colors.white,
-              fontSize: 46 * scale,
-              fontWeight: FontWeight.w700,
+              color: Colors.white.withValues(alpha: 0.92),
+              fontSize: 68 * scale,
+              fontWeight: FontWeight.w300,
+              letterSpacing: -2,
               height: 1,
             ),
           ),
@@ -460,9 +490,9 @@ class _LockScreenHeader extends StatelessWidget {
             dateLabel,
             textAlign: TextAlign.center,
             style: AppTextStyles.bodyLarge.copyWith(
-              color: Colors.white.withValues(alpha: 0.72),
-              fontSize: 16 * scale,
-              fontWeight: FontWeight.w600,
+              color: Colors.white.withValues(alpha: 0.55),
+              fontSize: 15 * scale,
+              fontWeight: FontWeight.w400,
               height: 1.2,
             ),
           ),
@@ -484,11 +514,11 @@ class _HomeIndicator extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(top: 10, bottom: 10),
       child: Container(
-        width: 90,
-        height: 4,
+        width: 120,
+        height: 5,
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.50),
-          borderRadius: BorderRadius.circular(4),
+          color: Colors.white.withValues(alpha: 0.25),
+          borderRadius: BorderRadius.circular(100),
         ),
       ),
     );
@@ -507,7 +537,7 @@ class _SideButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 4,
+      width: 3,
       height: height,
       decoration: BoxDecoration(
         color: color,
@@ -536,7 +566,9 @@ class _NotificationList extends StatelessWidget {
         children: [
           for (int i = 0; i < notifications.length; i++) ...[
             TweenAnimationBuilder<double>(
-              key: ValueKey(notifications[i].scheduledAt),
+              key: ValueKey(
+                '${notifications[i].id}:${notifications[i].scheduledAt.toIso8601String()}:$i',
+              ),
               tween: Tween(begin: 0.0, end: 1.0),
               duration: Duration(milliseconds: 280 + i * 80),
               curve: Curves.easeOutCubic,

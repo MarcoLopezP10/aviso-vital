@@ -77,7 +77,9 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
 
   Future<_DashboardData> _loadDashboardData({bool forceRefresh = false}) async {
     try {
-      final alertsFuture = _alertsRepository.fetchHistoryTimeline();
+      final alertsFuture = _alertsRepository.fetchHistoryTimeline(
+        forceRefresh: forceRefresh,
+      );
       final medicationSnapshotFuture = _medicationsRepository
           .fetchDailySnapshot(forceRefresh: forceRefresh);
       final appointmentsFuture = _appointmentsRepository.fetchAll(
@@ -308,8 +310,8 @@ class _UpcomingMedicationCard extends StatelessWidget {
         children: [
           PillVisual(
             color: medicamento.colorPastilla,
-            shape: FormShape.round,
-            size: 48,
+            shape: _toFormShape(medicamento.formaPastilla),
+            size: 36,
             showGlow: true,
           ),
           const SizedBox(width: AppSpacing.lg),
@@ -341,6 +343,12 @@ class _UpcomingMedicationCard extends StatelessWidget {
       ),
     );
   }
+
+  FormShape _toFormShape(FormaPastilla shape) => switch (shape) {
+    FormaPastilla.redonda => FormShape.round,
+    FormaPastilla.ovalada => FormShape.oval,
+    FormaPastilla.capsula => FormShape.capsule,
+  };
 }
 
 class _DashboardData {

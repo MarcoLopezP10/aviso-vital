@@ -7,8 +7,8 @@ String _daysBadge(Cita c) {
   final today = DateTime(now.year, now.month, now.day);
   final citaDay = DateTime(c.fecha.year, c.fecha.month, c.fecha.day);
   final diff = citaDay.difference(today).inDays;
-  if (diff <= 0) return 'Hoy';
-  if (diff == 1) return 'Mañana';
+  if (diff <= 0) return 'HOY';
+  if (diff == 1) return 'En 1 día';
   return 'En $diff días';
 }
 
@@ -20,89 +20,98 @@ class NextAppointmentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Sin cita próxima: no mostrar nada — la sección entera queda oculta
     if (appointment == null) return const SizedBox.shrink();
 
     final statusLabel = _daysBadge(appointment!);
-    final secondaryLabel = appointment!.lugar;
 
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(AppSpacing.xl),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
+          gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [AppColors.surfaceFloating, AppColors.surface],
+            colors: [
+              const Color(0xFF2A201A),
+              const Color(0xFF1D1A18),
+              const Color(0xFF181817),
+            ],
+            stops: const [0.0, 0.54, 1.0],
           ),
-          borderRadius: AppRadius.cardLg,
-          border: Border.all(color: AppColors.orange.withValues(alpha: 0.25)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.18),
-              blurRadius: 22,
-              offset: const Offset(0, 14),
-            ),
-          ],
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: AppColors.orange.withValues(alpha: 0.22),
+            width: 1.2,
+          ),
         ),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color: AppColors.orange.withValues(alpha: 0.12),
-                borderRadius: AppRadius.iconLg,
-              ),
-              child: const Icon(
-                Icons.event_rounded,
-                color: AppColors.orange,
-                size: 28,
-              ),
-            ),
-            const SizedBox(width: AppSpacing.lg),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(appointment!.especialidad, style: AppTextStyles.h2),
-                  const SizedBox(height: 3),
-                  Text(
-                    secondaryLabel,
-                    style: AppTextStyles.bodySmall,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  appointment!.hora,
-                  style: AppTextStyles.h3.copyWith(color: AppColors.orange),
-                ),
-                const SizedBox(height: 4),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 3,
+                    horizontal: 10,
+                    vertical: 5,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.orange.withValues(alpha: 0.12),
-                    borderRadius: AppRadius.chip,
+                    color: appointment!.esHoy
+                        ? AppColors.orange
+                        : AppColors.orange.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
                     statusLabel,
-                    style: AppTextStyles.caption.copyWith(
-                      color: AppColors.orange,
+                    style: AppTextStyles.label.copyWith(
+                      color: appointment!.esHoy
+                          ? AppColors.textOnOrange
+                          : AppColors.orange,
+                      fontSize: 13,
                       fontWeight: FontWeight.w600,
+                      letterSpacing: 0,
                     ),
                   ),
                 ),
+                const Icon(
+                  Icons.calendar_month_rounded,
+                  color: AppColors.orange,
+                  size: 24,
+                ),
               ],
+            ),
+            const SizedBox(height: 14),
+            Text(
+              appointment!.especialidad,
+              style: AppTextStyles.h2.copyWith(
+                color: AppColors.textPrimary,
+                fontSize: 23,
+                fontWeight: FontWeight.w700,
+                height: 1.15,
+                letterSpacing: 0,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              appointment!.lugar,
+              style: AppTextStyles.body.copyWith(
+                color: AppColors.textSecondary,
+                fontSize: 15,
+                height: 1.3,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              appointment!.hora,
+              style: AppTextStyles.labelLarge.copyWith(
+                color: AppColors.orange,
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0,
+              ),
             ),
           ],
         ),

@@ -64,7 +64,7 @@ class RoleSelectionScreen extends StatelessWidget {
                             RoleOptionCard(
                               title: 'Soy usuario',
                               subtitle: 'Recibo recordatorios y avisos',
-                              icon: Icons.favorite_outline_rounded,
+                              icon: Icons.person_outline_rounded,
                               accentColor: AppColors.amber,
                               accentForeground: AppColors.amberLight,
                               onTap: () => Navigator.pushNamed(
