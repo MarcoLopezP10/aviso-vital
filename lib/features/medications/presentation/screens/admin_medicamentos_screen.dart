@@ -154,7 +154,10 @@ class _AdminMedicamentosScreenState extends State<AdminMedicamentosScreen> {
 
     return AdminSectionScaffold(
       title: context.t.text('Medicamentos'),
-      subtitle: context.t.activeCount(allMedications.length, user.nombre),
+      subtitle: context.t.activeCount(
+        allMedications.length,
+        context.t.displayName(user.nombre),
+      ),
       compactHeader: true,
       onBack: widget.showBackButton ? () => Navigator.maybePop(context) : null,
       headerTrailing: _isExporting

@@ -19,8 +19,15 @@ class AlertsRepository {
     _handledAppointmentReminders.clear();
   }
 
-  String _appointmentReminderKey(String appointmentId, String reminderKind) =>
-      '$appointmentId|$reminderKind';
+  String _appointmentReminderKey(
+    String appointmentId,
+    String reminderKind, {
+    String? instanceId,
+  }) => [
+    appointmentId.trim(),
+    reminderKind.trim(),
+    if (instanceId?.trim().isNotEmpty == true) instanceId!.trim(),
+  ].join('|');
 
   Future<List<Alerta>> fetchRecent({
     String? userId,
@@ -158,22 +165,32 @@ class AlertsRepository {
   void markAppointmentReminderHandled({
     required String appointmentId,
     required String reminderKind,
+    String? instanceId,
   }) {
     if (appointmentId.trim().isEmpty || reminderKind.trim().isEmpty) return;
     _handledAppointmentReminders.add(
-      _appointmentReminderKey(appointmentId, reminderKind),
+      _appointmentReminderKey(
+        appointmentId,
+        reminderKind,
+        instanceId: instanceId,
+      ),
     );
   }
 
   bool isAppointmentReminderHandled({
     required String appointmentId,
     required String reminderKind,
+    String? instanceId,
   }) {
     if (appointmentId.trim().isEmpty || reminderKind.trim().isEmpty) {
       return false;
     }
     return _handledAppointmentReminders.contains(
-      _appointmentReminderKey(appointmentId, reminderKind),
+      _appointmentReminderKey(
+        appointmentId,
+        reminderKind,
+        instanceId: instanceId,
+      ),
     );
   }
 

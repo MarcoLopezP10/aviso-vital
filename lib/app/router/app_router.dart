@@ -66,6 +66,7 @@ class AppRouter {
         alertId: args?['alertId'] as String?,
         appointmentId: args?['appointmentId'] as String?,
         reminderKind: args?['reminderKind'] as String?,
+        reminderInstanceId: args?['reminderInstanceId'] as String?,
       ),
       _ => const RoleSelectionScreen(),
     };

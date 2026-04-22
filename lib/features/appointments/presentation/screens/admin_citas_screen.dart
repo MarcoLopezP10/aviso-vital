@@ -155,7 +155,10 @@ class _AdminCitasScreenState extends State<AdminCitasScreen> {
 
     return AdminSectionScaffold(
       title: context.t.text('Citas Médicas'),
-      subtitle: context.t.registeredCount(allAppointments.length, user.nombre),
+      subtitle: context.t.registeredCount(
+        allAppointments.length,
+        context.t.displayName(user.nombre),
+      ),
       onBack: widget.showBackButton ? () => Navigator.maybePop(context) : null,
       compactHeader: true,
       headerTrailing: _isExporting

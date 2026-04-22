@@ -32,7 +32,7 @@ class RoleSelectionScreen extends StatelessWidget {
           children: [
             const Positioned(
               top: AppSpacing.sm,
-              left: AppSpacing.md,
+              right: AppSpacing.md,
               child: LanguageToggle(),
             ),
             Center(

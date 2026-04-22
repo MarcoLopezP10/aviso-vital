@@ -486,7 +486,7 @@ class EmptyStateCard extends StatelessWidget {
           if (actionLabel != null && onAction != null) ...[
             const SizedBox(height: 20),
             PrimaryButton.small(
-              label: actionLabel!,
+              label: context.t.text(actionLabel!),
               onPressed: onAction,
               width: 200,
             ),
@@ -770,7 +770,7 @@ class SummaryStatCard extends StatelessWidget {
             ),
             const SizedBox(height: 2),
             Text(
-              title,
+              context.t.text(title),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: AppTextStyles.label.copyWith(
@@ -781,7 +781,7 @@ class SummaryStatCard extends StatelessWidget {
             if (subtitle != null) ...[
               const SizedBox(height: 2),
               Text(
-                subtitle!,
+                context.t.text(subtitle!),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: AppTextStyles.caption.copyWith(

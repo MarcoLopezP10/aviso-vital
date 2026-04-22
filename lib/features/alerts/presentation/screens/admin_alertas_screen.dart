@@ -77,7 +77,7 @@ class _AdminAlertasScreenState extends State<AdminAlertasScreen>
 
         return AdminSectionScaffold(
           title: context.t.text('Historial de alertas'),
-          subtitle: user.nombre,
+          subtitle: context.t.displayName(user.nombre),
           onBack: widget.showBackButton
               ? () => Navigator.maybePop(context)
               : null,
@@ -289,6 +289,13 @@ class _AlertaCard extends StatelessWidget {
       EstadoAlerta.omitida || EstadoAlerta.expirada => 0.15,
       _ => 0.12,
     };
+    final description =
+        alerta.tipo == TipoAlerta.medicacion &&
+            alerta.estado == EstadoAlerta.expirada
+        ? context.t.expiredMedicationNoResponse
+        : alerta.descripcion == null
+        ? null
+        : context.t.alertDescription(alerta.descripcion!);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
@@ -319,12 +326,12 @@ class _AlertaCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  alerta.titulo,
+                  context.t.alertTitle(alerta.titulo),
                   style: AppTextStyles.labelLarge.copyWith(fontSize: 14),
                 ),
-                if (alerta.descripcion != null)
+                if (description != null)
                   Text(
-                    alerta.descripcion!,
+                    description,
                     style: AppTextStyles.caption.copyWith(
                       fontSize: 11,
                       height: 1.2,

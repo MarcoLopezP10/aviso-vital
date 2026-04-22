@@ -14,12 +14,14 @@ class AlertaCitaScreen extends StatefulWidget {
   final String? alertId;
   final String? appointmentId;
   final String? reminderKind;
+  final String? reminderInstanceId;
 
   const AlertaCitaScreen({
     super.key,
     this.alertId,
     this.appointmentId,
     this.reminderKind,
+    this.reminderInstanceId,
   });
 
   @override
@@ -63,6 +65,7 @@ class _AlertaCitaScreenState extends State<AlertaCitaScreen> {
       _alertsRepository.markAppointmentReminderHandled(
         appointmentId: widget.appointmentId!,
         reminderKind: widget.reminderKind!,
+        instanceId: widget.reminderInstanceId,
       );
     }
     setState(() {
@@ -135,6 +138,7 @@ class _AlertaCitaScreenState extends State<AlertaCitaScreen> {
                       key: const ValueKey('cita'),
                       cita: data.appointment,
                       tiempoLabel: tiempoLabel,
+                      isReadOnly: data.isReminderHandled,
                       onClose: _handleBack,
                       onConfirm: () => _confirmar(data),
                     ),
@@ -162,9 +166,22 @@ class _AlertaCitaScreenState extends State<AlertaCitaScreen> {
     }
 
     if (appointment == null) return null;
+    final reminderKind = widget.reminderKind?.trim();
+    final appointmentId = widget.appointmentId?.trim();
+    final isHandledLocally =
+        appointmentId != null &&
+        appointmentId.isNotEmpty &&
+        reminderKind != null &&
+        reminderKind.isNotEmpty &&
+        _alertsRepository.isAppointmentReminderHandled(
+          appointmentId: appointmentId,
+          reminderKind: reminderKind,
+          instanceId: widget.reminderInstanceId,
+        );
     return _AppointmentAlertData(
       appointment: appointment,
       alertId: widget.alertId,
+      isReminderHandled: isHandledLocally,
     );
   }
 }
@@ -172,8 +189,13 @@ class _AlertaCitaScreenState extends State<AlertaCitaScreen> {
 class _AppointmentAlertData {
   final Cita appointment;
   final String? alertId;
+  final bool isReminderHandled;
 
-  const _AppointmentAlertData({required this.appointment, this.alertId});
+  const _AppointmentAlertData({
+    required this.appointment,
+    this.alertId,
+    this.isReminderHandled = false,
+  });
 }
 
 class _AppointmentUnavailableView extends StatelessWidget {
@@ -238,6 +260,7 @@ class _AppointmentUnavailableView extends StatelessWidget {
 class _CitaAlertaView extends StatelessWidget {
   final dynamic cita;
   final String tiempoLabel;
+  final bool isReadOnly;
   final VoidCallback onClose;
   final VoidCallback onConfirm;
 
@@ -245,6 +268,7 @@ class _CitaAlertaView extends StatelessWidget {
     super.key,
     required this.cita,
     required this.tiempoLabel,
+    required this.isReadOnly,
     required this.onClose,
     required this.onConfirm,
   });
@@ -258,8 +282,22 @@ class _CitaAlertaView extends StatelessWidget {
         final horizontalPadding = constraints.maxWidth < 360
             ? AppSpacing.lg
             : AppSpacing.xl;
-        final titleSize = veryCompact ? 28.0 : (compact ? 32.0 : 38.0);
-        final iconSize = veryCompact ? 82.0 : (compact ? 94.0 : 112.0);
+        final titleSize = veryCompact ? 26.0 : (compact ? 29.0 : 32.0);
+        final iconSize = veryCompact ? 70.0 : (compact ? 78.0 : 88.0);
+        final strings = context.t;
+        final stateColor = isReadOnly ? AppColors.success : AppColors.orange;
+        final stateSubtle = isReadOnly
+            ? AppColors.successSubtle
+            : AppColors.orangeSubtle;
+        final stateBorder = isReadOnly
+            ? AppColors.successBorder
+            : AppColors.orangeBorder;
+        final title = isReadOnly
+            ? strings.appointmentReminderConfirmed
+            : strings.appointmentAlertTitle(tiempoLabel);
+        final chipLabel = isReadOnly
+            ? strings.appointmentTiming(tiempoLabel)
+            : strings.appointmentReminderChip;
 
         return SingleChildScrollView(
           padding: EdgeInsets.fromLTRB(
@@ -317,63 +355,60 @@ class _CitaAlertaView extends StatelessWidget {
                         ],
                       ),
                     ),
-                    SizedBox(height: compact ? AppSpacing.sm : AppSpacing.md),
+                    SizedBox(height: compact ? AppSpacing.xs : AppSpacing.sm),
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 16,
                         vertical: 7,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.orangeSubtle,
+                        color: stateSubtle,
                         borderRadius: AppRadius.chip,
-                        border: Border.all(color: AppColors.orangeBorder),
+                        border: Border.all(color: stateBorder),
                       ),
                       child: Text(
-                        context.t.appointmentTiming(tiempoLabel),
-                        style: AppTextStyles.label.copyWith(
-                          color: AppColors.orange,
-                        ),
+                        chipLabel,
+                        style: AppTextStyles.label.copyWith(color: stateColor),
                       ),
                     ),
-                    SizedBox(height: compact ? AppSpacing.lg : AppSpacing.xl),
+                    SizedBox(height: compact ? AppSpacing.md : AppSpacing.lg),
                     Container(
                       width: iconSize,
                       height: iconSize,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: AppColors.orangeSubtle,
-                        border: Border.all(
-                          color: AppColors.orangeBorder,
-                          width: 2,
-                        ),
+                        color: stateSubtle,
+                        border: Border.all(color: stateBorder, width: 2),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.orange.withValues(alpha: 0.12),
-                            blurRadius: compact ? 24 : 32,
-                            spreadRadius: compact ? 2 : 4,
+                            color: stateColor.withValues(alpha: 0.12),
+                            blurRadius: compact ? 18 : 24,
+                            spreadRadius: compact ? 1 : 2,
                           ),
                         ],
                       ),
                       child: Icon(
-                        Icons.event_rounded,
-                        color: AppColors.orange,
-                        size: compact ? 38 : 46,
+                        isReadOnly
+                            ? Icons.check_circle_rounded
+                            : Icons.event_rounded,
+                        color: stateColor,
+                        size: compact ? 32 : 38,
                       ),
                     ),
-                    SizedBox(height: compact ? AppSpacing.lg : AppSpacing.xl),
+                    SizedBox(height: compact ? AppSpacing.md : AppSpacing.lg),
                     Text(
-                      context.t.medicalAppointment,
+                      title,
                       style: AppTextStyles.h1.copyWith(
                         fontSize: titleSize,
                         height: 1.08,
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    SizedBox(height: compact ? AppSpacing.lg : AppSpacing.xl),
+                    SizedBox(height: compact ? AppSpacing.md : AppSpacing.lg),
                     Container(
                       width: double.infinity,
                       padding: EdgeInsets.all(
-                        compact ? AppSpacing.xl : AppSpacing.xxl,
+                        compact ? AppSpacing.lg : AppSpacing.xl,
                       ),
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
@@ -399,13 +434,13 @@ class _CitaAlertaView extends StatelessWidget {
                           Text(
                             cita.especialidad,
                             style: AppTextStyles.h2.copyWith(
-                              fontSize: compact ? 24 : null,
+                              fontSize: compact ? 23 : 25,
                               height: 1.1,
                             ),
                             textAlign: TextAlign.center,
                           ),
                           SizedBox(
-                            height: compact ? AppSpacing.md : AppSpacing.lg,
+                            height: compact ? AppSpacing.sm : AppSpacing.md,
                           ),
                           _CitaRow(
                             Icons.access_time_rounded,
@@ -415,7 +450,7 @@ class _CitaAlertaView extends StatelessWidget {
                             compact: compact,
                           ),
                           SizedBox(
-                            height: compact ? AppSpacing.sm : AppSpacing.md,
+                            height: compact ? AppSpacing.xs : AppSpacing.sm,
                           ),
                           _CitaRow(
                             Icons.location_on_rounded,
@@ -438,14 +473,22 @@ class _CitaAlertaView extends StatelessWidget {
                       ),
                     ),
                     SizedBox(height: compact ? AppSpacing.lg : AppSpacing.xl),
-                    PrimaryButton(
-                      label: context.t.understoodThanks,
-                      icon: Icons.thumb_up_alt_rounded,
-                      backgroundColor: AppColors.orange,
-                      foregroundColor: AppColors.textPrimary,
-                      height: compact ? 56 : 64,
-                      onPressed: onConfirm,
-                    ),
+                    if (isReadOnly)
+                      SecondaryButton(
+                        label: context.t.back,
+                        icon: Icons.arrow_back_rounded,
+                        height: compact ? 48 : 52,
+                        onPressed: onClose,
+                      )
+                    else
+                      PrimaryButton(
+                        label: context.t.confirmReminder,
+                        icon: Icons.thumb_up_alt_rounded,
+                        backgroundColor: AppColors.orange,
+                        foregroundColor: AppColors.textPrimary,
+                        height: compact ? 52 : 56,
+                        onPressed: onConfirm,
+                      ),
                   ],
                 ),
               ),

@@ -115,6 +115,7 @@ class AppStrings {
     'Correcto': 'Correct',
     'Cita hoy': 'Appointment today',
     'Sin citas': 'No appointments',
+    'Administrador inicial': 'Initial administrator',
     'Citas Médicas': 'Medical appointments',
     'Exportar PDF': 'Export PDF',
     'PDF descargado correctamente': 'PDF downloaded successfully',
@@ -671,6 +672,106 @@ class AppStrings {
   String get viewAppointment => isEnglish ? 'View appointment' : 'Ver cita';
   String expiresAt(String hour) => isEnglish ? 'Expires $hour' : 'Expira $hour';
 
+  String displayName(String value) => text(value);
+
+  String alertTitle(String title) {
+    if (!isEnglish) return title;
+    final normalized = title.trim();
+    for (final entry in const {
+      ' confirmado': ' confirmed',
+      ' confirmada': ' confirmed',
+      ' omitida': ' missed',
+      ' expirada': ' expired',
+      ' pospuesta': ' snoozed',
+      ' pendiente': ' pending',
+    }.entries) {
+      if (normalized.endsWith(entry.key)) {
+        return normalized.replaceFirst(
+          RegExp('${RegExp.escape(entry.key)}\$'),
+          entry.value,
+        );
+      }
+    }
+    if (normalized.startsWith('Cita en 30 min: ')) {
+      return normalized.replaceFirst(
+        'Cita en 30 min: ',
+        'Appointment in 30 min: ',
+      );
+    }
+    if (normalized.startsWith('Cita mañana: ')) {
+      return normalized.replaceFirst('Cita mañana: ', 'Appointment tomorrow: ');
+    }
+    if (normalized.startsWith('Cita hoy: ')) {
+      return normalized.replaceFirst('Cita hoy: ', 'Appointment today: ');
+    }
+    if (normalized.startsWith('Stock bajo: ')) {
+      return normalized.replaceFirst('Stock bajo: ', 'Low stock: ');
+    }
+    return text(normalized);
+  }
+
+  String alertDescription(String description) {
+    if (!isEnglish) return description;
+    final normalized = description.trim();
+    if (normalized.startsWith('Toma confirmada a las ')) {
+      return normalized.replaceFirst(
+        'Toma confirmada a las ',
+        'Dose confirmed at ',
+      );
+    }
+    if (normalized == 'La toma quedó registrada como omitida') {
+      return 'Dose recorded as missed';
+    }
+    if (normalized == 'No se respondió en los 15 minutos disponibles') {
+      return 'No response within the 15 available minutes';
+    }
+    if (normalized == 'Se reprogramo 15 minutos despues' ||
+        normalized == 'Se reprogramó 15 minutos después') {
+      return 'Rescheduled 15 minutes later';
+    }
+    if (normalized.startsWith('Pendiente desde las ')) {
+      return normalized.replaceFirst('Pendiente desde las ', 'Pending since ');
+    }
+    if (normalized.startsWith('Recordatorio final · ')) {
+      return normalized
+          .replaceFirst('Recordatorio final · ', 'Final reminder · ')
+          .replaceAll(' a las ', ' at ');
+    }
+    if (normalized.startsWith('Recordatorio 24h · ')) {
+      return normalized
+          .replaceFirst('Recordatorio 24h · ', '24h reminder · ')
+          .replaceAll(' a las ', ' at ');
+    }
+    if (normalized.startsWith('Recordatorio 3h · ')) {
+      return normalized
+          .replaceFirst('Recordatorio 3h · ', '3h reminder · ')
+          .replaceAll(' a las ', ' at ');
+    }
+    if (normalized.contains(' no confirmó la toma de la tarde')) {
+      return normalized.replaceFirst(
+        ' no confirmó la toma de la tarde',
+        ' did not confirm the afternoon dose',
+      );
+    }
+    if (normalized.contains(' confirmó la toma de ')) {
+      return normalized.replaceFirst(' confirmó la toma de ', ' confirmed ');
+    }
+    if (normalized.startsWith('Quedan ')) {
+      final match = RegExp(
+        r'^Quedan (\d+) pastillas de (.+)$',
+      ).firstMatch(normalized);
+      if (match != null) {
+        return '${match.group(1)} pills of ${match.group(2)} remaining';
+      }
+      return normalized.replaceFirst('Quedan ', 'Remaining: ');
+    }
+    return text(normalized);
+  }
+
+  String get expiredMedicationNoResponse => isEnglish
+      ? 'No response within the 15 available minutes'
+      : 'No se respondió en los 15 minutos disponibles';
+
   String get noPendingMedication =>
       isEnglish ? 'No pending medication.' : 'No hay medicación pendiente.';
   String medicationLoadError(String error) => isEnglish
@@ -706,6 +807,15 @@ class AppStrings {
       isEnglish ? 'Appointment $value' : 'Cita $value';
   String get medicalAppointment =>
       isEnglish ? 'You have a medical appointment' : 'Tiene una cita médica';
+  String appointmentAlertTitle(String value) => isEnglish
+      ? 'Medical appointment ${value.toLowerCase()}'
+      : 'Cita médica ${value.toLowerCase()}';
+  String get appointmentReminderConfirmed =>
+      isEnglish ? 'Reminder confirmed' : 'Recordatorio confirmado';
+  String get appointmentReminderChip =>
+      isEnglish ? 'Appointment reminder' : 'Recordatorio de cita';
+  String get confirmReminder =>
+      isEnglish ? 'Confirm reminder' : 'Confirmar recordatorio';
   String get understoodThanks =>
       isEnglish ? 'Understood, thanks' : 'Entendido, gracias';
   String get noted => isEnglish ? 'Noted' : 'Anotado';

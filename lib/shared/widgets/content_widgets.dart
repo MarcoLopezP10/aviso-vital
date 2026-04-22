@@ -569,6 +569,13 @@ class TimelineEventItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (color, icon) = _iconForAlerta(alerta);
+    final description =
+        alerta.tipo == TipoAlerta.medicacion &&
+            alerta.estado == EstadoAlerta.expirada
+        ? context.t.expiredMedicationNoResponse
+        : alerta.descripcion == null
+        ? null
+        : context.t.alertDescription(alerta.descripcion!);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
@@ -595,14 +602,14 @@ class TimelineEventItem extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  alerta.titulo,
+                  context.t.alertTitle(alerta.titulo),
                   style: AppTextStyles.label.copyWith(
                     color: AppColors.textPrimary,
                   ),
                 ),
-                if (alerta.descripcion != null)
+                if (description != null)
                   Text(
-                    alerta.descripcion!,
+                    description,
                     style: AppTextStyles.caption.copyWith(
                       color: AppColors.textSecondary,
                       height: 1.1,

@@ -28,8 +28,8 @@ class NextMedicationCard extends StatelessWidget {
       onTap: onTap,
       child: Container(
         width: double.infinity,
-        constraints: const BoxConstraints(minHeight: 260),
-        padding: const EdgeInsets.fromLTRB(22, 22, 22, 20),
+        constraints: const BoxConstraints(minHeight: 214),
+        padding: const EdgeInsets.fromLTRB(22, 20, 22, 20),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
@@ -87,29 +87,69 @@ class NextMedicationCard extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 24),
-            Text(
-              medication.nombre,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: AppTextStyles.userMedName.copyWith(
-                color: AppColors.textPrimary,
-                fontSize: 40,
-                fontWeight: FontWeight.w800,
-                height: 1.03,
-                letterSpacing: 0,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              doseLabel,
-              style: AppTextStyles.userMedDose.copyWith(
-                color: AppColors.textSecondary,
-                fontSize: 22,
-                fontWeight: FontWeight.w400,
-                height: 1.2,
-                letterSpacing: 0,
-              ),
+            const SizedBox(height: 18),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        medication.nombre,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.userMedName.copyWith(
+                          color: AppColors.textPrimary,
+                          fontSize: 36,
+                          fontWeight: FontWeight.w800,
+                          height: 1.02,
+                          letterSpacing: 0,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        doseLabel,
+                        style: AppTextStyles.userMedDose.copyWith(
+                          color: AppColors.textSecondary,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w400,
+                          height: 1.15,
+                          letterSpacing: 0,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        context.t.at,
+                        style: AppTextStyles.label.copyWith(
+                          color: AppColors.amber.withValues(alpha: 0.7),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0,
+                        ),
+                      ),
+                      Text(
+                        timeLabel,
+                        style: AppTextStyles.display1.copyWith(
+                          color: AppColors.amber,
+                          fontSize: 40,
+                          fontWeight: FontWeight.w800,
+                          height: 0.98,
+                          letterSpacing: 0,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
             if (instructions != null && instructions.isNotEmpty) ...[
               const SizedBox(height: 10),
@@ -135,34 +175,6 @@ class NextMedicationCard extends StatelessWidget {
                 ),
               ),
             ],
-            const SizedBox(height: 22),
-            Align(
-              alignment: Alignment.centerRight,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    context.t.at,
-                    style: AppTextStyles.label.copyWith(
-                      color: AppColors.amber.withValues(alpha: 0.7),
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0,
-                    ),
-                  ),
-                  Text(
-                    timeLabel,
-                    style: AppTextStyles.display1.copyWith(
-                      color: AppColors.amber,
-                      fontSize: 48,
-                      fontWeight: FontWeight.w800,
-                      height: 0.98,
-                      letterSpacing: 0,
-                    ),
-                  ),
-                ],
-              ),
-            ),
           ],
         ),
       ),

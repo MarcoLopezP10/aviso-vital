@@ -71,10 +71,29 @@ class _SimulationNotificationCardState extends State<SimulationNotificationCard>
     final actionLabel = item.type == LiveNotificationType.medication
         ? context.t.viewReminder
         : context.t.viewAppointment;
+    final title = _titleFor(item);
+
+    if (item.compactReminder) {
+      return Semantics(
+        button: true,
+        label: title,
+        hint: actionLabel,
+        child: GestureDetector(
+          onTap: _handleTap,
+          child: ScaleTransition(
+            scale: _scale,
+            child: FadeTransition(
+              opacity: _fade,
+              child: _CompactAppointmentReminder(item: item, accent: accent),
+            ),
+          ),
+        ),
+      );
+    }
 
     return Semantics(
       button: true,
-      label: _titleFor(item),
+      label: title,
       hint: actionLabel,
       child: GestureDetector(
         onTap: _handleTap,
@@ -106,6 +125,80 @@ class _SimulationNotificationCardState extends State<SimulationNotificationCard>
                 ),
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CompactAppointmentReminder extends StatelessWidget {
+  final LiveNotificationItem item;
+  final Color accent;
+
+  const _CompactAppointmentReminder({required this.item, required this.accent});
+
+  @override
+  Widget build(BuildContext context) {
+    final title = _titleFor(item);
+    final time = item.appointment?.hora.trim().isNotEmpty == true
+        ? item.appointment!.hora.trim()
+        : item.leadingLabel;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(15),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: Container(
+          height: 48,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            color: _notificationBackground.withValues(alpha: 0.86),
+            borderRadius: BorderRadius.circular(15),
+            border: Border.all(color: accent.withValues(alpha: 0.32)),
+          ),
+          child: Row(
+            children: [
+              const AvisoVitalAppIcon(size: 24, borderRadius: 6),
+              const SizedBox(width: 13),
+              Expanded(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.labelLarge.copyWith(
+                    color: Colors.white.withValues(alpha: 0.94),
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0,
+                    height: 1,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Container(
+                height: 30,
+                constraints: const BoxConstraints(minWidth: 56),
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 0),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: 0.11),
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(color: accent.withValues(alpha: 0.26)),
+                ),
+                child: Text(
+                  time,
+                  maxLines: 1,
+                  style: AppTextStyles.labelLarge.copyWith(
+                    color: accent,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0,
+                    height: 1,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),

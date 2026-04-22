@@ -16,6 +16,7 @@ class AdminDashboardHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = _userRepository.getCurrentUser();
+    final strings = context.t;
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -44,7 +45,7 @@ class AdminDashboardHeader extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
-                  user.nombre,
+                  strings.displayName(user.nombre),
                   style: AppTextStyles.h2.copyWith(fontSize: 26, height: 1.05),
                 ),
                 const SizedBox(height: AppSpacing.xs),

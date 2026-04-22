@@ -220,37 +220,40 @@ class RealtimeSimulationService {
   }) {
     final appointmentAt = appointmentDateTime(appointment);
     if (appointmentAt.isBefore(DateTime.now())) return null;
+    final notificationId = alert != null
+        ? 'alert:${alert.id}'
+        : 'derived:${appointment.id}:${reminder.when.toIso8601String()}';
     final isHandledLocally = alertsRepository.isAppointmentReminderHandled(
       appointmentId: appointment.id,
       reminderKind: reminder.kind,
+      instanceId: notificationId,
     );
-    final isConfirmedReminder =
+    final isConfirmedInRepository =
         alert?.estado == EstadoAlerta.confirmada || isHandledLocally;
     final isFinalReminder = reminder.isFinal;
+    final useAcceptedFinalState = isFinalReminder && isHandledLocally;
 
-    if (isConfirmedReminder && !isFinalReminder) {
+    if (isConfirmedInRepository && !isFinalReminder) {
       return null;
     }
 
     return LiveNotificationItem(
-      id: alert != null
-          ? 'alert:${alert.id}'
-          : 'derived:${appointment.id}:${reminder.when.toIso8601String()}',
+      id: notificationId,
       type: LiveNotificationType.appointment,
       scheduledAt: reminder.when,
-      expiresAt: (isConfirmedReminder || isFinalReminder)
+      expiresAt: (useAcceptedFinalState || isFinalReminder)
           ? appointmentAt
           : reminder.when.add(AppDurations.reminderExpiration),
-      title: isConfirmedReminder ? appointment.especialidad : reminder.title,
-      subtitle: isConfirmedReminder
+      title: useAcceptedFinalState ? appointment.especialidad : reminder.title,
+      subtitle: useAcceptedFinalState
           ? 'Recordatorio confirmado'
           : reminder.message,
-      leadingLabel: isConfirmedReminder
+      leadingLabel: useAcceptedFinalState
           ? appointment.hora
           : formatAlertHour(reminder.when),
       appointment: appointment,
       alert: alert,
-      compactReminder: isConfirmedReminder && isFinalReminder,
+      compactReminder: useAcceptedFinalState,
       actionLabel: 'Pulse para abrir',
       keyValue: appointment.hora,
       reminderKind: reminder.kind,

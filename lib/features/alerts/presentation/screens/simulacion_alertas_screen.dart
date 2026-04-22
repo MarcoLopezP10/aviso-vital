@@ -119,6 +119,7 @@ class _SimulacionAlertasScreenState extends State<SimulacionAlertasScreen> {
           'alertId': item.alert?.id,
           'appointmentId': item.appointment?.id,
           'reminderKind': item.reminderKind,
+          'reminderInstanceId': item.id,
         },
       );
     }
