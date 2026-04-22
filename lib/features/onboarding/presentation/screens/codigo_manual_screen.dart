@@ -4,6 +4,7 @@ import 'package:aviso_vital_2/core/services/supabase_service.dart';
 import 'package:aviso_vital_2/app/router/app_routes.dart';
 import 'package:aviso_vital_2/core/services/app_link_service.dart';
 import 'package:aviso_vital_2/data/repositories/user_repository.dart';
+import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 import 'package:aviso_vital_2/shared/widgets/shared_widgets.dart';
 import 'dispositivo_conectado_screen.dart';
@@ -90,7 +91,7 @@ class _CodigoManualScreenState extends State<CodigoManualScreen> {
           content: Text(
             error is StateError
                 ? error.message.toString()
-                : 'No se pudo verificar el código: $error',
+                : context.t.verifyCodeError(error),
           ),
         ),
       );
@@ -155,7 +156,7 @@ class _CodigoManualScreenState extends State<CodigoManualScreen> {
               SizedBox(height: screenH * 0.04),
 
               Text(
-                'Código manual',
+                context.t.text('Código manual'),
                 style: AppTextStyles.overline.copyWith(
                   color: AppColors.amber,
                   letterSpacing: 1.5,
@@ -163,12 +164,14 @@ class _CodigoManualScreenState extends State<CodigoManualScreen> {
               ),
               const SizedBox(height: 10),
               Text(
-                'Introduzca el código\nde su administrador',
+                context.t.text('Introduzca el código\nde su administrador'),
                 style: AppTextStyles.h1,
               ),
               const SizedBox(height: 8),
               Text(
-                'El administrador puede encontrarlo en la pantalla de inicio',
+                context.t.text(
+                  'El administrador puede encontrarlo en la pantalla de inicio',
+                ),
                 style: AppTextStyles.bodySmall,
               ),
 
@@ -190,7 +193,7 @@ class _CodigoManualScreenState extends State<CodigoManualScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Formato del código',
+                      context.t.text('Formato del código'),
                       style: AppTextStyles.label.copyWith(
                         color: AppColors.textSecondary,
                       ),
@@ -232,7 +235,7 @@ class _CodigoManualScreenState extends State<CodigoManualScreen> {
                       child: TextButton.icon(
                         onPressed: _isLoading ? null : _pasteFromClipboard,
                         icon: const Icon(Icons.content_paste_rounded, size: 18),
-                        label: const Text('Pegar código'),
+                        label: Text(context.t.text('Pegar código')),
                       ),
                     ),
                   ],
@@ -251,7 +254,9 @@ class _CodigoManualScreenState extends State<CodigoManualScreen> {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      'Código incorrecto o no disponible. Inténtelo de nuevo.',
+                      context.t.text(
+                        'Código incorrecto o no disponible. Inténtelo de nuevo.',
+                      ),
                       style: AppTextStyles.caption.copyWith(
                         color: AppColors.danger,
                       ),
@@ -263,7 +268,7 @@ class _CodigoManualScreenState extends State<CodigoManualScreen> {
               const Spacer(),
 
               PrimaryButton(
-                label: 'Verificar código',
+                label: context.t.text('Verificar código'),
                 isLoading: _isLoading,
                 onPressed: _codigoLleno ? _verificar : null,
               ),
@@ -271,7 +276,9 @@ class _CodigoManualScreenState extends State<CodigoManualScreen> {
               const SizedBox(height: AppSpacing.xl),
               Center(
                 child: Text(
-                  'Introduzca el código real de vinculación del perfil en Supabase',
+                  context.t.text(
+                    'Introduzca el código real de vinculación del perfil en Supabase',
+                  ),
                   style: AppTextStyles.caption,
                   textAlign: TextAlign.center,
                 ),

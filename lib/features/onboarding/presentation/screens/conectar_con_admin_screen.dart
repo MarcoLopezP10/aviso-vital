@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:aviso_vital_2/app/router/app_routes.dart';
+import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 import 'package:aviso_vital_2/shared/widgets/shared_widgets.dart';
 import 'codigo_manual_screen.dart';
@@ -36,7 +37,7 @@ class ConectarConAdminScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Modo Usuario',
+                        context.t.text('Modo Usuario'),
                         style: AppTextStyles.overline.copyWith(
                           color: AppColors.amber,
                           letterSpacing: 1.5,
@@ -44,12 +45,14 @@ class ConectarConAdminScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 10),
                       Text(
-                        'Conéctese con su\nadministrador',
+                        context.t.text('Conéctese con su\nadministrador'),
                         style: AppTextStyles.h1,
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'La vinculación real entre administrador y usuario se hace siempre con el código manual de Aviso Vital.',
+                        context.t.text(
+                          'La vinculación real entre administrador y usuario se hace siempre con el código manual de Aviso Vital.',
+                        ),
                         style: AppTextStyles.bodySmall,
                       ),
                       SizedBox(height: screenH * 0.05),
@@ -77,19 +80,19 @@ class ConectarConAdminScreen extends StatelessWidget {
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          children: const [
+                          children: [
                             _StepRow(
                               index: '1',
                               text:
                                   'Pida al administrador su código de vinculación.',
                             ),
-                            SizedBox(height: AppSpacing.md),
+                            const SizedBox(height: AppSpacing.md),
                             _StepRow(
                               index: '2',
                               text:
                                   'Introduzca ese código en la siguiente pantalla.',
                             ),
-                            SizedBox(height: AppSpacing.md),
+                            const SizedBox(height: AppSpacing.md),
                             _StepRow(
                               index: '3',
                               text:
@@ -105,7 +108,7 @@ class ConectarConAdminScreen extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.lg),
               PrimaryButton(
-                label: 'Introducir código del administrador',
+                label: context.t.text('Introducir código del administrador'),
                 icon: Icons.password_rounded,
                 onPressed: () =>
                     Navigator.pushNamed(context, CodigoManualScreen.routeName),
@@ -113,7 +116,9 @@ class ConectarConAdminScreen extends StatelessWidget {
               const SizedBox(height: AppSpacing.md),
               Center(
                 child: Text(
-                  'El acceso por QR queda desactivado para evitar vinculaciones de prueba.',
+                  context.t.text(
+                    'El acceso por QR queda desactivado para evitar vinculaciones de prueba.',
+                  ),
                   textAlign: TextAlign.center,
                   style: AppTextStyles.caption.copyWith(
                     color: AppColors.textTertiary,
@@ -157,7 +162,7 @@ class _StepRow extends StatelessWidget {
         const SizedBox(width: AppSpacing.md),
         Expanded(
           child: Text(
-            text,
+            context.t.text(text),
             style: AppTextStyles.body.copyWith(
               color: AppColors.textSecondary,
               height: 1.45,

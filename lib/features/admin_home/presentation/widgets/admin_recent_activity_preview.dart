@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:aviso_vital_2/data/models/models.dart';
+import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 import 'package:aviso_vital_2/shared/widgets/content_widgets.dart';
 import 'package:aviso_vital_2/shared/widgets/shared_widgets.dart';
@@ -20,8 +21,8 @@ class AdminRecentActivityPreview extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SectionHeader(
-          title: 'Actividad reciente',
-          actionLabel: 'Ver todo',
+          title: context.t.text('Actividad reciente'),
+          actionLabel: context.t.text('Ver todo'),
           onAction: onViewAll,
         ),
         const SizedBox(height: AppSpacing.md),

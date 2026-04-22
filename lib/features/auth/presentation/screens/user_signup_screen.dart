@@ -9,6 +9,7 @@ import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_scaffold.d
 import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_switch_link.dart';
 import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_text_field.dart';
 import 'package:aviso_vital_2/features/user_home/presentation/screens/home_usuario_screen.dart';
+import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 import 'package:aviso_vital_2/shared/widgets/shared_widgets.dart';
 
@@ -63,14 +64,16 @@ class _UserSignupScreenState extends State<UserSignupScreen> {
     } catch (error) {
       if (!mounted) return;
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(AuthErrorMapper.fromSignup(error))));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AuthErrorMapper.fromSignup(error))),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final strings = context.t;
+
     return AuthScaffold(
       child: Form(
         key: _formKey,
@@ -80,12 +83,11 @@ class _UserSignupScreenState extends State<UserSignupScreen> {
             const SizedBox(height: AppSpacing.sm),
             const AppBackButton(),
             const SizedBox(height: AppSpacing.xl),
-            const AuthHeroCard(
-              eyebrow: 'Alta Usuario',
+            AuthHeroCard(
+              eyebrow: strings.userSignupEyebrow,
               eyebrowColor: AppColors.amberLight,
-              title: 'Crear cuenta\ny vincular',
-              description:
-                  'Cree su cuenta y enlácela al administrador usando su código de vinculación.',
+              title: strings.userSignupTitle,
+              description: strings.userSignupDescription,
             ),
             const SizedBox(height: AppSpacing.xl),
             AuthFormCard(
@@ -93,21 +95,21 @@ class _UserSignupScreenState extends State<UserSignupScreen> {
                 children: [
                   AuthTextField(
                     controller: _emailCtrl,
-                    hint: 'Email',
+                    hint: strings.email,
                     icon: Icons.person_outline_rounded,
                     keyboardType: TextInputType.emailAddress,
                     validator: (v) {
                       if (v == null || v.trim().isEmpty) {
-                        return 'Introduzca su email';
+                        return strings.enterEmail;
                       }
-                      if (!v.contains('@')) return 'Email no válido';
+                      if (!v.contains('@')) return strings.invalidEmail;
                       return null;
                     },
                   ),
                   const SizedBox(height: AppSpacing.md),
                   AuthTextField(
                     controller: _linkCodeCtrl,
-                    hint: 'Código del administrador',
+                    hint: strings.adminCode,
                     icon: Icons.link_rounded,
                     textCapitalization: TextCapitalization.characters,
                     validator: (v) {
@@ -115,10 +117,10 @@ class _UserSignupScreenState extends State<UserSignupScreen> {
                           ?.replaceAll(RegExp(r'[^A-Za-z0-9]'), '')
                           .trim();
                       if (normalized == null || normalized.isEmpty) {
-                        return 'Introduzca el código del administrador';
+                        return strings.enterAdminCode;
                       }
                       if (normalized.length != 6) {
-                        return 'El código debe tener 6 caracteres';
+                        return strings.adminCodeLength;
                       }
                       return null;
                     },
@@ -126,7 +128,7 @@ class _UserSignupScreenState extends State<UserSignupScreen> {
                   const SizedBox(height: AppSpacing.md),
                   AuthTextField(
                     controller: _passCtrl,
-                    hint: 'Contraseña',
+                    hint: strings.password,
                     icon: Icons.lock_outline_rounded,
                     obscure: !_passVisible,
                     suffix: IconButton(
@@ -142,16 +144,16 @@ class _UserSignupScreenState extends State<UserSignupScreen> {
                     ),
                     validator: (v) {
                       if (v == null || v.isEmpty) {
-                        return 'Introduzca una contraseña';
+                        return strings.createPassword;
                       }
-                      if (v.length < 6) return 'Mínimo 6 caracteres';
+                      if (v.length < 6) return strings.minSixChars;
                       return null;
                     },
                   ),
                   const SizedBox(height: AppSpacing.md),
                   AuthTextField(
                     controller: _confirmCtrl,
-                    hint: 'Confirmar contraseña',
+                    hint: strings.confirmPassword,
                     icon: Icons.lock_outline_rounded,
                     obscure: !_confirmVisible,
                     suffix: IconButton(
@@ -167,10 +169,10 @@ class _UserSignupScreenState extends State<UserSignupScreen> {
                     ),
                     validator: (v) {
                       if (v == null || v.isEmpty) {
-                        return 'Confirme la contraseña';
+                        return strings.confirmPasswordError;
                       }
                       if (v != _passCtrl.text) {
-                        return 'Las contraseñas no coinciden';
+                        return strings.passwordsDontMatch;
                       }
                       return null;
                     },
@@ -180,7 +182,7 @@ class _UserSignupScreenState extends State<UserSignupScreen> {
             ),
             const SizedBox(height: AppSpacing.xl),
             PrimaryButton(
-              label: 'Crear cuenta de usuario',
+              label: strings.createUserAccount,
               backgroundColor: AppColors.amber,
               foregroundColor: AppColors.textOnAmber,
               isLoading: _isLoading,
@@ -188,8 +190,8 @@ class _UserSignupScreenState extends State<UserSignupScreen> {
             ),
             const SizedBox(height: AppSpacing.lg),
             AuthSwitchLink(
-              prompt: '¿Ya tiene cuenta? ',
-              actionLabel: 'Iniciar sesión',
+              prompt: strings.hasAccountPrompt,
+              actionLabel: strings.signIn,
               onPressed: () => Navigator.pushReplacementNamed(
                 context,
                 UserLoginScreen.routeName,

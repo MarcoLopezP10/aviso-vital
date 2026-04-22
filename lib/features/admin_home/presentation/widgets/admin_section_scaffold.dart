@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 import 'package:aviso_vital_2/shared/widgets/shared_widgets.dart';
 
@@ -68,9 +69,12 @@ class AdminSectionScaffold extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(title, style: titleStyle),
+                            Text(context.t.text(title), style: titleStyle),
                             const SizedBox(height: 2),
-                            Text(subtitle, style: AppTextStyles.bodySmall),
+                            Text(
+                              context.t.text(subtitle),
+                              style: AppTextStyles.bodySmall,
+                            ),
                           ],
                         ),
                       ),

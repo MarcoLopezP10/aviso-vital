@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:aviso_vital_2/app/router/app_routes.dart';
+import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 import 'package:aviso_vital_2/shared/widgets/shared_widgets.dart';
 import 'dispositivo_conectado_screen.dart';
@@ -25,9 +26,10 @@ class _EscaneoQrScreenState extends State<EscaneoQrScreen>
       vsync: this,
       duration: const Duration(milliseconds: 1800),
     )..repeat(reverse: true);
-    _scanAnim = Tween<double>(begin: 0.05, end: 0.95).animate(
-      CurvedAnimation(parent: _scanCtrl, curve: Curves.easeInOut),
-    );
+    _scanAnim = Tween<double>(
+      begin: 0.05,
+      end: 0.95,
+    ).animate(CurvedAnimation(parent: _scanCtrl, curve: Curves.easeInOut));
   }
 
   @override
@@ -38,7 +40,10 @@ class _EscaneoQrScreenState extends State<EscaneoQrScreen>
 
   void _onQrDetected() {
     _scanCtrl.stop();
-    Navigator.pushReplacementNamed(context, DispositivoConectadoScreen.routeName);
+    Navigator.pushReplacementNamed(
+      context,
+      DispositivoConectadoScreen.routeName,
+    );
   }
 
   @override
@@ -59,8 +64,9 @@ class _EscaneoQrScreenState extends State<EscaneoQrScreen>
             // Header
             Padding(
               padding: EdgeInsets.symmetric(
-                  horizontal: AppSpacing.xl,
-                  vertical: screenH * 0.02),
+                horizontal: AppSpacing.xl,
+                vertical: screenH * 0.02,
+              ),
               child: Row(
                 children: [
                   const AppBackButton(),
@@ -68,11 +74,17 @@ class _EscaneoQrScreenState extends State<EscaneoQrScreen>
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Modo Usuario',
-                          style: AppTextStyles.overline.copyWith(
-                            color: AppColors.amber, letterSpacing: 1.5)),
-                      Text('Escanear código QR',
-                          style: AppTextStyles.h3),
+                      Text(
+                        context.t.text('Modo Usuario'),
+                        style: AppTextStyles.overline.copyWith(
+                          color: AppColors.amber,
+                          letterSpacing: 1.5,
+                        ),
+                      ),
+                      Text(
+                        context.t.text('Escanear código QR'),
+                        style: AppTextStyles.h3,
+                      ),
                     ],
                   ),
                 ],
@@ -147,7 +159,7 @@ class _EscaneoQrScreenState extends State<EscaneoQrScreen>
 
             const SizedBox(height: AppSpacing.xxl),
             Text(
-              'Coloque el código dentro del escáner',
+              context.t.text('Coloque el código dentro del escáner'),
               style: AppTextStyles.bodySmall,
               textAlign: TextAlign.center,
             ),
@@ -157,9 +169,13 @@ class _EscaneoQrScreenState extends State<EscaneoQrScreen>
             // Botón simular detección (para demo/TFG)
             Padding(
               padding: EdgeInsets.fromLTRB(
-                  AppSpacing.xl, 0, AppSpacing.xl, screenH * 0.04),
+                AppSpacing.xl,
+                0,
+                AppSpacing.xl,
+                screenH * 0.04,
+              ),
               child: PrimaryButton(
-                label: 'Simular detección QR',
+                label: context.t.text('Simular detección QR'),
                 icon: Icons.check_circle_outline,
                 onPressed: _onQrDetected,
               ),
@@ -183,9 +199,24 @@ class _QrCornerPainter extends CustomPainter {
     const len = 28.0;
     final corners = [
       [Offset(r, 0), Offset(len, 0), Offset(0, len), Offset(0, r)],
-      [Offset(size.width - r, 0), Offset(size.width - len, 0), Offset(size.width, len), Offset(size.width, r)],
-      [Offset(0, size.height - r), Offset(0, size.height - len), Offset(len, size.height), Offset(r, size.height)],
-      [Offset(size.width - r, size.height), Offset(size.width - len, size.height), Offset(size.width, size.height - len), Offset(size.width, size.height - r)],
+      [
+        Offset(size.width - r, 0),
+        Offset(size.width - len, 0),
+        Offset(size.width, len),
+        Offset(size.width, r),
+      ],
+      [
+        Offset(0, size.height - r),
+        Offset(0, size.height - len),
+        Offset(len, size.height),
+        Offset(r, size.height),
+      ],
+      [
+        Offset(size.width - r, size.height),
+        Offset(size.width - len, size.height),
+        Offset(size.width, size.height - len),
+        Offset(size.width, size.height - r),
+      ],
     ];
     for (final c in corners) {
       canvas.drawLine(c[0], c[1], paint);

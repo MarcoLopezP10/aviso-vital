@@ -10,6 +10,7 @@ import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_scaffold.d
 import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_social_row.dart';
 import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_switch_link.dart';
 import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_text_field.dart';
+import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 import 'package:aviso_vital_2/shared/widgets/shared_widgets.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -53,9 +54,9 @@ class _CrearCuentaScreenState extends State<CrearCuentaScreen> {
 
       if (!mounted) return;
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Cuenta creada correctamente.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.t.accountCreated)));
       Navigator.pushNamedAndRemoveUntil(
         context,
         HomeAdminScreen.routeName,
@@ -71,18 +72,19 @@ class _CrearCuentaScreenState extends State<CrearCuentaScreen> {
   }
 
   String _mapAuthError(Object error) {
+    final strings = AppStrings.current;
     final message = error.toString();
     if (message.contains('User already registered')) {
-      return 'Ya existe una cuenta con ese email.';
+      return strings.accountAlreadyExists;
     }
     if (message.contains('Password should be at least')) {
-      return 'La contraseña no cumple la longitud mínima requerida.';
+      return strings.passwordTooShort;
     }
     if (error is AuthException && error.message.trim().isNotEmpty) {
       return error.message;
     }
     if (error is StateError) return message.replaceFirst('Bad state: ', '');
-    return 'No se pudo crear la cuenta: $message';
+    return '${strings.createAccountFailed}: $message';
   }
 
   void _openSocialSignup(AuthSocialProvider provider) {
@@ -99,6 +101,7 @@ class _CrearCuentaScreenState extends State<CrearCuentaScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = context.t;
     final height = MediaQuery.of(context).size.height;
     final compact = height < 780;
     final topGap = compact ? AppSpacing.xs : AppSpacing.sm;
@@ -116,12 +119,11 @@ class _CrearCuentaScreenState extends State<CrearCuentaScreen> {
             SizedBox(height: topGap),
             const AppBackButton(),
             SizedBox(height: sectionGap),
-            const AuthHeroCard(
-              eyebrow: 'Acceso Administrador',
+            AuthHeroCard(
+              eyebrow: strings.adminAccess,
               eyebrowColor: AppColors.orangeLight,
-              title: 'Crear una\ncuenta',
-              description:
-                  'Crea tu acceso para gestionar medicación, citas y alertas con la misma claridad visual del panel.',
+              title: strings.adminSignupTitle,
+              description: strings.adminSignupDescription,
             ),
             SizedBox(height: sectionGap),
             AuthFormCard(
@@ -130,21 +132,21 @@ class _CrearCuentaScreenState extends State<CrearCuentaScreen> {
                 children: [
                   AuthTextField(
                     controller: _emailCtrl,
-                    hint: 'Email',
+                    hint: strings.email,
                     icon: Icons.person_outline_rounded,
                     keyboardType: TextInputType.emailAddress,
                     validator: (v) {
                       if (v == null || v.trim().isEmpty) {
-                        return 'Introduzca su email';
+                        return strings.enterEmail;
                       }
-                      if (!v.contains('@')) return 'Email no válido';
+                      if (!v.contains('@')) return strings.invalidEmail;
                       return null;
                     },
                   ),
                   SizedBox(height: innerGap),
                   AuthTextField(
                     controller: _passCtrl,
-                    hint: 'Contraseña',
+                    hint: strings.password,
                     icon: Icons.lock_outline_rounded,
                     obscure: !_passVisible,
                     suffix: IconButton(
@@ -160,16 +162,16 @@ class _CrearCuentaScreenState extends State<CrearCuentaScreen> {
                     ),
                     validator: (v) {
                       if (v == null || v.isEmpty) {
-                        return 'Introduce una contraseña';
+                        return strings.createPassword;
                       }
-                      if (v.length < 6) return 'Mínimo 6 caracteres';
+                      if (v.length < 6) return strings.minSixChars;
                       return null;
                     },
                   ),
                   SizedBox(height: innerGap),
                   AuthTextField(
                     controller: _confirmCtrl,
-                    hint: 'Confirmar contraseña',
+                    hint: strings.confirmPassword,
                     icon: Icons.lock_outline_rounded,
                     obscure: !_confirmVisible,
                     suffix: IconButton(
@@ -185,10 +187,10 @@ class _CrearCuentaScreenState extends State<CrearCuentaScreen> {
                     ),
                     validator: (v) {
                       if (v == null || v.isEmpty) {
-                        return 'Confirma la contraseña';
+                        return strings.confirmPasswordError;
                       }
                       if (v != _passCtrl.text) {
-                        return 'Las contraseñas no coinciden';
+                        return strings.passwordsDontMatch;
                       }
                       return null;
                     },
@@ -198,9 +200,9 @@ class _CrearCuentaScreenState extends State<CrearCuentaScreen> {
                     text: TextSpan(
                       style: AppTextStyles.bodySmall,
                       children: [
-                        const TextSpan(text: 'Al crear una cuenta acepta las '),
+                        TextSpan(text: strings.privacyPrefix),
                         TextSpan(
-                          text: 'Políticas de Privacidad',
+                          text: strings.privacyPolicy,
                           style: TextStyle(
                             color: AppColors.orange,
                             fontWeight: FontWeight.w600,
@@ -214,7 +216,7 @@ class _CrearCuentaScreenState extends State<CrearCuentaScreen> {
             ),
             SizedBox(height: sectionGap),
             PrimaryButton(
-              label: 'Crear Cuenta',
+              label: strings.createAccount,
               backgroundColor: AppColors.orange,
               foregroundColor: AppColors.textPrimary,
               height: compact ? 52 : 56,
@@ -227,8 +229,8 @@ class _CrearCuentaScreenState extends State<CrearCuentaScreen> {
             AuthSocialRow(onProviderTap: _openSocialSignup),
             SizedBox(height: footerGap),
             AuthSwitchLink(
-              prompt: '¿Ya tiene cuenta? ',
-              actionLabel: 'Iniciar sesión',
+              prompt: strings.hasAccountPrompt,
+              actionLabel: strings.signIn,
               onPressed: () => Navigator.pushReplacementNamed(
                 context,
                 AdminLoginScreen.routeName,

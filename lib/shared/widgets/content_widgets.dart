@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 import 'package:aviso_vital_2/data/models/models.dart';
 import 'shared_widgets.dart';
@@ -66,64 +67,64 @@ class MedicationCard extends StatelessWidget {
                 vertical: compact ? AppSpacing.sm : AppSpacing.lg,
               ),
               child: Row(
-          children: [
-            // ── Pastilla visual ──
-            PillVisual(
-              color: medicamento.colorPastilla,
-              shape: _toFormShape(medicamento.formaPastilla),
-              size: compact ? 34 : 44,
-            ),
-
-            const SizedBox(width: AppSpacing.md),
-
-            // ── Info ──
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          medicamento.nombre,
-                          style: compact
-                              ? AppTextStyles.h4.copyWith(fontSize: 17)
-                              : AppTextStyles.h3.copyWith(fontSize: 17),
-                          overflow: TextOverflow.ellipsis,
+                  // ── Pastilla visual ──
+                  PillVisual(
+                    color: medicamento.colorPastilla,
+                    shape: _toFormShape(medicamento.formaPastilla),
+                    size: compact ? 34 : 44,
+                  ),
+
+                  const SizedBox(width: AppSpacing.md),
+
+                  // ── Info ──
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                medicamento.nombre,
+                                style: compact
+                                    ? AppTextStyles.h4.copyWith(fontSize: 17)
+                                    : AppTextStyles.h3.copyWith(fontSize: 17),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            if (medicamento.stockBajo)
+                              StatusBadge.lowStock(small: true),
+                          ],
                         ),
-                      ),
-                      if (medicamento.stockBajo)
-                        StatusBadge.lowStock(small: true),
-                    ],
-                  ),
-                  SizedBox(height: compact ? 2 : 3),
-                  Text(
-                    '${medicamento.dosis} · ${medicamento.resumenTomas}',
-                    style: AppTextStyles.bodySmall,
-                  ),
-                  if ((!compact || forceStockBar) &&
-                      medicamento.horasToma.isNotEmpty) ...[
-                    SizedBox(height: compact ? 5 : 6),
-                    StockProgressBar(
-                      stockActual: medicamento.stockActual,
-                      stockMinimo: medicamento.stockMinimo,
+                        SizedBox(height: compact ? 2 : 3),
+                        Text(
+                          '${medicamento.dosis} · ${medicamento.resumenTomas}',
+                          style: AppTextStyles.bodySmall,
+                        ),
+                        if ((!compact || forceStockBar) &&
+                            medicamento.horasToma.isNotEmpty) ...[
+                          SizedBox(height: compact ? 5 : 6),
+                          StockProgressBar(
+                            stockActual: medicamento.stockActual,
+                            stockMinimo: medicamento.stockMinimo,
+                          ),
+                        ],
+                      ],
                     ),
-                  ],
+                  ),
+
+                  // ── Acciones ──
+                  if (showActions)
+                    _ActionsMenu(onEdit: onEdit, onDelete: onDelete)
+                  else if (onTap != null)
+                    const Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      color: AppColors.textDisabled,
+                      size: 14,
+                    ),
                 ],
               ),
-            ),
-
-            // ── Acciones ──
-            if (showActions)
-              _ActionsMenu(onEdit: onEdit, onDelete: onDelete)
-            else if (onTap != null)
-              const Icon(
-                Icons.arrow_forward_ios_rounded,
-                color: AppColors.textDisabled,
-                size: 14,
-              ),
-          ],
-        ),
             ),
           ],
         ),
@@ -170,19 +171,19 @@ class _ActionsMenu extends StatelessWidget {
       ),
       itemBuilder: (_) => [
         if (onEdit != null)
-          const PopupMenuItem(
+          PopupMenuItem(
             value: 'edit',
             child: Row(
               children: [
-                Icon(
+                const Icon(
                   Icons.edit_outlined,
                   size: 16,
                   color: AppColors.textSecondary,
                 ),
-                SizedBox(width: 10),
+                const SizedBox(width: 10),
                 Text(
-                  'Editar',
-                  style: TextStyle(fontFamily: 'Inter', fontSize: 14),
+                  context.t.text('Editar'),
+                  style: const TextStyle(fontFamily: 'Inter', fontSize: 14),
                 ),
               ],
             ),
@@ -199,7 +200,7 @@ class _ActionsMenu extends StatelessWidget {
                 ),
                 const SizedBox(width: 10),
                 Text(
-                  'Eliminar',
+                  context.t.text('Eliminar'),
                   style: const TextStyle(
                     fontFamily: 'Inter',
                     fontSize: 14,
@@ -367,21 +368,6 @@ class _DateBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = esHoy ? AppColors.orange : AppColors.info;
-    const meses = [
-      'ENE',
-      'FEB',
-      'MAR',
-      'ABR',
-      'MAY',
-      'JUN',
-      'JUL',
-      'AGO',
-      'SEP',
-      'OCT',
-      'NOV',
-      'DIC',
-    ];
-
     return Container(
       width: compact ? 56 : 62,
       height: compact ? 66 : 72,
@@ -419,7 +405,7 @@ class _DateBadge extends StatelessWidget {
           ),
           SizedBox(height: compact ? 0 : 1),
           Text(
-            meses[fecha.month - 1],
+            context.t.shortMonth(fecha.month),
             style: AppTextStyles.overline.copyWith(
               color: color.withValues(alpha: 0.85),
               letterSpacing: compact ? 1.0 : 1.2,
@@ -483,37 +469,37 @@ class _ActionsMenuCita extends StatelessWidget {
       ),
       itemBuilder: (_) => [
         if (onEdit != null)
-          const PopupMenuItem(
+          PopupMenuItem(
             value: 'edit',
             child: Row(
               children: [
-                Icon(
+                const Icon(
                   Icons.edit_outlined,
                   size: 16,
                   color: AppColors.textSecondary,
                 ),
-                SizedBox(width: 10),
+                const SizedBox(width: 10),
                 Text(
-                  'Editar',
-                  style: TextStyle(fontFamily: 'Inter', fontSize: 14),
+                  context.t.text('Editar'),
+                  style: const TextStyle(fontFamily: 'Inter', fontSize: 14),
                 ),
               ],
             ),
           ),
         if (onDelete != null)
-          const PopupMenuItem(
+          PopupMenuItem(
             value: 'delete',
             child: Row(
               children: [
-                Icon(
+                const Icon(
                   Icons.delete_outline_rounded,
                   size: 16,
                   color: AppColors.danger,
                 ),
-                SizedBox(width: 10),
+                const SizedBox(width: 10),
                 Text(
-                  'Eliminar',
-                  style: TextStyle(
+                  context.t.text('Eliminar'),
+                  style: const TextStyle(
                     fontFamily: 'Inter',
                     fontSize: 14,
                     color: AppColors.danger,
@@ -565,7 +551,7 @@ class RecentActivityPanel extends StatelessWidget {
               minimumSize: const Size(double.infinity, 44),
             ),
             child: Text(
-              'Ver historial',
+              context.t.text('Ver historial'),
               style: AppTextStyles.label.copyWith(color: AppColors.amber),
             ),
           ),
@@ -652,10 +638,14 @@ class TimelineEventItem extends StatelessWidget {
   String _formatTime(DateTime dt) {
     final now = DateTime.now();
     final diff = now.difference(dt);
-    if (diff.inMinutes < 60) return 'hace ${diff.inMinutes}min';
+    if (diff.inMinutes < 60) {
+      return AppStrings.current.isEnglish
+          ? '${diff.inMinutes}min ago'
+          : 'hace ${diff.inMinutes}min';
+    }
     if (diff.inHours < 24) {
       return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
     }
-    return 'Ayer';
+    return AppStrings.current.yesterday;
   }
 }

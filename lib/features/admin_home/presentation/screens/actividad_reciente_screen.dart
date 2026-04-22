@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:aviso_vital_2/app/router/app_routes.dart';
 import 'package:aviso_vital_2/data/models/models.dart';
 import 'package:aviso_vital_2/data/repositories/alerts_repository.dart';
+import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 import 'package:aviso_vital_2/shared/widgets/shared_widgets.dart';
 import 'package:aviso_vital_2/shared/widgets/content_widgets.dart';
@@ -46,7 +47,7 @@ class _ActividadRecienteScreenState extends State<ActividadRecienteScreen> {
           appBar: AppBar(
             backgroundColor: AppColors.background,
             leading: const AppBackButton(),
-            title: const Text('Actividad reciente'),
+            title: Text(context.t.text('Actividad reciente')),
           ),
           body: alertas.isEmpty
               ? Center(child: EmptyStateCard.noActivity())
@@ -60,11 +61,11 @@ class _ActividadRecienteScreenState extends State<ActividadRecienteScreen> {
                     padding: const EdgeInsets.all(AppSpacing.xl),
                     children: [
                       _GroupSection(
-                        label: 'Hoy',
+                        label: context.t.today,
                         alertas: alertas.where((a) => a.esHoy).toList(),
                       ),
                       _GroupSection(
-                        label: 'Ayer',
+                        label: context.t.yesterday,
                         alertas: alertas.where((a) => !a.esHoy).toList(),
                       ),
                     ],

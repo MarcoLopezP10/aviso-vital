@@ -1,36 +1,43 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 
 /// Maps authentication errors to user-facing Spanish messages.
 abstract class AuthErrorMapper {
   /// For login screens (user and admin).
   static String fromLogin(Object error) {
     final message = error.toString();
+    final strings = AppStrings.current;
     if (message.contains('Invalid login credentials')) {
-      return 'Email o contraseña incorrectos.';
+      return strings.loginInvalidCredentials;
     }
     if (message.contains('Email not confirmed')) {
-      return 'Confirme su email antes de iniciar sesión.';
+      return strings.emailNotConfirmed;
     }
     if (error is AuthException && error.message.trim().isNotEmpty) {
       return error.message;
     }
     if (error is StateError) return message.replaceFirst('Bad state: ', '');
-    return 'No se pudo iniciar sesión: $message';
+    return strings.isEnglish
+        ? 'Could not sign in: $message'
+        : 'No se pudo iniciar sesión: $message';
   }
 
   /// For the sign-up screen.
   static String fromSignup(Object error) {
     final message = error.toString();
+    final strings = AppStrings.current;
     if (message.contains('User already registered')) {
-      return 'Ya existe una cuenta con ese email.';
+      return strings.accountAlreadyExists;
     }
     if (message.contains('Password should be at least')) {
-      return 'La contraseña no cumple la longitud mínima requerida.';
+      return strings.passwordTooShort;
     }
     if (error is AuthException && error.message.trim().isNotEmpty) {
       return error.message;
     }
     if (error is StateError) return message.replaceFirst('Bad state: ', '');
-    return 'No se pudo crear la cuenta: $message';
+    return strings.isEnglish
+        ? 'Could not create the account: $message'
+        : 'No se pudo crear la cuenta: $message';
   }
 }

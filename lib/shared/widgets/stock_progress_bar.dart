@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 
 /// Barra de progreso de stock con color dinámico y etiquetas legibles.
@@ -27,13 +28,13 @@ class StockProgressBar extends StatelessWidget {
     required int max,
   }) : stockMaximo = max;
 
-  static const _colorGreen  = Color(0xFF22c55e);
+  static const _colorGreen = Color(0xFF22c55e);
   static const _colorYellow = Color(0xFFeab308);
-  static const _colorRed    = Color(0xFFef4444);
+  static const _colorRed = Color(0xFFef4444);
 
   Color get _barColor {
     if (stockActual >= stockMinimo * 2) return _colorGreen;
-    if (stockActual >= stockMinimo)     return _colorYellow;
+    if (stockActual >= stockMinimo) return _colorYellow;
     return _colorRed;
   }
 
@@ -79,7 +80,7 @@ class StockProgressBar extends StatelessWidget {
         ),
         const SizedBox(height: 2),
         Text(
-          'Mínimo $stockMinimo',
+          context.t.minimumValue(stockMinimo),
           style: AppTextStyles.caption.copyWith(
             color: AppColors.textTertiary,
             fontSize: 11,

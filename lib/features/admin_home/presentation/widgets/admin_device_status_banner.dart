@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:aviso_vital_2/data/repositories/device_repository.dart';
 import 'package:aviso_vital_2/features/device_status/presentation/screens/estado_dispositivo_screen.dart';
+import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 
 class AdminDeviceStatusBanner extends StatefulWidget {
@@ -39,8 +40,8 @@ class _AdminDeviceStatusBannerState extends State<AdminDeviceStatusBanner> {
         final data = snapshot.data ?? const _DeviceBannerData();
         final color = data.connected ? AppColors.success : AppColors.warning;
         final label = data.connected
-            ? '${data.userName ?? 'Usuario vinculado'} · Conectado'
-            : 'Sin usuario mayor vinculado todavía';
+            ? '${data.userName ?? context.t.text('Usuario vinculado')} · ${context.t.text('Conectado')}'
+            : context.t.text('Sin usuario mayor vinculado todavía');
 
         return GestureDetector(
           onTap: () =>
@@ -125,4 +126,3 @@ class _DeviceBannerData {
     this.lastSync,
   });
 }
-

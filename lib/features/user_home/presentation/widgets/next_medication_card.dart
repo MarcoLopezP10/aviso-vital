@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:aviso_vital_2/data/models/models.dart';
+import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 import 'package:aviso_vital_2/shared/widgets/shared_widgets.dart';
 
@@ -70,7 +71,7 @@ class NextMedicationCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
-                    'Próxima toma',
+                    context.t.nextDose,
                     style: AppTextStyles.label.copyWith(
                       color: AppColors.amber,
                       fontSize: 14,
@@ -141,7 +142,7 @@ class NextMedicationCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    'A las',
+                    context.t.at,
                     style: AppTextStyles.label.copyWith(
                       color: AppColors.amber.withValues(alpha: 0.7),
                       fontSize: 16,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:aviso_vital_2/data/models/models.dart';
+import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 
 /// Franja semanal de adherencia — 7 días (L M X J V S D).
@@ -16,16 +17,11 @@ class WeeklyAdherenceStrip extends StatelessWidget {
 
   static const _colorGreen = Color(0xFF22c55e);
   static const _colorAmber = Color(0xFFeab308);
-  static const _colorRed   = Color(0xFFef4444);
-
-  static const _labels   = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
-  static const _dayNames = [
-    'Lunes', 'Martes', 'Miércoles', 'Jueves',
-    'Viernes', 'Sábado', 'Domingo',
-  ];
+  static const _colorRed = Color(0xFFef4444);
 
   @override
   Widget build(BuildContext context) {
+    final strings = context.t;
     final today = DateTime.now();
     final todayDate = DateTime(today.year, today.month, today.day);
 
@@ -44,7 +40,7 @@ class WeeklyAdherenceStrip extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Adherencia semanal',
+            strings.text('Adherencia semanal'),
             style: AppTextStyles.label.copyWith(color: AppColors.textPrimary),
           ),
           const SizedBox(height: AppSpacing.md),
@@ -58,21 +54,21 @@ class WeeklyAdherenceStrip extends StatelessWidget {
               final confirmed = _confirmedForDay(dayDate);
               final dayColor = _colorForDay(confirmed, total, isFuture);
               final isToday = dayDate == todayDate;
-              final labelIdx = dayDate.weekday - 1; // 0=Mon…6=Sun
-
               return Semantics(
-                label:
-                    '${_dayNames[labelIdx]}: $confirmed de $total tomas confirmadas',
+                label: strings.weekdaySemantic(
+                  dayDate.weekday,
+                  confirmed,
+                  total,
+                ),
                 child: Column(
                   children: [
                     Text(
-                      _labels[labelIdx],
+                      _weekdayInitial(strings, dayDate.weekday),
                       style: AppTextStyles.caption.copyWith(
                         color: isToday
                             ? AppColors.amber
                             : AppColors.textTertiary,
-                        fontWeight:
-                            isToday ? FontWeight.w700 : FontWeight.w400,
+                        fontWeight: isToday ? FontWeight.w700 : FontWeight.w400,
                         fontSize: 11,
                       ),
                     ),
@@ -82,11 +78,13 @@ class WeeklyAdherenceStrip extends StatelessWidget {
                       height: 28,
                       decoration: BoxDecoration(
                         color: dayColor.withValues(
-                            alpha: isFuture || total == 0 ? 0.08 : 0.18),
+                          alpha: isFuture || total == 0 ? 0.08 : 0.18,
+                        ),
                         shape: BoxShape.circle,
                         border: Border.all(
                           color: dayColor.withValues(
-                              alpha: isFuture || total == 0 ? 0.15 : 0.45),
+                            alpha: isFuture || total == 0 ? 0.15 : 0.45,
+                          ),
                           width: isToday ? 2.0 : 1.2,
                         ),
                       ),
@@ -95,7 +93,8 @@ class WeeklyAdherenceStrip extends StatelessWidget {
                           _iconFor(dayColor, isFuture, total),
                           size: 13,
                           color: dayColor.withValues(
-                              alpha: isFuture || total == 0 ? 0.35 : 0.9),
+                            alpha: isFuture || total == 0 ? 0.35 : 0.9,
+                          ),
                         ),
                       ),
                     ),
@@ -110,23 +109,29 @@ class WeeklyAdherenceStrip extends StatelessWidget {
   }
 
   int _totalForDay(DateTime day) => weekDoses.where((t) {
-        final d = t.fechaProgramada;
-        return d.year == day.year && d.month == day.month && d.day == day.day;
-      }).length;
+    final d = t.fechaProgramada;
+    return d.year == day.year && d.month == day.month && d.day == day.day;
+  }).length;
 
   int _confirmedForDay(DateTime day) => weekDoses.where((t) {
-        final d = t.fechaProgramada;
-        return d.year == day.year &&
-            d.month == day.month &&
-            d.day == day.day &&
-            t.estado == EstadoToma.confirmada;
-      }).length;
+    final d = t.fechaProgramada;
+    return d.year == day.year &&
+        d.month == day.month &&
+        d.day == day.day &&
+        t.estado == EstadoToma.confirmada;
+  }).length;
 
   Color _colorForDay(int confirmed, int total, bool isFuture) {
     if (isFuture || total == 0) return AppColors.surfaceBorder;
     if (confirmed == total) return _colorGreen;
     if (confirmed > 0) return _colorAmber;
     return _colorRed;
+  }
+
+  String _weekdayInitial(AppStrings strings, int weekday) {
+    final es = ['', 'L', 'M', 'X', 'J', 'V', 'S', 'D'];
+    final en = ['', 'M', 'T', 'W', 'T', 'F', 'S', 'S'];
+    return strings.isEnglish ? en[weekday] : es[weekday];
   }
 
   IconData _iconFor(Color color, bool isFuture, int total) {

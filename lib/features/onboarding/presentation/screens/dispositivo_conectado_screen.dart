@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:aviso_vital_2/app/router/app_routes.dart';
+import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 import 'package:aviso_vital_2/shared/widgets/shared_widgets.dart';
 import 'package:aviso_vital_2/features/user_home/presentation/screens/home_usuario_screen.dart';
@@ -27,13 +28,15 @@ class _DispositivoConectadoScreenState extends State<DispositivoConectadoScreen>
       vsync: this,
       duration: const Duration(milliseconds: 600),
     );
-    _scaleAnim = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.elasticOut),
-    );
+    _scaleAnim = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.elasticOut));
     _fadeAnim = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
-          parent: _ctrl,
-          curve: const Interval(0.4, 1.0, curve: Curves.easeOut)),
+        parent: _ctrl,
+        curve: const Interval(0.4, 1.0, curve: Curves.easeOut),
+      ),
     );
     _ctrl.forward();
   }
@@ -74,7 +77,9 @@ class _DispositivoConectadoScreenState extends State<DispositivoConectadoScreen>
                       shape: BoxShape.circle,
                       color: AppColors.successSubtle,
                       border: Border.all(
-                          color: AppColors.successBorder, width: 2),
+                        color: AppColors.successBorder,
+                        width: 2,
+                      ),
                       boxShadow: [
                         BoxShadow(
                           color: AppColors.success.withValues(alpha: 0.25),
@@ -97,12 +102,16 @@ class _DispositivoConectadoScreenState extends State<DispositivoConectadoScreen>
                   opacity: _fadeAnim,
                   child: Column(
                     children: [
-                      Text('Dispositivo conectado',
-                          style: AppTextStyles.h1,
-                          textAlign: TextAlign.center),
+                      Text(
+                        context.t.text('Dispositivo conectado'),
+                        style: AppTextStyles.h1,
+                        textAlign: TextAlign.center,
+                      ),
                       const SizedBox(height: 14),
                       Text(
-                        'Su cuidador ya puede ayudarle a gestionar medicamentos y citas médicas',
+                        context.t.text(
+                          'Su cuidador ya puede ayudarle a gestionar medicamentos y citas médicas',
+                        ),
                         style: AppTextStyles.bodyLarge.copyWith(
                           color: AppColors.textSecondary,
                         ),
@@ -124,7 +133,7 @@ class _DispositivoConectadoScreenState extends State<DispositivoConectadoScreen>
                   child: Column(
                     children: [
                       PrimaryButton(
-                        label: 'Continuar',
+                        label: context.t.text('Continuar'),
                         icon: Icons.arrow_forward_rounded,
                         onPressed: () => Navigator.pushNamedAndRemoveUntil(
                           context,
@@ -155,10 +164,7 @@ class _WhatNextCard extends StatelessWidget {
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            AppColors.surfaceOverlay,
-            AppColors.surfaceRaised,
-          ],
+          colors: [AppColors.surfaceOverlay, AppColors.surfaceRaised],
         ),
         borderRadius: AppRadius.cardLg,
         border: Border.all(color: AppColors.surfaceBorder),
@@ -167,26 +173,33 @@ class _WhatNextCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('¿Qué ocurrirá ahora?',
-              style:
-                  AppTextStyles.h4.copyWith(color: AppColors.textSecondary)),
+          Text(
+            context.t.text('¿Qué ocurrirá ahora?'),
+            style: AppTextStyles.h4.copyWith(color: AppColors.textSecondary),
+          ),
           const SizedBox(height: AppSpacing.lg),
           _NextItem(
             icon: Icons.notifications_active_rounded,
             color: AppColors.amber,
-            text: 'Recibirá avisos cuando sea la hora de tomar su medicación',
+            text: context.t.text(
+              'Recibirá avisos cuando sea la hora de tomar su medicación',
+            ),
           ),
           const SizedBox(height: AppSpacing.md),
           _NextItem(
             icon: Icons.event_rounded,
             color: AppColors.orange,
-            text: 'Le recordaremos sus citas médicas con antelación',
+            text: context.t.text(
+              'Le recordaremos sus citas médicas con antelación',
+            ),
           ),
           const SizedBox(height: AppSpacing.md),
           _NextItem(
             icon: Icons.check_circle_outline_rounded,
             color: AppColors.success,
-            text: 'Solo tendrá que pulsar un botón para confirmar',
+            text: context.t.text(
+              'Solo tendrá que pulsar un botón para confirmar',
+            ),
           ),
         ],
       ),
@@ -198,8 +211,11 @@ class _NextItem extends StatelessWidget {
   final IconData icon;
   final Color color;
   final String text;
-  const _NextItem(
-      {required this.icon, required this.color, required this.text});
+  const _NextItem({
+    required this.icon,
+    required this.color,
+    required this.text,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -217,9 +233,13 @@ class _NextItem extends StatelessWidget {
         ),
         const SizedBox(width: AppSpacing.md),
         Expanded(
-          child: Text(text,
-              style: AppTextStyles.body.copyWith(
-                  color: AppColors.textSecondary, height: 1.45)),
+          child: Text(
+            text,
+            style: AppTextStyles.body.copyWith(
+              color: AppColors.textSecondary,
+              height: 1.45,
+            ),
+          ),
         ),
       ],
     );

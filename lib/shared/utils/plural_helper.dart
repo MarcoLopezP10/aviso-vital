@@ -1,19 +1,23 @@
+import 'package:aviso_vital_2/shared/i18n/app_language.dart';
+
 /// Helpers de pluralización en español para textos de la interfaz.
 class PluralHelper {
   const PluralHelper._();
 
   /// "en menos de 1 minuto" / "en 1 minuto" / "en X minutos"
   static String minutesUntil(int diff) {
-    if (diff <= 0) return 'en menos de 1 minuto';
-    if (diff == 1) return 'en 1 minuto';
-    return 'en $diff minutos';
+    final strings = AppStrings.current;
+    if (diff <= 0) {
+      return strings.isEnglish
+          ? 'in less than 1 minute'
+          : 'en menos de 1 minuto';
+    }
+    return strings.minutesUntil(diff);
   }
 
   /// "en 1 hora" / "en X horas" con minutos opcionales
   static String hoursUntil(int hours, int remainingMinutes) {
-    final hLabel = hours == 1 ? '1 hora' : '$hours horas';
-    if (remainingMinutes == 0) return 'en $hLabel';
-    return 'en ${hours}h ${remainingMinutes}min';
+    return AppStrings.current.hoursUntil(hours, remainingMinutes);
   }
 
   /// Pluraliza cualquier unidad: "1 día" / "X días"

@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 
 class AuthSocialProvider {
@@ -103,7 +104,7 @@ class AuthSocialRow extends StatelessWidget {
                 Expanded(
                   child: Semantics(
                     button: true,
-                    label: 'Continuar con ${entry.value.label}',
+                    label: context.t.continueWithProvider(entry.value.label),
                     child: InkWell(
                       onTap: onProviderTap == null
                           ? null

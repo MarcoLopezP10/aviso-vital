@@ -3,6 +3,7 @@ import 'package:aviso_vital_2/app/router/app_routes.dart';
 import 'package:aviso_vital_2/data/repositories/auth_repository.dart';
 import 'package:aviso_vital_2/data/repositories/user_repository.dart';
 import 'package:aviso_vital_2/features/device_status/presentation/screens/estado_dispositivo_screen.dart';
+import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 import 'package:aviso_vital_2/shared/widgets/shared_widgets.dart';
 
@@ -35,7 +36,7 @@ class AdminDashboardHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Panel de control',
+                  context.t.text('Panel de control'),
                   style: AppTextStyles.overline.copyWith(
                     color: AppColors.textTertiary,
                     letterSpacing: 1.2,
@@ -85,7 +86,7 @@ class AdminDashboardHeader extends StatelessWidget {
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            'Seguimiento activo',
+                            context.t.text('Seguimiento activo'),
                             style: AppTextStyles.caption.copyWith(
                               color: AppColors.success,
                               fontWeight: FontWeight.w600,
@@ -107,7 +108,7 @@ class AdminDashboardHeader extends StatelessWidget {
                         ),
                       ),
                       child: Text(
-                        'Resumen diario del cuidado',
+                        context.t.text('Resumen diario del cuidado'),
                         style: AppTextStyles.caption.copyWith(
                           color: AppColors.amberLight,
                           fontWeight: FontWeight.w600,
@@ -121,14 +122,14 @@ class AdminDashboardHeader extends StatelessWidget {
           ),
           _HeaderActionButton(
             icon: Icons.phone_android_outlined,
-            tooltip: 'Estado dispositivo',
+            tooltip: context.t.text('Estado dispositivo'),
             onTap: () =>
                 Navigator.pushNamed(context, EstadoDispositivoScreen.routeName),
           ),
           const SizedBox(width: 8),
           _HeaderActionButton(
             icon: Icons.logout_rounded,
-            tooltip: 'Cerrar sesión',
+            tooltip: context.t.logout,
             onTap: () => ConfirmDialog.show(
               context,
               title: 'Cerrar sesión',

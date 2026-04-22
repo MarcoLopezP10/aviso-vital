@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 
 class AdminSectionStatCard extends StatelessWidget {
@@ -65,7 +66,7 @@ class AdminSectionStatCard extends StatelessWidget {
           ),
           const SizedBox(height: 2),
           Text(
-            label,
+            context.t.text(label),
             style: AppTextStyles.caption.copyWith(
               color: AppColors.textSecondary,
               height: 1.1,

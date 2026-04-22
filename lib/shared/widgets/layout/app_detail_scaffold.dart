@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 import 'package:aviso_vital_2/shared/widgets/shared_widgets.dart';
 
@@ -43,7 +44,7 @@ class AppDetailScaffold extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: AppColors.background,
         leading: const AppBackButton(),
-        title: title != null ? Text(title!) : null,
+        title: title != null ? Text(context.t.text(title!)) : null,
         actions: actions,
       ),
       body: Column(

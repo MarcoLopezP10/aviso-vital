@@ -9,6 +9,7 @@ import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_scaffold.d
 import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_social_row.dart';
 import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_switch_link.dart';
 import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_text_field.dart';
+import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 import 'package:aviso_vital_2/shared/utils/auth_error_mapper.dart';
 import 'package:aviso_vital_2/shared/widgets/shared_widgets.dart';
@@ -76,6 +77,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = context.t;
     final height = MediaQuery.of(context).size.height;
     final compact = height < 780;
     final topGap = compact ? AppSpacing.xs : AppSpacing.sm;
@@ -93,11 +95,10 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
             SizedBox(height: topGap),
             const AppBackButton(),
             SizedBox(height: sectionGap),
-            const AuthHeroCard(
-              eyebrow: 'Acceso Administrador',
-              title: 'Bienvenido\nde nuevo',
-              description:
-                  'Gestiona medicación, citas y alertas desde un panel claro y seguro.',
+            AuthHeroCard(
+              eyebrow: strings.adminAccess,
+              title: strings.welcomeBack,
+              description: strings.adminLoginDescription,
             ),
             SizedBox(height: sectionGap),
             AuthFormCard(
@@ -106,21 +107,21 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                 children: [
                   AuthTextField(
                     controller: _emailCtrl,
-                    hint: 'Email',
+                    hint: strings.email,
                     icon: Icons.person_outline_rounded,
                     keyboardType: TextInputType.emailAddress,
                     validator: (v) {
                       if (v == null || v.trim().isEmpty) {
-                        return 'Introduzca su email';
+                        return strings.enterEmail;
                       }
-                      if (!v.contains('@')) return 'Email no válido';
+                      if (!v.contains('@')) return strings.invalidEmail;
                       return null;
                     },
                   ),
                   SizedBox(height: innerGap),
                   AuthTextField(
                     controller: _passCtrl,
-                    hint: 'Contraseña',
+                    hint: strings.password,
                     icon: Icons.lock_outline_rounded,
                     obscure: !_passVisible,
                     suffix: IconButton(
@@ -136,9 +137,9 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                     ),
                     validator: (v) {
                       if (v == null || v.isEmpty) {
-                        return 'Introduzca su contraseña';
+                        return strings.enterPassword;
                       }
-                      if (v.length < 6) return 'Mínimo 6 caracteres';
+                      if (v.length < 6) return strings.minSixChars;
                       return null;
                     },
                   ),
@@ -152,7 +153,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                         padding: const EdgeInsets.symmetric(horizontal: 6),
                       ),
                       child: Text(
-                        '¿Ha olvidado la contraseña?',
+                        strings.forgotPassword,
                         style: AppTextStyles.label.copyWith(
                           color: AppColors.orange,
                         ),
@@ -164,7 +165,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
             ),
             SizedBox(height: sectionGap),
             PrimaryButton(
-              label: 'Iniciar Sesión',
+              label: strings.adminSignIn,
               backgroundColor: AppColors.orange,
               foregroundColor: AppColors.textPrimary,
               height: compact ? 52 : 56,
@@ -177,8 +178,8 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
             AuthSocialRow(onProviderTap: _openSocialLogin),
             SizedBox(height: footerGap),
             AuthSwitchLink(
-              prompt: '¿No tiene cuenta? ',
-              actionLabel: 'Crear cuenta',
+              prompt: strings.noAccountPrompt,
+              actionLabel: strings.createAccount,
               onPressed: () =>
                   Navigator.pushNamed(context, CrearCuentaScreen.routeName),
             ),

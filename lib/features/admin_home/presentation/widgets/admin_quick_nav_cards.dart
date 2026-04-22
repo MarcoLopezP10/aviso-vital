@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 
 class AdminQuickNavCards extends StatelessWidget {
@@ -21,24 +22,25 @@ class AdminQuickNavCards extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = context.t;
     final cards = [
       _QuickNavData(
-        'Medicamentos',
-        '$medicationsCount activos',
+        strings.text('Medicamentos'),
+        strings.activeMedications(medicationsCount),
         Icons.medication_rounded,
         AppColors.amber,
         onOpenMedications,
       ),
       _QuickNavData(
-        'Citas',
-        '$upcomingAppointmentsCount próximas',
+        strings.text('Citas'),
+        strings.upcomingAppointmentsCount(upcomingAppointmentsCount),
         Icons.event_rounded,
         AppColors.orange,
         onOpenAppointments,
       ),
       _QuickNavData(
-        'Alertas',
-        '$omissionsCount incidencias',
+        strings.text('Alertas'),
+        strings.incidentsCount(omissionsCount),
         Icons.history_rounded,
         AppColors.info,
         onOpenAlerts,

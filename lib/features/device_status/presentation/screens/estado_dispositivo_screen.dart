@@ -5,6 +5,7 @@ import 'package:aviso_vital_2/data/models/models.dart';
 import 'package:aviso_vital_2/data/repositories/device_repository.dart';
 import 'package:aviso_vital_2/data/repositories/user_repository.dart';
 import 'package:aviso_vital_2/features/admin_home/presentation/widgets/admin_widgets.dart';
+import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 import 'package:aviso_vital_2/shared/widgets/layout/app_detail_scaffold.dart';
 
@@ -34,7 +35,7 @@ class _EstadoDispositivoScreenState extends State<EstadoDispositivoScreen> {
   @override
   Widget build(BuildContext context) {
     return AppDetailScaffold(
-      title: 'Estado del dispositivo',
+      title: context.t.text('Estado del dispositivo'),
       content: FutureBuilder<_DeviceStatusData>(
         future: _screenDataFuture,
         builder: (context, snapshot) {
@@ -46,8 +47,12 @@ class _EstadoDispositivoScreenState extends State<EstadoDispositivoScreen> {
           }
 
           if (admin == null) {
-            return const Center(
-              child: Text('No se pudo cargar el perfil del administrador.'),
+            return Center(
+              child: Text(
+                context.t.text(
+                  'No se pudo cargar el perfil del administrador.',
+                ),
+              ),
             );
           }
 
@@ -55,7 +60,9 @@ class _EstadoDispositivoScreenState extends State<EstadoDispositivoScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               ConnectionStatusCard(
-                nombreUsuario: device?.displayName ?? 'Sin usuario vinculado',
+                nombreUsuario:
+                    device?.displayName ??
+                    context.t.text('Sin usuario vinculado'),
                 conectado: device?.connected == true,
                 ultimaSincronizacion: device?.lastSyncAt,
                 fechaVinculacion: device?.linkedAt,
@@ -63,7 +70,7 @@ class _EstadoDispositivoScreenState extends State<EstadoDispositivoScreen> {
               ),
               const SizedBox(height: AppSpacing.xxl),
               Text(
-                'CÓDIGO DE VINCULACIÓN',
+                context.t.text('CÓDIGO DE VINCULACIÓN'),
                 style: AppTextStyles.overline.copyWith(letterSpacing: 1.5),
               ),
               const SizedBox(height: 10),
@@ -80,7 +87,10 @@ class _EstadoDispositivoScreenState extends State<EstadoDispositivoScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Código activo', style: AppTextStyles.label),
+                          Text(
+                            context.t.text('Código activo'),
+                            style: AppTextStyles.label,
+                          ),
                           const SizedBox(height: 6),
                           Text(
                             _formatCode(admin.codigoVinculacion),
@@ -99,21 +109,23 @@ class _EstadoDispositivoScreenState extends State<EstadoDispositivoScreen> {
                       ),
                       onPressed: () =>
                           _copyCode(context, admin.codigoVinculacion),
-                      tooltip: 'Copiar',
+                      tooltip: context.t.text('Copiar'),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: AppSpacing.sm),
               Text(
-                'Comparta este código exactamente como aparece: dos letras, guion y cuatro números (ej. AV-1234).',
+                context.t.isEnglish
+                    ? 'Share this code exactly as shown: two letters, dash and four numbers (e.g. AV-1234).'
+                    : 'Comparta este código exactamente como aparece: dos letras, guion y cuatro números (ej. AV-1234).',
                 style: AppTextStyles.caption.copyWith(
                   color: AppColors.textSecondary,
                 ),
               ),
               const SizedBox(height: AppSpacing.xxl),
               Text(
-                'ESTADO DE ALERTAS',
+                context.t.text('ESTADO DE ALERTAS'),
                 style: AppTextStyles.overline.copyWith(letterSpacing: 1.5),
               ),
               const SizedBox(height: 10),
@@ -143,7 +155,7 @@ class _EstadoDispositivoScreenState extends State<EstadoDispositivoScreen> {
     await Clipboard.setData(ClipboardData(text: withDash));
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Código copiado al portapapeles')),
+      SnackBar(content: Text(context.t.text('Código copiado al portapapeles'))),
     );
   }
 
@@ -185,7 +197,7 @@ class _AlertaRow extends StatelessWidget {
         children: [
           Expanded(
             child: Text(
-              label,
+              context.t.text(label),
               style: AppTextStyles.label.copyWith(color: AppColors.textPrimary),
             ),
           ),

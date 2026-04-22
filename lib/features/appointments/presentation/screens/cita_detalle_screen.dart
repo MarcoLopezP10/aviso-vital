@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:aviso_vital_2/app/router/app_routes.dart';
 import 'package:aviso_vital_2/data/models/models.dart';
 import 'package:aviso_vital_2/data/repositories/appointments_repository.dart';
+import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 import 'package:aviso_vital_2/shared/widgets/layout/app_detail_scaffold.dart';
 import 'package:aviso_vital_2/shared/widgets/shared_widgets.dart';
@@ -39,11 +40,11 @@ class _CitaDetalleScreenState extends State<CitaDetalleScreen> {
 
         final cita = snapshot.data;
         if (cita == null) {
-          return const AppDetailScaffold(
+          return AppDetailScaffold(
             content: Center(
               child: Text(
-                'Cita no encontrada',
-                style: TextStyle(color: Colors.white),
+                context.t.text('Cita no encontrada'),
+                style: const TextStyle(color: Colors.white),
               ),
             ),
             scrollable: false,
@@ -64,7 +65,7 @@ class _CitaDetalleView extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = cita.esHoy ? AppColors.orange : AppColors.info;
     return AppDetailScaffold(
-      title: 'Detalle de cita',
+      title: context.t.text('Detalle de cita'),
       actions: [
         if (cita.esHoy)
           Padding(
@@ -77,7 +78,7 @@ class _CitaDetalleView extends StatelessWidget {
         children: [
           Expanded(
             child: SecondaryButton(
-              label: 'Editar',
+              label: context.t.text('Editar'),
               icon: Icons.edit_outlined,
               onPressed: () => Navigator.of(context).pop('edit'),
             ),
@@ -85,15 +86,17 @@ class _CitaDetalleView extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: PrimaryButton(
-              label: 'Eliminar',
+              label: context.t.text('Eliminar'),
               backgroundColor: AppColors.danger,
               foregroundColor: AppColors.textPrimary,
               icon: Icons.delete_outline_rounded,
               onPressed: () => ConfirmDialog.show(
                 context,
-                title: 'Eliminar cita',
-                message: '¿Seguro que desea eliminar esta cita?',
-                confirmLabel: 'Eliminar',
+                title: context.t.text('Eliminar cita'),
+                message: context.t.isEnglish
+                    ? 'Are you sure you want to delete this appointment?'
+                    : '¿Seguro que desea eliminar esta cita?',
+                confirmLabel: context.t.text('Eliminar'),
                 isDestructive: true,
                 onConfirm: () async {
                   await _appointmentsRepository.delete(cita.id);
@@ -112,26 +115,26 @@ class _CitaDetalleView extends StatelessWidget {
             items: [
               _Row(
                 icon: Icons.local_hospital_outlined,
-                label: 'Centro',
+                label: context.t.text('Centro'),
                 value: cita.lugar,
               ),
               if (cita.direccion != null)
                 _Row(
                   icon: Icons.location_on_outlined,
-                  label: 'Dirección',
+                  label: context.t.text('Dirección'),
                   value: cita.direccion!,
                 ),
               if (cita.telefono != null)
                 _Row(
                   icon: Icons.phone_outlined,
-                  label: 'Teléfono',
+                  label: context.t.text('Teléfono'),
                   value: cita.telefono!,
                 ),
             ],
           ),
           const SizedBox(height: AppSpacing.xl),
           Text(
-            'RECORDATORIOS',
+            context.t.text('RECORDATORIOS'),
             style: AppTextStyles.overline.copyWith(letterSpacing: 1.5),
           ),
           const SizedBox(height: 10),
@@ -141,8 +144,10 @@ class _CitaDetalleView extends StatelessWidget {
                 icon: cita.recordatorio24h
                     ? Icons.check_circle_outline
                     : Icons.radio_button_unchecked,
-                label: '24 horas antes',
-                value: cita.recordatorio24h ? 'Activo' : 'Desactivado',
+                label: context.t.text('24 horas antes'),
+                value: cita.recordatorio24h
+                    ? context.t.text('Activo')
+                    : context.t.text('Desactivado'),
                 valueColor: cita.recordatorio24h
                     ? AppColors.success
                     : AppColors.textTertiary,
@@ -151,8 +156,10 @@ class _CitaDetalleView extends StatelessWidget {
                 icon: cita.recordatorio3h
                     ? Icons.check_circle_outline
                     : Icons.radio_button_unchecked,
-                label: '3 horas antes',
-                value: cita.recordatorio3h ? 'Activo' : 'Desactivado',
+                label: context.t.text('3 horas antes'),
+                value: cita.recordatorio3h
+                    ? context.t.text('Activo')
+                    : context.t.text('Desactivado'),
                 valueColor: cita.recordatorio3h
                     ? AppColors.success
                     : AppColors.textTertiary,
@@ -162,7 +169,7 @@ class _CitaDetalleView extends StatelessWidget {
           if (cita.notas != null) ...[
             const SizedBox(height: AppSpacing.xl),
             Text(
-              'NOTAS',
+              context.t.text('NOTAS'),
               style: AppTextStyles.overline.copyWith(letterSpacing: 1.5),
             ),
             const SizedBox(height: 10),
@@ -196,21 +203,6 @@ class _AppointmentDetailHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const months = [
-      'enero',
-      'febrero',
-      'marzo',
-      'abril',
-      'mayo',
-      'junio',
-      'julio',
-      'agosto',
-      'septiembre',
-      'octubre',
-      'noviembre',
-      'diciembre',
-    ];
-
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.xxl),
@@ -230,7 +222,9 @@ class _AppointmentDetailHeader extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            '${cita.fecha.day} de ${months[cita.fecha.month - 1]} · ${cita.hora}',
+            context.t.isEnglish
+                ? '${context.t.month(cita.fecha.month)} ${cita.fecha.day} · ${cita.hora}'
+                : '${cita.fecha.day} de ${context.t.month(cita.fecha.month)} · ${cita.hora}',
             style: AppTextStyles.h3.copyWith(color: color),
             textAlign: TextAlign.center,
           ),

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:aviso_vital_2/app/router/app_router.dart';
 import 'package:aviso_vital_2/core/services/care_plan_context_service.dart';
 import 'package:aviso_vital_2/core/services/supabase_service.dart';
@@ -9,6 +10,7 @@ import 'package:aviso_vital_2/features/admin_home/presentation/screens/home_admi
 import 'package:aviso_vital_2/features/onboarding/presentation/screens/codigo_manual_screen.dart';
 import 'package:aviso_vital_2/features/onboarding/presentation/screens/role_selection_screen.dart';
 import 'package:aviso_vital_2/features/user_home/presentation/screens/home_usuario_screen.dart';
+import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 
 /// Punto de entrada de la aplicación Aviso Vital.
@@ -17,12 +19,27 @@ class AvisoVitalApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Aviso Vital',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.theme,
-      home: const _AppBootstrapScreen(),
-      onGenerateRoute: AppRouter.onGenerateRoute,
+    return ValueListenableBuilder<AppLanguage>(
+      valueListenable: AppLocaleController.instance.language,
+      builder: (context, language, _) {
+        return MaterialApp(
+          key: ValueKey('aviso-vital-${language.locale.languageCode}'),
+          title: 'Aviso Vital',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.theme,
+          locale: language.locale,
+          supportedLocales: AppLanguage.values
+              .map((language) => language.locale)
+              .toList(growable: false),
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+          ],
+          home: const _AppBootstrapScreen(),
+          onGenerateRoute: AppRouter.onGenerateRoute,
+        );
+      },
     );
   }
 }
@@ -104,6 +121,8 @@ class _ConfigurationErrorScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = context.t;
+
     return Scaffold(
       body: Center(
         child: Padding(
@@ -116,15 +135,15 @@ class _ConfigurationErrorScreen extends StatelessWidget {
                 const Icon(Icons.error_outline_rounded, size: 48),
                 const SizedBox(height: 16),
                 Text(
-                  'Configuración de Supabase incompleta',
+                  strings.supabaseConfigTitle,
                   style: Theme.of(context).textTheme.titleLarge,
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 12),
                 Text(message, textAlign: TextAlign.center),
                 const SizedBox(height: 12),
-                const Text(
-                  'Ejemplo: flutter run --dart-define-from-file=env/dev.json',
+                Text(
+                  strings.supabaseConfigExample,
                   textAlign: TextAlign.center,
                 ),
               ],

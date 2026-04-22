@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 
 class QuickActionsStrip extends StatelessWidget {
   final int pendingCount;
 
-  const QuickActionsStrip({
-    super.key,
-    required this.pendingCount,
-  });
+  const QuickActionsStrip({super.key, required this.pendingCount});
 
   @override
   Widget build(BuildContext context) {
@@ -17,8 +15,8 @@ class QuickActionsStrip extends StatelessWidget {
         ? Icons.check_circle_outline_rounded
         : Icons.notifications_active_outlined;
     final text = noPending
-        ? 'Todo al día, no tiene tomas pendientes'
-        : 'Le avisaremos cuando llegue la hora';
+        ? context.t.text('Todo al día, no tiene tomas pendientes')
+        : context.t.text('Le avisaremos cuando llegue la hora');
 
     return Container(
       width: double.infinity,
@@ -30,9 +28,7 @@ class QuickActionsStrip extends StatelessWidget {
         color: noPending ? AppColors.successSubtle : AppColors.surface,
         borderRadius: AppRadius.card,
         border: Border.all(
-          color: noPending
-              ? AppColors.successBorder
-              : AppColors.surfaceBorder,
+          color: noPending ? AppColors.successBorder : AppColors.surfaceBorder,
         ),
       ),
       child: Row(

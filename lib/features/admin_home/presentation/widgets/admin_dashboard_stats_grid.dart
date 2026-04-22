@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:aviso_vital_2/data/models/models.dart';
+import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 import 'package:aviso_vital_2/shared/widgets/shared_widgets.dart';
 
@@ -23,6 +24,7 @@ class AdminDashboardStatsGrid extends StatelessWidget {
     final adherenciaColor = pct >= 80
         ? AppColors.success
         : (pct >= 50 ? AppColors.warning : AppColors.danger);
+    final strings = context.t;
 
     final cards = [
       SummaryStatCard(
@@ -30,28 +32,32 @@ class AdminDashboardStatsGrid extends StatelessWidget {
         value: '$pct%',
         icon: Icons.trending_up_rounded,
         color: adherenciaColor,
-        subtitle: 'Hoy',
+        subtitle: strings.today,
       ),
       SummaryStatCard(
         title: 'Pendientes hoy',
         value: '$pendientesHoy',
         icon: Icons.schedule_rounded,
         color: AppColors.orange,
-        subtitle: pendientesHoy > 0 ? 'Sin confirmar' : 'En orden',
+        subtitle: pendientesHoy > 0
+            ? strings.text('Sin confirmar')
+            : strings.text('En orden'),
       ),
       SummaryStatCard(
         title: 'Stock bajo',
         value: '$stockBajoCount',
         icon: Icons.warning_amber_rounded,
         color: stockBajoCount > 0 ? AppColors.danger : AppColors.success,
-        subtitle: stockBajoCount > 0 ? 'Reposición' : 'Correcto',
+        subtitle: stockBajoCount > 0
+            ? strings.text('Reposición')
+            : strings.text('Correcto'),
       ),
       SummaryStatCard(
         title: 'Cita hoy',
         value: citaHoy != null ? citaHoy!.hora : '—',
         icon: Icons.event_rounded,
         color: citaHoy != null ? AppColors.info : AppColors.textTertiary,
-        subtitle: citaHoy?.especialidad ?? 'Sin citas',
+        subtitle: citaHoy?.especialidad ?? strings.text('Sin citas'),
       ),
     ];
 

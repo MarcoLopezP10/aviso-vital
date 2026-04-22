@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:aviso_vital_2/app/router/app_routes.dart';
 import 'package:aviso_vital_2/core/services/pdf_export_service.dart';
+import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 import 'package:aviso_vital_2/shared/widgets/shared_widgets.dart';
 import 'package:aviso_vital_2/shared/widgets/content_widgets.dart';
@@ -92,9 +93,7 @@ class _AdminMedicamentosScreenState extends State<AdminMedicamentosScreen> {
       setState(() {
         _medicamentos = _medicationsRepository.getAll();
         _isLoading = false;
-        _loadError =
-            'No se pudieron cargar los medicamentos desde Supabase. '
-            'Se muestran datos mock.';
+        _loadError = context.t.medicationLoadLocalFallback();
       });
       ScaffoldMessenger.of(
         context,
@@ -113,8 +112,8 @@ class _AdminMedicamentosScreenState extends State<AdminMedicamentosScreen> {
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('PDF descargado correctamente'),
+        SnackBar(
+          content: Text(context.t.text('PDF descargado correctamente')),
           backgroundColor: Color(0xFF16A34A),
         ),
       );
@@ -122,7 +121,7 @@ class _AdminMedicamentosScreenState extends State<AdminMedicamentosScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('No se pudo generar el archivo: $error'),
+          content: Text(context.t.fileGenerationError(error)),
           backgroundColor: const Color(0xFFDC2626),
         ),
       );
@@ -139,7 +138,7 @@ class _AdminMedicamentosScreenState extends State<AdminMedicamentosScreen> {
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('No se pudo eliminar el medicamento: $error')),
+        SnackBar(content: Text(context.t.medicationDeleteError(error))),
       );
     }
   }
@@ -154,8 +153,8 @@ class _AdminMedicamentosScreenState extends State<AdminMedicamentosScreen> {
     final pendingToday = _medicationsRepository.getPendingTodayCount();
 
     return AdminSectionScaffold(
-      title: 'Medicamentos',
-      subtitle: '${allMedications.length} activos · ${user.nombre}',
+      title: context.t.text('Medicamentos'),
+      subtitle: context.t.activeCount(allMedications.length, user.nombre),
       compactHeader: true,
       onBack: widget.showBackButton ? () => Navigator.maybePop(context) : null,
       headerTrailing: _isExporting
@@ -167,7 +166,7 @@ class _AdminMedicamentosScreenState extends State<AdminMedicamentosScreen> {
           : IconButton(
               icon: const Icon(Icons.picture_as_pdf_rounded),
               color: AppColors.textSecondary,
-              tooltip: 'Exportar PDF',
+              tooltip: context.t.text('Exportar PDF'),
               onPressed: _medicamentos.isEmpty ? null : _exportPdf,
               style: IconButton.styleFrom(
                 backgroundColor: AppColors.surfaceRaised,
@@ -184,7 +183,7 @@ class _AdminMedicamentosScreenState extends State<AdminMedicamentosScreen> {
           Expanded(
             child: AdminSectionStatCard(
               value: '${allMedications.length}',
-              label: 'Total',
+              label: context.t.text('Total'),
               color: AppColors.amber,
               icon: Icons.medication_rounded,
               compact: true,
@@ -194,7 +193,7 @@ class _AdminMedicamentosScreenState extends State<AdminMedicamentosScreen> {
           Expanded(
             child: AdminSectionStatCard(
               value: '$stockBajoCount',
-              label: 'Stock bajo',
+              label: context.t.text('Stock bajo'),
               color: stockBajoCount > 0 ? AppColors.danger : AppColors.success,
               icon: stockBajoCount > 0
                   ? Icons.warning_amber_rounded
@@ -206,7 +205,7 @@ class _AdminMedicamentosScreenState extends State<AdminMedicamentosScreen> {
           Expanded(
             child: AdminSectionStatCard(
               value: '$pendingToday',
-              label: 'Pendientes hoy',
+              label: context.t.text('Pendientes hoy'),
               color: AppColors.warning,
               icon: Icons.schedule_rounded,
               compact: true,
@@ -216,7 +215,7 @@ class _AdminMedicamentosScreenState extends State<AdminMedicamentosScreen> {
       ),
       filters: SearchFilterBar(
         controller: _searchCtrl,
-        hint: 'Buscar medicamento...',
+        hint: context.t.text('Buscar medicamento...'),
         compact: true,
         filters: _filtros,
         activeFilter: _filtro,
@@ -278,15 +277,15 @@ class _AdminMedicamentosScreenState extends State<AdminMedicamentosScreen> {
                               showActions: true,
                               compact: true,
                               forceStockBar: true,
-                              onTap: () =>
-                                  _openMedDetail(lista[i]),
+                              onTap: () => _openMedDetail(lista[i]),
                               onEdit: () => _showEditForm(context, lista[i]),
                               onDelete: () => ConfirmDialog.show(
                                 context,
-                                title: 'Eliminar medicamento',
-                                message:
-                                    '¿Seguro que desea eliminar ${lista[i].nombre}?',
-                                confirmLabel: 'Eliminar',
+                                title: context.t.text('Eliminar medicamento'),
+                                message: context.t.medicationDeleteMessage(
+                                  lista[i].nombre,
+                                ),
+                                confirmLabel: context.t.text('Eliminar'),
                                 isDestructive: true,
                                 onConfirm: () => _deleteMedication(lista[i].id),
                               ),
@@ -492,8 +491,10 @@ class _MedicamentoFormState extends State<_MedicamentoForm> {
     if (!_formKey.currentState!.validate()) return;
     if (_horasToma.length != _tomasAlDia) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Revise las horas de toma antes de guardar.'),
+        SnackBar(
+          content: Text(
+            context.t.text('Revise las horas de toma antes de guardar.'),
+          ),
         ),
       );
       return;
@@ -506,13 +507,14 @@ class _MedicamentoFormState extends State<_MedicamentoForm> {
         'diasSemana' => FrecuenciaMed.diasSemana,
         _ => _frequencyFromDoseCount(_tomasAlDia),
       };
-      final intervaloDias =
-          int.tryParse(_intervaloDiasCtrl.text.trim()) ?? 2;
+      final intervaloDias = int.tryParse(_intervaloDiasCtrl.text.trim()) ?? 2;
 
       if (_frecuenciaPatron == 'diasSemana' && _diasSemana.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Seleccione al menos un día de la semana.'),
+          SnackBar(
+            content: Text(
+              context.t.text('Seleccione al menos un día de la semana.'),
+            ),
           ),
         );
         setState(() => _isLoading = false);
@@ -553,7 +555,7 @@ class _MedicamentoFormState extends State<_MedicamentoForm> {
       if (!mounted) return;
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('No se pudo guardar el medicamento: $error')),
+        SnackBar(content: Text(context.t.medicationSaveError(error))),
       );
     }
   }
@@ -605,358 +607,374 @@ class _MedicamentoFormState extends State<_MedicamentoForm> {
                       ),
 
                       Text(
-                        isEdit ? 'Editar medicamento' : 'Añadir medicamento',
+                        context.t.text(
+                          isEdit ? 'Editar medicamento' : 'Añadir medicamento',
+                        ),
                         style: AppTextStyles.h3,
                       ),
                       SizedBox(
                         height: isCompactHeight ? AppSpacing.lg : AppSpacing.xl,
                       ),
 
-                    _FormSection(
-                      title: 'Datos básicos',
-                      compact: isCompactHeight,
-                      child: Column(
-                        children: [
-                          _FormField(
-                            controller: _nombreCtrl,
-                            label: 'Nombre',
-                            hint: 'Ej: Enalapril',
-                            compact: isCompactHeight,
-                            validator: (v) =>
-                                v?.isEmpty == true ? 'Requerido' : null,
-                          ),
-                          const SizedBox(height: AppSpacing.sm),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _FormField(
-                                  controller: _dosisCtrl,
-                                  label: 'Dosis',
-                                  hint: 'Ej: 10 mg',
-                                  compact: isCompactHeight,
-                                  validator: (v) =>
-                                      v?.isEmpty == true ? 'Requerido' : null,
-                                ),
-                              ),
-                              const SizedBox(width: AppSpacing.sm),
-                              Expanded(
-                                child: _FormField(
-                                  controller: _stockCtrl,
-                                  label: 'Stock',
-                                  hint: 'Unidades',
-                                  keyboardType: TextInputType.number,
-                                  compact: isCompactHeight,
-                                  validator: (v) =>
-                                      v?.isEmpty == true ? 'Requerido' : null,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: AppSpacing.sm),
-                          _FormField(
-                            controller: _stockMinimoCtrl,
-                            label: 'Stock mínimo',
-                            hint: 'Ej: 7',
-                            keyboardType: TextInputType.number,
-                            compact: isCompactHeight,
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-
-                    _FormSection(
-                      title: 'Frecuencia',
-                      compact: isCompactHeight,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Patrón de repetición',
-                            style: AppTextStyles.label.copyWith(
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                          const SizedBox(height: AppSpacing.xs),
-                          _FrequencyPatternPicker(
-                            selected: _frecuenciaPatron,
-                            onChanged: (value) =>
-                                setState(() => _frecuenciaPatron = value),
-                            compact: isCompactHeight,
-                          ),
-                          if (_frecuenciaPatron == 'cadaDias') ...[
-                            const SizedBox(height: AppSpacing.md),
+                      _FormSection(
+                        title: context.t.text('Datos básicos'),
+                        compact: isCompactHeight,
+                        child: Column(
+                          children: [
                             _FormField(
-                              controller: _intervaloDiasCtrl,
-                              label: 'Cada cuántos días',
-                              hint: 'Ej: 2 (día sí, día no)',
+                              controller: _nombreCtrl,
+                              label: context.t.text('Nombre'),
+                              hint: context.t.text('Ej: Enalapril'),
+                              compact: isCompactHeight,
+                              validator: (v) => v?.isEmpty == true
+                                  ? context.t.requiredField
+                                  : null,
+                            ),
+                            const SizedBox(height: AppSpacing.sm),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _FormField(
+                                    controller: _dosisCtrl,
+                                    label: context.t.text('Dosis'),
+                                    hint: context.t.text('Ej: 10 mg'),
+                                    compact: isCompactHeight,
+                                    validator: (v) => v?.isEmpty == true
+                                        ? context.t.requiredField
+                                        : null,
+                                  ),
+                                ),
+                                const SizedBox(width: AppSpacing.sm),
+                                Expanded(
+                                  child: _FormField(
+                                    controller: _stockCtrl,
+                                    label: context.t.text('Stock'),
+                                    hint: context.t.text('Unidades'),
+                                    keyboardType: TextInputType.number,
+                                    compact: isCompactHeight,
+                                    validator: (v) => v?.isEmpty == true
+                                        ? context.t.requiredField
+                                        : null,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: AppSpacing.sm),
+                            _FormField(
+                              controller: _stockMinimoCtrl,
+                              label: context.t.text('Stock mínimo'),
+                              hint: context.t.text('Ej: 7'),
                               keyboardType: TextInputType.number,
                               compact: isCompactHeight,
-                              validator: (v) {
-                                final n = int.tryParse(v?.trim() ?? '');
-                                if (n == null || n < 2) {
-                                  return 'Introduce un número ≥ 2';
-                                }
-                                return null;
-                              },
                             ),
                           ],
-                          if (_frecuenciaPatron == 'diasSemana') ...[
-                            const SizedBox(height: AppSpacing.md),
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+
+                      _FormSection(
+                        title: context.t.text('Frecuencia'),
+                        compact: isCompactHeight,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
                             Text(
-                              'Días de la semana',
+                              context.t.text('Patrón de repetición'),
                               style: AppTextStyles.label.copyWith(
                                 color: AppColors.textSecondary,
                               ),
                             ),
                             const SizedBox(height: AppSpacing.xs),
-                            _WeekdayChips(
-                              selected: _diasSemana,
-                              onChanged: (days) =>
-                                  setState(() => _diasSemana = days),
+                            _FrequencyPatternPicker(
+                              selected: _frecuenciaPatron,
+                              onChanged: (value) =>
+                                  setState(() => _frecuenciaPatron = value),
+                              compact: isCompactHeight,
                             ),
-                          ],
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-
-                    _FormSection(
-                      title: 'Toma',
-                      compact: isCompactHeight,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Tomas al dia',
-                            style: AppTextStyles.label.copyWith(
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                          const SizedBox(height: AppSpacing.xs),
-                          DropdownButtonFormField<int>(
-                            initialValue: _tomasAlDia,
-                            items: List.generate(
-                              6,
-                              (index) => DropdownMenuItem(
-                                value: index + 1,
-                                child: Text('${index + 1}'),
-                              ),
-                            ),
-                            onChanged: (value) {
-                              if (value != null) _updateTomasAlDia(value);
-                            },
-                            decoration: const InputDecoration(
-                              contentPadding: EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 10,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: AppSpacing.md),
-                          Text(
-                            'Horas exactas',
-                            style: AppTextStyles.label.copyWith(
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                          const SizedBox(height: AppSpacing.xs),
-                          ...List.generate(
-                            _horasToma.length,
-                            (index) => Padding(
-                              padding: EdgeInsets.only(
-                                bottom: index == _horasToma.length - 1
-                                    ? 0
-                                    : AppSpacing.sm,
-                              ),
-                              child: _HourPickerTile(
-                                label: 'Toma ${index + 1}',
-                                value: _horasToma[index],
+                            if (_frecuenciaPatron == 'cadaDias') ...[
+                              const SizedBox(height: AppSpacing.md),
+                              _FormField(
+                                controller: _intervaloDiasCtrl,
+                                label: context.t.text('Cada cuántos días'),
+                                hint: context.t.text('Ej: 2 (día sí, día no)'),
+                                keyboardType: TextInputType.number,
                                 compact: isCompactHeight,
-                                onTap: () => _pickHour(index),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: AppSpacing.sm),
-                          _FormField(
-                            controller: _instruccionesCtrl,
-                            label: 'Instrucciones (opcional)',
-                            hint: 'Ej: Tomar con agua después de comer',
-                            maxLines: 2,
-                            compact: isCompactHeight,
-                            secondary: true,
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-
-                    _FormSection(
-                      title: 'Notas',
-                      compact: isCompactHeight,
-                      child: _FormField(
-                        controller: _notasCtrl,
-                        label: 'Notas (opcional)',
-                        hint: 'Ej: Revisar receta en la próxima cita',
-                        maxLines: 2,
-                        compact: isCompactHeight,
-                        secondary: true,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-
-                    _FormSection(
-                      title: 'Apariencia',
-                      compact: isCompactHeight,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Forma',
-                            style: AppTextStyles.label.copyWith(
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                          const SizedBox(height: AppSpacing.xs),
-                          Wrap(
-                            spacing: 6,
-                            runSpacing: 6,
-                            children: [
-                              _FormaChip(
-                                forma: FormaPastilla.redonda,
-                                selected: _formaPastilla,
-                                label: 'Redonda',
-                                compact: true,
-                                onTap: () => setState(
-                                  () => _formaPastilla = FormaPastilla.redonda,
-                                ),
-                              ),
-                              _FormaChip(
-                                forma: FormaPastilla.ovalada,
-                                selected: _formaPastilla,
-                                label: 'Ovalada',
-                                compact: true,
-                                onTap: () => setState(
-                                  () => _formaPastilla = FormaPastilla.ovalada,
-                                ),
-                              ),
-                              _FormaChip(
-                                forma: FormaPastilla.capsula,
-                                selected: _formaPastilla,
-                                label: 'Cápsula',
-                                compact: true,
-                                onTap: () => setState(
-                                  () => _formaPastilla = FormaPastilla.capsula,
-                                ),
+                                validator: (v) {
+                                  final n = int.tryParse(v?.trim() ?? '');
+                                  if (n == null || n < 2) {
+                                    return context.t.isEnglish
+                                        ? 'Enter a number ≥ 2'
+                                        : 'Introduce un número ≥ 2';
+                                  }
+                                  return null;
+                                },
                               ),
                             ],
-                          ),
-                          const SizedBox(height: AppSpacing.md),
-                          Text(
-                            'Color',
-                            style: AppTextStyles.label.copyWith(
-                              color: AppColors.textSecondary,
+                            if (_frecuenciaPatron == 'diasSemana') ...[
+                              const SizedBox(height: AppSpacing.md),
+                              Text(
+                                context.t.text('Días de la semana'),
+                                style: AppTextStyles.label.copyWith(
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                              const SizedBox(height: AppSpacing.xs),
+                              _WeekdayChips(
+                                selected: _diasSemana,
+                                onChanged: (days) =>
+                                    setState(() => _diasSemana = days),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+
+                      _FormSection(
+                        title: context.t.text('Toma'),
+                        compact: isCompactHeight,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              context.t.text('Tomas al dia'),
+                              style: AppTextStyles.label.copyWith(
+                                color: AppColors.textSecondary,
+                              ),
                             ),
+                            const SizedBox(height: AppSpacing.xs),
+                            DropdownButtonFormField<int>(
+                              initialValue: _tomasAlDia,
+                              items: List.generate(
+                                6,
+                                (index) => DropdownMenuItem(
+                                  value: index + 1,
+                                  child: Text('${index + 1}'),
+                                ),
+                              ),
+                              onChanged: (value) {
+                                if (value != null) _updateTomasAlDia(value);
+                              },
+                              decoration: const InputDecoration(
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 10,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.md),
+                            Text(
+                              context.t.text('Horas exactas'),
+                              style: AppTextStyles.label.copyWith(
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.xs),
+                            ...List.generate(
+                              _horasToma.length,
+                              (index) => Padding(
+                                padding: EdgeInsets.only(
+                                  bottom: index == _horasToma.length - 1
+                                      ? 0
+                                      : AppSpacing.sm,
+                                ),
+                                child: _HourPickerTile(
+                                  label: context.t.doseNumber(index + 1),
+                                  value: _horasToma[index],
+                                  compact: isCompactHeight,
+                                  onTap: () => _pickHour(index),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.sm),
+                            _FormField(
+                              controller: _instruccionesCtrl,
+                              label: context.t.text('Instrucciones (opcional)'),
+                              hint: context.t.text(
+                                'Ej: Tomar con agua después de comer',
+                              ),
+                              maxLines: 2,
+                              compact: isCompactHeight,
+                              secondary: true,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+
+                      _FormSection(
+                        title: context.t.text('Notas'),
+                        compact: isCompactHeight,
+                        child: _FormField(
+                          controller: _notasCtrl,
+                          label: context.t.text('Notas (opcional)'),
+                          hint: context.t.text(
+                            'Ej: Revisar receta en la próxima cita',
                           ),
-                          const SizedBox(height: AppSpacing.xs),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: AppColors.pillColors
-                                .map(
-                                  (c) => GestureDetector(
-                                    onTap: () =>
-                                        setState(() => _colorPastilla = c),
-                                    child: Container(
-                                      width: 34,
-                                      height: 34,
-                                      decoration: BoxDecoration(
-                                        color: c,
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
-                                          color: _colorPastilla == c
-                                              ? AppColors.amber
-                                              : AppColors.surfaceBorder,
-                                          width: _colorPastilla == c ? 2.5 : 1,
-                                        ),
-                                        boxShadow: _colorPastilla == c
-                                            ? [
-                                                BoxShadow(
-                                                  color:
-                                                      AppColors.amber.withValues(
-                                                    alpha: 0.16,
+                          maxLines: 2,
+                          compact: isCompactHeight,
+                          secondary: true,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+
+                      _FormSection(
+                        title: context.t.text('Apariencia'),
+                        compact: isCompactHeight,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              context.t.text('Forma'),
+                              style: AppTextStyles.label.copyWith(
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.xs),
+                            Wrap(
+                              spacing: 6,
+                              runSpacing: 6,
+                              children: [
+                                _FormaChip(
+                                  forma: FormaPastilla.redonda,
+                                  selected: _formaPastilla,
+                                  label: context.t.text('Redonda'),
+                                  compact: true,
+                                  onTap: () => setState(
+                                    () =>
+                                        _formaPastilla = FormaPastilla.redonda,
+                                  ),
+                                ),
+                                _FormaChip(
+                                  forma: FormaPastilla.ovalada,
+                                  selected: _formaPastilla,
+                                  label: context.t.text('Ovalada'),
+                                  compact: true,
+                                  onTap: () => setState(
+                                    () =>
+                                        _formaPastilla = FormaPastilla.ovalada,
+                                  ),
+                                ),
+                                _FormaChip(
+                                  forma: FormaPastilla.capsula,
+                                  selected: _formaPastilla,
+                                  label: context.t.text('Cápsula'),
+                                  compact: true,
+                                  onTap: () => setState(
+                                    () =>
+                                        _formaPastilla = FormaPastilla.capsula,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: AppSpacing.md),
+                            Text(
+                              context.t.text('Color'),
+                              style: AppTextStyles.label.copyWith(
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.xs),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: AppColors.pillColors
+                                  .map(
+                                    (c) => GestureDetector(
+                                      onTap: () =>
+                                          setState(() => _colorPastilla = c),
+                                      child: Container(
+                                        width: 34,
+                                        height: 34,
+                                        decoration: BoxDecoration(
+                                          color: c,
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: _colorPastilla == c
+                                                ? AppColors.amber
+                                                : AppColors.surfaceBorder,
+                                            width: _colorPastilla == c
+                                                ? 2.5
+                                                : 1,
+                                          ),
+                                          boxShadow: _colorPastilla == c
+                                              ? [
+                                                  BoxShadow(
+                                                    color: AppColors.amber
+                                                        .withValues(
+                                                          alpha: 0.16,
+                                                        ),
+                                                    blurRadius: 10,
+                                                    spreadRadius: 0.5,
                                                   ),
-                                                  blurRadius: 10,
-                                                  spreadRadius: 0.5,
-                                                ),
-                                              ]
+                                                ]
+                                              : null,
+                                        ),
+                                        child: _colorPastilla == c
+                                            ? const Icon(
+                                                Icons.check_rounded,
+                                                size: 15,
+                                                color: Colors.black54,
+                                              )
                                             : null,
                                       ),
-                                      child: _colorPastilla == c
-                                          ? const Icon(
-                                              Icons.check_rounded,
-                                              size: 15,
-                                              color: Colors.black54,
-                                            )
-                                          : null,
                                     ),
-                                  ),
-                                )
-                                .toList(),
-                          ),
-                        ],
+                                  )
+                                  .toList(),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            // ── Botones sticky — siempre visibles ─────────────────
+            Container(
+              padding: EdgeInsets.fromLTRB(
+                AppSpacing.xl,
+                AppSpacing.md,
+                AppSpacing.xl,
+                AppSpacing.xl,
+              ),
+              decoration: const BoxDecoration(
+                border: Border(top: BorderSide(color: AppColors.surfaceBorder)),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: 52,
+                      child: OutlinedButton(
+                        onPressed: _isLoading
+                            ? null
+                            : () => Navigator.of(context).pop(false),
+                        child: Text(context.t.text('Cancelar')),
                       ),
                     ),
-                    const SizedBox(height: AppSpacing.lg),
-                  ],
-                ),
-              ),
-            ),
-          ),
-
-          // ── Botones sticky — siempre visibles ─────────────────
-          Container(
-            padding: EdgeInsets.fromLTRB(
-              AppSpacing.xl,
-              AppSpacing.md,
-              AppSpacing.xl,
-              AppSpacing.xl,
-            ),
-            decoration: const BoxDecoration(
-              border: Border(
-                top: BorderSide(color: AppColors.surfaceBorder),
-              ),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: SizedBox(
-                    height: 52,
-                    child: OutlinedButton(
-                      onPressed: _isLoading
-                          ? null
-                          : () => Navigator.of(context).pop(false),
-                      child: const Text('Cancelar'),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    flex: 2,
+                    child: PrimaryButton(
+                      label: context.t.text(
+                        isEdit ? 'Guardar cambios' : 'Guardar',
+                      ),
+                      isLoading: _isLoading,
+                      onPressed: _guardar,
                     ),
                   ),
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  flex: 2,
-                  child: PrimaryButton(
-                    label: isEdit ? 'Guardar cambios' : 'Guardar',
-                    isLoading: _isLoading,
-                    onPressed: _guardar,
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 }
 
 class _FormField extends StatelessWidget {
@@ -1168,9 +1186,7 @@ class _FrequencyPatternPicker extends StatelessWidget {
         final isSelected = opt.$1 == selected;
         return Expanded(
           child: Padding(
-            padding: EdgeInsets.only(
-              right: opt.$1 == 'diasSemana' ? 0 : 6,
-            ),
+            padding: EdgeInsets.only(right: opt.$1 == 'diasSemana' ? 0 : 6),
             child: GestureDetector(
               onTap: () => onChanged(opt.$1),
               child: AnimatedContainer(
@@ -1192,16 +1208,14 @@ class _FrequencyPatternPicker extends StatelessWidget {
                   ),
                 ),
                 child: Text(
-                  opt.$2,
+                  context.t.text(opt.$2),
                   textAlign: TextAlign.center,
                   style: AppTextStyles.label.copyWith(
                     color: isSelected
                         ? AppColors.amber
                         : AppColors.textSecondary,
                     fontSize: 11,
-                    fontWeight: isSelected
-                        ? FontWeight.w600
-                        : FontWeight.w500,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                   ),
                 ),
               ),
@@ -1221,21 +1235,30 @@ class _WeekdayChips extends StatelessWidget {
 
   const _WeekdayChips({required this.selected, required this.onChanged});
 
-  static const _days = [
-    (1, 'L'),
-    (2, 'M'),
-    (3, 'X'),
-    (4, 'J'),
-    (5, 'V'),
-    (6, 'S'),
-    (7, 'D'),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final days = context.t.isEnglish
+        ? const [
+            (1, 'M'),
+            (2, 'T'),
+            (3, 'W'),
+            (4, 'T'),
+            (5, 'F'),
+            (6, 'S'),
+            (7, 'S'),
+          ]
+        : const [
+            (1, 'L'),
+            (2, 'M'),
+            (3, 'X'),
+            (4, 'J'),
+            (5, 'V'),
+            (6, 'S'),
+            (7, 'D'),
+          ];
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: _days.map((day) {
+      children: days.map((day) {
         final isSelected = selected.contains(day.$1);
         return GestureDetector(
           onTap: () {
@@ -1256,9 +1279,7 @@ class _WeekdayChips extends StatelessWidget {
               color: isSelected ? AppColors.amber : AppColors.surfaceRaised,
               shape: BoxShape.circle,
               border: Border.all(
-                color: isSelected
-                    ? AppColors.amber
-                    : AppColors.surfaceBorder,
+                color: isSelected ? AppColors.amber : AppColors.surfaceBorder,
                 width: isSelected ? 0 : 1,
               ),
             ),
@@ -1266,9 +1287,7 @@ class _WeekdayChips extends StatelessWidget {
               child: Text(
                 day.$2,
                 style: AppTextStyles.label.copyWith(
-                  color: isSelected
-                      ? Colors.black87
-                      : AppColors.textSecondary,
+                  color: isSelected ? Colors.black87 : AppColors.textSecondary,
                   fontWeight: FontWeight.w700,
                   fontSize: 13,
                 ),

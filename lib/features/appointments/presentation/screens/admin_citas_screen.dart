@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:aviso_vital_2/app/router/app_routes.dart';
 import 'package:aviso_vital_2/core/services/pdf_export_service.dart';
+import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 import 'package:aviso_vital_2/shared/widgets/shared_widgets.dart';
 import 'package:aviso_vital_2/shared/widgets/content_widgets.dart';
@@ -91,9 +92,7 @@ class _AdminCitasScreenState extends State<AdminCitasScreen> {
       setState(() {
         _citas = _appointmentsRepository.getAll();
         _isLoading = false;
-        _loadError =
-            'No se pudieron cargar las citas desde Supabase. '
-            'Se muestran datos locales.';
+        _loadError = context.t.appointmentLoadLocalFallback();
       });
       ScaffoldMessenger.of(
         context,
@@ -106,14 +105,11 @@ class _AdminCitasScreenState extends State<AdminCitasScreen> {
     setState(() => _isExporting = true);
     try {
       final user = _userRepository.getCurrentUser();
-      await _pdfExportService.exportCitas(
-        _citas,
-        nombrePaciente: user.nombre,
-      );
+      await _pdfExportService.exportCitas(_citas, nombrePaciente: user.nombre);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('PDF descargado correctamente'),
+        SnackBar(
+          content: Text(context.t.text('PDF descargado correctamente')),
           backgroundColor: Color(0xFF16A34A),
         ),
       );
@@ -121,7 +117,7 @@ class _AdminCitasScreenState extends State<AdminCitasScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('No se pudo generar el archivo: $error'),
+          content: Text(context.t.fileGenerationError(error)),
           backgroundColor: const Color(0xFFDC2626),
         ),
       );
@@ -138,7 +134,7 @@ class _AdminCitasScreenState extends State<AdminCitasScreen> {
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('No se pudo eliminar la cita: $error')),
+        SnackBar(content: Text(context.t.appointmentDeleteError(error))),
       );
     }
   }
@@ -158,8 +154,8 @@ class _AdminCitasScreenState extends State<AdminCitasScreen> {
         MediaQuery.of(context).size.height < 860;
 
     return AdminSectionScaffold(
-      title: 'Citas Médicas',
-      subtitle: '${allAppointments.length} registradas · ${user.nombre}',
+      title: context.t.text('Citas Médicas'),
+      subtitle: context.t.registeredCount(allAppointments.length, user.nombre),
       onBack: widget.showBackButton ? () => Navigator.maybePop(context) : null,
       compactHeader: true,
       headerTrailing: _isExporting
@@ -171,7 +167,7 @@ class _AdminCitasScreenState extends State<AdminCitasScreen> {
           : IconButton(
               icon: const Icon(Icons.picture_as_pdf_rounded),
               color: AppColors.textSecondary,
-              tooltip: 'Exportar PDF',
+              tooltip: context.t.text('Exportar PDF'),
               onPressed: _citas.isEmpty ? null : _exportPdf,
               style: IconButton.styleFrom(
                 backgroundColor: AppColors.surfaceRaised,
@@ -188,7 +184,7 @@ class _AdminCitasScreenState extends State<AdminCitasScreen> {
           Expanded(
             child: AdminSectionStatCard(
               value: '$citasHoy',
-              label: 'Hoy',
+              label: context.t.today,
               color: AppColors.orange,
               icon: Icons.today_rounded,
               compact: true,
@@ -198,7 +194,7 @@ class _AdminCitasScreenState extends State<AdminCitasScreen> {
           Expanded(
             child: AdminSectionStatCard(
               value: '$proximas',
-              label: 'Próximas',
+              label: context.t.text('Próximas'),
               color: AppColors.info,
               icon: Icons.event_rounded,
               compact: true,
@@ -208,7 +204,7 @@ class _AdminCitasScreenState extends State<AdminCitasScreen> {
           Expanded(
             child: AdminSectionStatCard(
               value: '${allAppointments.length}',
-              label: 'Total',
+              label: context.t.text('Total'),
               color: AppColors.amber,
               icon: Icons.list_rounded,
               compact: true,
@@ -218,7 +214,7 @@ class _AdminCitasScreenState extends State<AdminCitasScreen> {
       ),
       filters: SearchFilterBar(
         controller: _searchCtrl,
-        hint: 'Buscar especialidad o centro...',
+        hint: context.t.text('Buscar especialidad o centro...'),
         filters: _filtros,
         activeFilter: _filtro,
         onFilterChanged: (v) => setState(() => _filtro = v),
@@ -281,10 +277,11 @@ class _AdminCitasScreenState extends State<AdminCitasScreen> {
                                   _showAddForm(context, cita: lista[i]),
                               onDelete: () => ConfirmDialog.show(
                                 context,
-                                title: 'Eliminar cita',
-                                message:
-                                    '¿Desea eliminar la cita de ${lista[i].especialidad}?',
-                                confirmLabel: 'Eliminar',
+                                title: context.t.text('Eliminar cita'),
+                                message: context.t.appointmentDeleteMessage(
+                                  lista[i].especialidad,
+                                ),
+                                confirmLabel: context.t.text('Eliminar'),
                                 isDestructive: true,
                                 onConfirm: () =>
                                     _deleteAppointment(lista[i].id),
@@ -420,7 +417,11 @@ class _CitaFormState extends State<_CitaForm> {
   Future<void> _guardar() async {
     if (!_formKey.currentState!.validate() || _fecha == null || _hora == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Selecciona fecha y hora para la cita.')),
+        SnackBar(
+          content: Text(
+            context.t.text('Selecciona fecha y hora para la cita.'),
+          ),
+        ),
       );
       return;
     }
@@ -468,7 +469,7 @@ class _CitaFormState extends State<_CitaForm> {
       if (!mounted) return;
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('No se pudo guardar la cita: $error')),
+        SnackBar(content: Text(context.t.appointmentSaveError(error))),
       );
     }
   }
@@ -522,7 +523,9 @@ class _CitaFormState extends State<_CitaForm> {
                   ),
                 ),
                 Text(
-                  widget.cita == null ? 'Añadir cita' : 'Editar cita',
+                  context.t.text(
+                    widget.cita == null ? 'Añadir cita' : 'Editar cita',
+                  ),
                   style: AppTextStyles.h3,
                 ),
                 SizedBox(
@@ -530,40 +533,40 @@ class _CitaFormState extends State<_CitaForm> {
                 ),
 
                 _FormSection(
-                  title: 'Datos de la cita',
+                  title: context.t.text('Datos de la cita'),
                   compact: isCompactHeight,
                   child: Column(
                     children: [
                       _FormField(
                         controller: _especialidadCtrl,
-                        label: 'Especialidad',
-                        hint: 'Ej: Cardiología',
+                        label: context.t.text('Especialidad'),
+                        hint: context.t.text('Ej: Cardiología'),
                         compact: isCompactHeight,
                         validator: (v) =>
-                            v?.isEmpty == true ? 'Requerido' : null,
+                            v?.isEmpty == true ? context.t.requiredField : null,
                       ),
                       const SizedBox(height: AppSpacing.md),
                       _FormField(
                         controller: _lugarCtrl,
-                        label: 'Centro / Hospital',
-                        hint: 'Ej: Centro de Salud Norte',
+                        label: context.t.text('Centro / Hospital'),
+                        hint: context.t.text('Ej: Centro de Salud Norte'),
                         compact: isCompactHeight,
                         validator: (v) =>
-                            v?.isEmpty == true ? 'Requerido' : null,
+                            v?.isEmpty == true ? context.t.requiredField : null,
                       ),
                       const SizedBox(height: AppSpacing.md),
                       _FormField(
                         controller: _direccionCtrl,
-                        label: 'Dirección (opcional)',
-                        hint: 'Ej: Calle Mayor 12, Planta 2',
+                        label: context.t.text('Dirección (opcional)'),
+                        hint: context.t.text('Ej: Calle Mayor 12, Planta 2'),
                         compact: isCompactHeight,
                         secondary: true,
                       ),
                       const SizedBox(height: AppSpacing.md),
                       _FormField(
                         controller: _telefonoCtrl,
-                        label: 'Teléfono (opcional)',
-                        hint: 'Ej: 912345678',
+                        label: context.t.text('Teléfono (opcional)'),
+                        hint: context.t.text('Ej: 912345678'),
                         compact: isCompactHeight,
                         secondary: true,
                       ),
@@ -575,16 +578,16 @@ class _CitaFormState extends State<_CitaForm> {
                 ),
 
                 _FormSection(
-                  title: 'Programación',
+                  title: context.t.text('Programación'),
                   compact: isCompactHeight,
                   child: Row(
                     children: [
                       Expanded(
                         child: _PickerButton(
-                          label: 'Fecha',
+                          label: context.t.text('Fecha'),
                           value: _fecha != null
                               ? '${_fecha!.day}/${_fecha!.month}/${_fecha!.year}'
-                              : 'Seleccionar',
+                              : context.t.text('Seleccionar'),
                           icon: Icons.calendar_today_rounded,
                           compact: isCompactHeight,
                           onTap: _pickDate,
@@ -593,10 +596,10 @@ class _CitaFormState extends State<_CitaForm> {
                       const SizedBox(width: AppSpacing.sm),
                       Expanded(
                         child: _PickerButton(
-                          label: 'Hora',
+                          label: context.t.text('Hora'),
                           value: _hora != null
                               ? '${_hora!.hour.toString().padLeft(2, '0')}:${_hora!.minute.toString().padLeft(2, '0')}'
-                              : 'Seleccionar',
+                              : context.t.text('Seleccionar'),
                           icon: Icons.access_time_rounded,
                           compact: isCompactHeight,
                           onTap: _pickTime,
@@ -610,7 +613,7 @@ class _CitaFormState extends State<_CitaForm> {
                 ),
 
                 _FormSection(
-                  title: 'Recordatorios',
+                  title: context.t.text('Recordatorios'),
                   compact: isCompactHeight,
                   child: Container(
                     padding: EdgeInsets.all(
@@ -630,8 +633,10 @@ class _CitaFormState extends State<_CitaForm> {
                     child: Column(
                       children: [
                         _SwitchRow(
-                          label: '24 horas antes',
-                          subtitle: 'Aviso previo para preparar la cita',
+                          label: context.t.text('24 horas antes'),
+                          subtitle: context.t.text(
+                            'Aviso previo para preparar la cita',
+                          ),
                           value: _rec24h,
                           compact: isCompactHeight,
                           onChanged: (v) => setState(() => _rec24h = v),
@@ -641,8 +646,10 @@ class _CitaFormState extends State<_CitaForm> {
                           color: AppColors.surfaceBorder.withValues(alpha: 0.7),
                         ),
                         _SwitchRow(
-                          label: '3 horas antes',
-                          subtitle: 'Recordatorio cercano a la salida',
+                          label: context.t.text('3 horas antes'),
+                          subtitle: context.t.text(
+                            'Recordatorio cercano a la salida',
+                          ),
                           value: _rec3h,
                           compact: isCompactHeight,
                           onChanged: (v) => setState(() => _rec3h = v),
@@ -656,12 +663,12 @@ class _CitaFormState extends State<_CitaForm> {
                 ),
 
                 _FormSection(
-                  title: 'Notas',
+                  title: context.t.text('Notas'),
                   compact: isCompactHeight,
                   child: _FormField(
                     controller: _notasCtrl,
-                    label: 'Notas (opcional)',
-                    hint: 'Ej: Traer resultados del análisis',
+                    label: context.t.text('Notas (opcional)'),
+                    hint: context.t.text('Ej: Traer resultados del análisis'),
                     maxLines: 2,
                     compact: isCompactHeight,
                     secondary: true,
@@ -671,8 +678,8 @@ class _CitaFormState extends State<_CitaForm> {
 
                 PrimaryButton(
                   label: widget.cita == null
-                      ? 'Añadir cita'
-                      : 'Guardar cambios',
+                      ? context.t.text('Añadir cita')
+                      : context.t.text('Guardar cambios'),
                   backgroundColor: AppColors.orange,
                   foregroundColor: Colors.white,
                   isLoading: _isLoading,

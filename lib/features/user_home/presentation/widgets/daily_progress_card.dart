@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 
 class DailyProgressCard extends StatelessWidget {
@@ -37,16 +38,16 @@ class DailyProgressCard extends StatelessWidget {
             children: [
               Text(
                 pending == 0
-                    ? 'Tomas completadas'
-                    : '$confirmed de $total tomas hoy',
+                    ? context.t.text('Tomas completadas')
+                    : context.t.confirmedOfTotalToday(confirmed, total),
                 style: AppTextStyles.label.copyWith(
                   color: AppColors.textPrimary,
                 ),
               ),
               Text(
                 pending == 0
-                    ? 'Todo al día'
-                    : '$pending pendiente${pending > 1 ? 's' : ''}',
+                    ? context.t.allSet
+                    : context.t.pendingDosesToday(pending),
                 style: AppTextStyles.caption.copyWith(
                   color: color,
                   fontWeight: FontWeight.w600,

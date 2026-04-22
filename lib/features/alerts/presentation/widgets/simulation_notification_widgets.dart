@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:aviso_vital_2/core/services/realtime_simulation_service.dart';
 import 'package:aviso_vital_2/data/models/models.dart';
+import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 import 'package:aviso_vital_2/shared/utils/alert_formatters.dart';
 import 'package:aviso_vital_2/shared/widgets/aviso_vital_logo.dart';
@@ -68,8 +69,8 @@ class _SimulationNotificationCardState extends State<SimulationNotificationCard>
         ? _medicationAccent
         : _appointmentAccent;
     final actionLabel = item.type == LiveNotificationType.medication
-        ? 'Ver recordatorio'
-        : 'Ver cita';
+        ? context.t.viewReminder
+        : context.t.viewAppointment;
 
     return Semantics(
       button: true,
@@ -308,7 +309,7 @@ class _ExpiryLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Text(
-      'Expira ${formatAlertHour(expiresAt)}',
+      context.t.expiresAt(formatAlertHour(expiresAt)),
       style: AppTextStyles.caption.copyWith(
         color: Colors.white.withValues(alpha: 0.34),
         fontSize: 11,

@@ -10,6 +10,7 @@ import 'package:aviso_vital_2/features/alerts/presentation/screens/alerta_medica
 import 'package:aviso_vital_2/features/user_home/presentation/widgets/next_appointment_card.dart';
 import 'package:aviso_vital_2/features/user_home/presentation/widgets/next_medication_card.dart';
 import 'package:aviso_vital_2/features/user_home/presentation/widgets/user_home_header.dart';
+import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 import 'package:aviso_vital_2/shared/widgets/shared_widgets.dart';
 
@@ -53,8 +54,9 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
 
             if (snapshot.hasError) {
               return _buildErrorState(
-                message:
-                    'No se pudo cargar el inicio del usuario: ${snapshot.error}',
+                message: context.t.isEnglish
+                    ? 'Could not load the user home: ${snapshot.error}'
+                    : 'No se pudo cargar el inicio del usuario: ${snapshot.error}',
               );
             }
 
@@ -104,7 +106,7 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
               const SizedBox(height: AppSpacing.xxl),
 
               // ── ZONA B: Próxima medicación ──────────────────────────
-              const _SectionLabel('Próxima medicación'),
+              _SectionLabel(context.t.nextMedication),
               const SizedBox(height: AppSpacing.sm),
               if (data.nextMedication != null)
                 NextMedicationCard(
@@ -122,7 +124,7 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
 
               // ── ZONA C: Próxima cita (solo si existe) ───────────────
               if (data.todayAppointment != null) ...[
-                const _SectionLabel('Próxima cita médica'),
+                _SectionLabel(context.t.nextAppointment),
                 const SizedBox(height: AppSpacing.sm),
                 NextAppointmentCard(
                   appointment: data.todayAppointment,
@@ -189,52 +191,20 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
     final profile =
         contextData.careRecipientProfile ?? contextData.viewerProfile;
     final now = DateTime.now();
+    final strings = AppStrings.current;
     final firstName = (profile?.nombre ?? '').split(' ').first;
     final greeting = firstName.isEmpty || firstName.toLowerCase() == 'usuario'
-        ? _greetingForHour(now.hour)
-        : '${_greetingForHour(now.hour)}, $firstName';
+        ? strings.greetingForHour(now.hour)
+        : '${strings.greetingForHour(now.hour)}, $firstName';
 
     return _UserHomeViewData(
       greeting: greeting,
-      dateLabel: _formatDate(now),
+      dateLabel: strings.fullDate(now),
       avatarInitial: firstName.isNotEmpty ? firstName[0] : null,
       nextMedication: medicationSnapshot.upcomingMedication,
       nextMedicationTime: medicationSnapshot.upcomingTime,
       todayAppointment: nextAppointment,
     );
-  }
-
-  String _greetingForHour(int hour) {
-    if (hour < 12) return 'Buenos días';
-    if (hour < 20) return 'Buenas tardes';
-    return 'Buenas noches';
-  }
-
-  String _formatDate(DateTime date) {
-    const months = [
-      'enero',
-      'febrero',
-      'marzo',
-      'abril',
-      'mayo',
-      'junio',
-      'julio',
-      'agosto',
-      'septiembre',
-      'octubre',
-      'noviembre',
-      'diciembre',
-    ];
-    const days = [
-      'lunes',
-      'martes',
-      'miércoles',
-      'jueves',
-      'viernes',
-      'sábado',
-      'domingo',
-    ];
-    return '${days[date.weekday - 1]}, ${date.day} de ${months[date.month - 1]}';
   }
 }
 
@@ -296,7 +266,7 @@ class _EmptyMedicationCard extends StatelessWidget {
         border: Border.all(color: AppColors.surfaceBorder),
       ),
       child: Text(
-        'No tiene medicación pendiente hoy',
+        context.t.noMedicationToday,
         textAlign: TextAlign.center,
         style: AppTextStyles.body.copyWith(
           color: AppColors.textSecondary,
@@ -351,7 +321,7 @@ class _SimulationButtonCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Ver pantalla de avisos',
+                      context.t.mobileSimulationSubtitle,
                       style: AppTextStyles.labelLarge.copyWith(
                         color: AppColors.textPrimary,
                         fontSize: 16,
@@ -361,7 +331,7 @@ class _SimulationButtonCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      'Simulación del móvil',
+                      context.t.mobileSimulation,
                       style: AppTextStyles.bodySmall.copyWith(
                         color: AppColors.textSecondary,
                         fontSize: 13,
@@ -396,12 +366,12 @@ class _LogoutButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      label: 'Cerrar sesión',
+      label: context.t.logout,
       button: true,
       child: IconButton(
         icon: const Icon(Icons.logout_rounded, size: 20),
         color: AppColors.textTertiary,
-        tooltip: 'Cerrar sesión',
+        tooltip: context.t.logout,
         onPressed: onPressed,
         style: IconButton.styleFrom(
           backgroundColor: AppColors.surfaceRaised,

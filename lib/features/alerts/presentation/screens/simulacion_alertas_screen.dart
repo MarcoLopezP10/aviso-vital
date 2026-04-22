@@ -5,6 +5,7 @@ import 'package:aviso_vital_2/app/router/app_routes.dart';
 import 'package:aviso_vital_2/core/services/realtime_service.dart';
 import 'package:aviso_vital_2/core/services/realtime_simulation_service.dart';
 import 'package:aviso_vital_2/features/alerts/presentation/widgets/simulation_notification_widgets.dart';
+import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 import 'package:aviso_vital_2/shared/widgets/shared_widgets.dart';
 
@@ -140,7 +141,7 @@ class _SimulacionAlertasScreenState extends State<SimulacionAlertasScreen> {
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         leading: const AppBackButton(),
-        title: const Text('Pantalla de pruebas'),
+        title: Text(context.t.testScreen),
       ),
       body: SafeArea(
         top: false,
@@ -220,13 +221,13 @@ class _SimulationErrorState extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.lg),
             Text(
-              'No se pudo cargar la simulación',
+              context.t.simulationLoadError,
               textAlign: TextAlign.center,
               style: AppTextStyles.h2,
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              'La pantalla ya no se queda bloqueada cargando. Puede reintentar ahora.\n\nDetalle: $message',
+              context.t.simulationLoadErrorDetail(message),
               textAlign: TextAlign.center,
               style: AppTextStyles.body.copyWith(
                 color: AppColors.textSecondary,
@@ -235,7 +236,7 @@ class _SimulationErrorState extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.lg),
             PrimaryButton(
-              label: 'Reintentar',
+              label: context.t.retry,
               icon: Icons.refresh_rounded,
               onPressed: onRetry,
             ),
@@ -258,7 +259,7 @@ class _SimulationHintCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final syncLabel = syncedAt == null
-        ? 'sin sincronizar'
+        ? context.t.unsynced
         : '${syncedAt!.hour.toString().padLeft(2, '0')}:${syncedAt!.minute.toString().padLeft(2, '0')}:${syncedAt!.second.toString().padLeft(2, '0')}';
 
     return Row(
@@ -266,7 +267,7 @@ class _SimulationHintCard extends StatelessWidget {
       children: [
         const Icon(Icons.sync_rounded, color: AppColors.textTertiary, size: 14),
         const SizedBox(width: 6),
-        Text('Última actualización: $syncLabel', style: AppTextStyles.caption),
+        Text(context.t.lastSync(syncLabel), style: AppTextStyles.caption),
       ],
     );
   }
@@ -438,37 +439,11 @@ class _LockScreenHeader extends StatelessWidget {
 
   const _LockScreenHeader({required this.now, required this.scale});
 
-  static const _weekdays = <String>[
-    'lunes',
-    'martes',
-    'miércoles',
-    'jueves',
-    'viernes',
-    'sábado',
-    'domingo',
-  ];
-
-  static const _months = <String>[
-    'enero',
-    'febrero',
-    'marzo',
-    'abril',
-    'mayo',
-    'junio',
-    'julio',
-    'agosto',
-    'septiembre',
-    'octubre',
-    'noviembre',
-    'diciembre',
-  ];
-
   @override
   Widget build(BuildContext context) {
     final timeLabel =
         '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
-    final dateLabel =
-        '${_weekdays[now.weekday - 1]}, ${now.day} de ${_months[now.month - 1]}';
+    final dateLabel = context.t.fullDate(now);
 
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 20 * scale),

@@ -10,6 +10,7 @@ import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_scaffold.d
 import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_switch_link.dart';
 import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_text_field.dart';
 import 'package:aviso_vital_2/features/user_home/presentation/screens/home_usuario_screen.dart';
+import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 import 'package:aviso_vital_2/shared/widgets/shared_widgets.dart';
 
@@ -75,6 +76,8 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = context.t;
+
     return AuthScaffold(
       child: Form(
         key: _formKey,
@@ -84,12 +87,11 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
             const SizedBox(height: AppSpacing.sm),
             const AppBackButton(),
             const SizedBox(height: AppSpacing.xl),
-            const AuthHeroCard(
-              eyebrow: 'Acceso Usuario',
+            AuthHeroCard(
+              eyebrow: strings.userAccess,
               eyebrowColor: AppColors.amberLight,
-              title: 'Su espacio\nde avisos',
-              description:
-                  'Acceda a sus recordatorios y a la simulación en tiempo real con su cuenta.',
+              title: strings.userLoginTitle,
+              description: strings.userLoginDescription,
             ),
             const SizedBox(height: AppSpacing.xl),
             AuthFormCard(
@@ -97,21 +99,21 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
                 children: [
                   AuthTextField(
                     controller: _emailCtrl,
-                    hint: 'Email',
+                    hint: strings.email,
                     icon: Icons.person_outline_rounded,
                     keyboardType: TextInputType.emailAddress,
                     validator: (v) {
                       if (v == null || v.trim().isEmpty) {
-                        return 'Introduzca su email';
+                        return strings.enterEmail;
                       }
-                      if (!v.contains('@')) return 'Email no válido';
+                      if (!v.contains('@')) return strings.invalidEmail;
                       return null;
                     },
                   ),
                   const SizedBox(height: AppSpacing.md),
                   AuthTextField(
                     controller: _passCtrl,
-                    hint: 'Contraseña',
+                    hint: strings.password,
                     icon: Icons.lock_outline_rounded,
                     obscure: !_passVisible,
                     suffix: IconButton(
@@ -127,9 +129,9 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
                     ),
                     validator: (v) {
                       if (v == null || v.isEmpty) {
-                        return 'Introduzca su contraseña';
+                        return strings.enterPassword;
                       }
-                      if (v.length < 6) return 'Mínimo 6 caracteres';
+                      if (v.length < 6) return strings.minSixChars;
                       return null;
                     },
                   ),
@@ -138,7 +140,7 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
             ),
             const SizedBox(height: AppSpacing.xl),
             PrimaryButton(
-              label: 'Entrar como usuario',
+              label: strings.userSignIn,
               backgroundColor: AppColors.amber,
               foregroundColor: AppColors.textOnAmber,
               isLoading: _isLoading,
@@ -146,8 +148,8 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
             ),
             const SizedBox(height: AppSpacing.lg),
             AuthSwitchLink(
-              prompt: '¿No tiene cuenta? ',
-              actionLabel: 'Crear cuenta',
+              prompt: strings.noAccountPrompt,
+              actionLabel: strings.createAccount,
               onPressed: () =>
                   Navigator.pushNamed(context, UserSignupScreen.routeName),
             ),

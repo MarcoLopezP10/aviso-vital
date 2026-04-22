@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 
 class AuthDivider extends StatelessWidget {
-  final String text;
+  final String? text;
 
-  const AuthDivider({
-    super.key,
-    this.text = 'o continuar con',
-  });
+  const AuthDivider({super.key, this.text});
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +27,7 @@ class AuthDivider extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14),
           child: Text(
-            text,
+            text ?? context.t.continueWith,
             style: AppTextStyles.caption.copyWith(
               color: AppColors.textSecondary,
               fontWeight: FontWeight.w600,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:aviso_vital_2/app/router/app_routes.dart';
 import 'package:aviso_vital_2/data/models/models.dart';
 import 'package:aviso_vital_2/data/repositories/medications_repository.dart';
+import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 import 'package:aviso_vital_2/shared/widgets/layout/app_detail_scaffold.dart';
 import 'package:aviso_vital_2/shared/widgets/shared_widgets.dart';
@@ -40,11 +41,11 @@ class _MedicamentoDetalleScreenState extends State<MedicamentoDetalleScreen> {
 
         final med = snapshot.data;
         if (med == null) {
-          return const AppDetailScaffold(
+          return AppDetailScaffold(
             content: Center(
               child: Text(
-                'Medicamento no encontrado',
-                style: TextStyle(color: Colors.white),
+                context.t.text('Medicamento no encontrado'),
+                style: const TextStyle(color: Colors.white),
               ),
             ),
             scrollable: false,
@@ -70,7 +71,7 @@ class _MedicamentoDetalleView extends StatelessWidget {
         children: [
           Expanded(
             child: SecondaryButton(
-              label: 'Editar',
+              label: context.t.text('Editar'),
               icon: Icons.edit_outlined,
               onPressed: () => Navigator.of(context).pop('edit'),
             ),
@@ -78,16 +79,17 @@ class _MedicamentoDetalleView extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: PrimaryButton(
-              label: 'Eliminar',
+              label: context.t.text('Eliminar'),
               backgroundColor: AppColors.danger,
               foregroundColor: AppColors.textPrimary,
               icon: Icons.delete_outline_rounded,
               onPressed: () => ConfirmDialog.show(
                 context,
-                title: 'Eliminar medicamento',
-                message:
-                    '¿Seguro que desea eliminar ${medicamento.nombre}? Esta acción no se puede deshacer.',
-                confirmLabel: 'Eliminar',
+                title: context.t.text('Eliminar medicamento'),
+                message: context.t.medicationDeleteDetailMessage(
+                  medicamento.nombre,
+                ),
+                confirmLabel: context.t.text('Eliminar'),
                 isDestructive: true,
                 onConfirm: () async {
                   await _medicationsRepository.delete(medicamento.id);
@@ -117,22 +119,25 @@ class _MedicamentoDetalleView extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.xxl),
           _InfoSection(
-            title: 'Información',
+            title: context.t.text('Información'),
             items: [
-              _InfoItem(label: 'Tomas', value: medicamento.resumenTomas),
               _InfoItem(
-                label: 'Patrón',
-                value: _frecuenciaLabel(medicamento),
+                label: context.t.text('Tomas'),
+                value: medicamento.resumenTomas,
               ),
               _InfoItem(
-                label: 'Horario',
+                label: context.t.text('Patrón'),
+                value: _frecuenciaLabel(context, medicamento),
+              ),
+              _InfoItem(
+                label: context.t.text('Horario'),
                 value: medicamento.horasToma.isEmpty
                     ? '—'
                     : medicamento.horasToma.join(' · '),
               ),
               if (medicamento.instrucciones != null)
                 _InfoItem(
-                  label: 'Instrucciones',
+                  label: context.t.text('Instrucciones'),
                   value: medicamento.instrucciones!,
                 ),
             ],
@@ -142,21 +147,21 @@ class _MedicamentoDetalleView extends StatelessWidget {
           const SizedBox(height: AppSpacing.xl),
           if (medicamento.notas != null) ...[
             _InfoSection(
-              title: 'Notas',
+              title: context.t.text('Notas'),
               items: [_InfoItem(label: '', value: medicamento.notas!)],
             ),
             const SizedBox(height: AppSpacing.xl),
           ],
           _InfoSection(
-            title: 'Registro',
+            title: context.t.text('Registro'),
             items: [
               _InfoItem(
-                label: 'Añadido',
+                label: context.t.text('Añadido'),
                 value: _formatDate(medicamento.fechaCreacion),
               ),
               if (medicamento.ultimaEdicion != null)
                 _InfoItem(
-                  label: 'Última edición',
+                  label: context.t.text('Última edición'),
                   value: _formatDate(medicamento.ultimaEdicion!),
                 ),
             ],
@@ -166,22 +171,22 @@ class _MedicamentoDetalleView extends StatelessWidget {
     );
   }
 
-  String _formatDate(DateTime dt) => '${dt.day}/${dt.month}/${dt.year}';
+  String _formatDate(DateTime dt) => AppStrings.current.shortNumericDate(dt);
 
-  String _frecuenciaLabel(Medicamento med) {
+  String _frecuenciaLabel(BuildContext context, Medicamento med) {
     return switch (med.frecuencia) {
-      FrecuenciaMed.cadaDias => 'Cada ${med.intervaloDias} días',
-      FrecuenciaMed.diasSemana => med.diasSemana.isEmpty
-          ? 'Días específicos'
-          : _diasSemanaLabel(med.diasSemana),
-      _ => med.frecuencia.label,
+      FrecuenciaMed.cadaDias => context.t.everyDays(med.intervaloDias),
+      FrecuenciaMed.diasSemana =>
+        med.diasSemana.isEmpty
+            ? context.t.text('Días específicos')
+            : _diasSemanaLabel(context, med.diasSemana),
+      _ => context.t.text(med.frecuencia.label),
     };
   }
 
-  String _diasSemanaLabel(List<int> days) {
-    const names = ['', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+  String _diasSemanaLabel(BuildContext context, List<int> days) {
     final sorted = List<int>.from(days)..sort();
-    return sorted.map((d) => names[d]).join(' · ');
+    return sorted.map(context.t.shortWeekday).join(' · ');
   }
 }
 
@@ -311,7 +316,7 @@ class _StockSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'STOCK',
+          context.t.text('STOCK'),
           style: AppTextStyles.overline.copyWith(letterSpacing: 1.5),
         ),
         const SizedBox(height: 10),
@@ -328,11 +333,11 @@ class _StockSection extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    '${medicamento.stockActual} unidades',
+                    context.t.units(medicamento.stockActual),
                     style: AppTextStyles.h3,
                   ),
                   Text(
-                    'Mínimo: ${medicamento.stockMinimo}',
+                    context.t.minimumStock(medicamento.stockMinimo),
                     style: AppTextStyles.caption,
                   ),
                 ],
@@ -358,7 +363,7 @@ class _StockSection extends StatelessWidget {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      'Stock bajo — recuerda reponerlo pronto',
+                      context.t.text('Stock bajo — recuerda reponerlo pronto'),
                       style: AppTextStyles.caption.copyWith(
                         color: AppColors.danger,
                       ),

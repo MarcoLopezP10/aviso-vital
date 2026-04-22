@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:aviso_vital_2/data/models/models.dart';
+import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 
-String _daysBadge(Cita c) {
+String _daysBadge(BuildContext context, Cita c) {
+  final strings = context.t;
   final now = DateTime.now();
   final today = DateTime(now.year, now.month, now.day);
   final citaDay = DateTime(c.fecha.year, c.fecha.month, c.fecha.day);
   final diff = citaDay.difference(today).inDays;
-  if (diff <= 0) return 'HOY';
-  if (diff == 1) return 'En 1 día';
-  return 'En $diff días';
+  if (diff <= 0) return strings.today.toUpperCase();
+  return strings.inDays(diff);
 }
 
 class NextAppointmentCard extends StatelessWidget {
@@ -22,7 +23,7 @@ class NextAppointmentCard extends StatelessWidget {
   Widget build(BuildContext context) {
     if (appointment == null) return const SizedBox.shrink();
 
-    final statusLabel = _daysBadge(appointment!);
+    final statusLabel = _daysBadge(context, appointment!);
 
     return GestureDetector(
       onTap: onTap,

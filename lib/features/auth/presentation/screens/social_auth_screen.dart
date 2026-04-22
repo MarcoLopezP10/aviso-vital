@@ -5,6 +5,7 @@ import 'package:aviso_vital_2/data/models/models.dart';
 import 'package:aviso_vital_2/data/repositories/auth_repository.dart';
 import 'package:aviso_vital_2/data/repositories/user_repository.dart';
 import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_social_row.dart';
+import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 
 class SocialAuthScreen extends StatefulWidget {
   final String providerId;
@@ -112,23 +113,24 @@ class _SocialAuthScreenState extends State<SocialAuthScreen> {
 
   String _mapAuthError(Object error) {
     final message = error.toString();
+    final strings = AppStrings.current;
     if (message.contains('Invalid login credentials')) {
-      return 'Email o contraseña incorrectos.';
+      return strings.loginInvalidCredentials;
     }
     if (message.contains('User already registered')) {
-      return 'Ya existe una cuenta con ese email.';
+      return strings.accountAlreadyExists;
     }
     if (message.contains('Password should be at least')) {
-      return 'La contraseña no cumple la longitud mínima requerida.';
+      return strings.passwordTooShort;
     }
     if (message.contains('Email not confirmed')) {
-      return 'Confirme su email antes de iniciar sesión.';
+      return strings.emailNotConfirmed;
     }
     if (error is AuthException && error.message.trim().isNotEmpty) {
       return error.message;
     }
     if (error is StateError) return message.replaceFirst('Bad state: ', '');
-    return 'No se pudo completar la operación: $message';
+    return strings.operationFailed(message);
   }
 
   void _switchProvider(AuthSocialProvider provider) {
@@ -296,9 +298,11 @@ class _FacebookAuthView extends StatelessWidget {
               const SizedBox(height: 4),
               Center(
                 child: Text(
-                  data.isSignup
-                      ? 'Cree su cuenta con Facebook'
-                      : 'Acceda con su cuenta de Facebook',
+                  context.t.text(
+                    data.isSignup
+                        ? 'Cree su cuenta con Facebook'
+                        : 'Acceda con su cuenta de Facebook',
+                  ),
                   style: const TextStyle(color: _textSub, fontSize: 14),
                 ),
               ),
@@ -310,13 +314,13 @@ class _FacebookAuthView extends StatelessWidget {
                   children: [
                     _FbField(
                       controller: data.emailCtrl,
-                      hint: 'Correo electrónico o teléfono',
+                      hint: context.t.text('Correo electrónico o teléfono'),
                       keyboardType: TextInputType.emailAddress,
                       validator: (v) {
                         if (v == null || v.trim().isEmpty) {
-                          return 'Introduzca su email';
+                          return context.t.enterEmail;
                         }
-                        if (!v.contains('@')) return 'Email no válido';
+                        if (!v.contains('@')) return context.t.invalidEmail;
                         return null;
                       },
                     ),
@@ -324,17 +328,17 @@ class _FacebookAuthView extends StatelessWidget {
                       const SizedBox(height: 12),
                       _FbField(
                         controller: data.linkCodeCtrl,
-                        hint: 'Código del administrador',
+                        hint: context.t.text('Código del administrador'),
                         textCapitalization: TextCapitalization.characters,
                         validator: (v) {
                           final n = v
                               ?.replaceAll(RegExp(r'[^A-Za-z0-9]'), '')
                               .trim();
                           if (n == null || n.isEmpty) {
-                            return 'Introduzca el código';
+                            return context.t.text('Introduzca el código');
                           }
                           if (n.length != 6) {
-                            return 'El código debe tener 6 caracteres';
+                            return context.t.adminCodeLength;
                           }
                           return null;
                         },
@@ -343,7 +347,7 @@ class _FacebookAuthView extends StatelessWidget {
                     const SizedBox(height: 12),
                     _FbField(
                       controller: data.passCtrl,
-                      hint: 'Contraseña',
+                      hint: context.t.password,
                       obscure: !data.passVisible,
                       suffix: IconButton(
                         icon: Icon(
@@ -357,9 +361,9 @@ class _FacebookAuthView extends StatelessWidget {
                       ),
                       validator: (v) {
                         if (v == null || v.isEmpty) {
-                          return 'Introduzca una contraseña';
+                          return context.t.createPassword;
                         }
-                        if (v.length < 6) return 'Mínimo 6 caracteres';
+                        if (v.length < 6) return context.t.minSixChars;
                         return null;
                       },
                     ),
@@ -367,7 +371,7 @@ class _FacebookAuthView extends StatelessWidget {
                       const SizedBox(height: 12),
                       _FbField(
                         controller: data.confirmCtrl,
-                        hint: 'Confirmar contraseña',
+                        hint: context.t.confirmPassword,
                         obscure: !data.confirmVisible,
                         suffix: IconButton(
                           icon: Icon(
@@ -381,10 +385,10 @@ class _FacebookAuthView extends StatelessWidget {
                         ),
                         validator: (v) {
                           if (v == null || v.isEmpty) {
-                            return 'Confirme la contraseña';
+                            return context.t.confirmPasswordError;
                           }
                           if (v != data.passCtrl.text) {
-                            return 'Las contraseñas no coinciden';
+                            return context.t.passwordsDontMatch;
                           }
                           return null;
                         },
@@ -413,15 +417,19 @@ class _FacebookAuthView extends StatelessWidget {
                                   color: Colors.white,
                                 ),
                               )
-                            : Text(data.isSignup ? 'Registrarse' : 'Continuar'),
+                            : Text(
+                                context.t.text(
+                                  data.isSignup ? 'Registrarse' : 'Continuar',
+                                ),
+                              ),
                       ),
                     ),
                     const SizedBox(height: 12),
                     if (!data.isSignup)
-                      const Center(
+                      Center(
                         child: Text(
-                          '¿Ha olvidado su contraseña?',
-                          style: TextStyle(color: _textSub, fontSize: 14),
+                          context.t.text('¿Ha olvidado su contraseña?'),
+                          style: const TextStyle(color: _textSub, fontSize: 14),
                         ),
                       ),
                   ],
@@ -433,7 +441,10 @@ class _FacebookAuthView extends StatelessWidget {
                   const Expanded(child: Divider(color: _fieldBorder)),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: Text('o', style: const TextStyle(color: _textSub)),
+                    child: Text(
+                      context.t.or,
+                      style: const TextStyle(color: _textSub),
+                    ),
                   ),
                   const Expanded(child: Divider(color: _fieldBorder)),
                 ],
@@ -443,9 +454,11 @@ class _FacebookAuthView extends StatelessWidget {
                 child: GestureDetector(
                   onTap: data.onSwitchMode,
                   child: Text(
-                    data.isSignup
-                        ? '¿Ya tiene cuenta? Inicie sesión'
-                        : '¿No tiene cuenta? Regístrese',
+                    context.t.text(
+                      data.isSignup
+                          ? '¿Ya tiene cuenta? Inicie sesión'
+                          : '¿No tiene cuenta? Regístrese',
+                    ),
                     style: const TextStyle(
                       color: _blue,
                       fontSize: 14,
@@ -659,9 +672,11 @@ class _AppleAuthView extends StatelessWidget {
                           const SizedBox(height: 6),
                           Center(
                             child: Text(
-                              data.isSignup
-                                  ? 'Cree su cuenta con Apple'
-                                  : 'Continúe con su Apple ID',
+                              context.t.text(
+                                data.isSignup
+                                    ? 'Cree su cuenta con Apple'
+                                    : 'Continúe con su Apple ID',
+                              ),
                               textAlign: TextAlign.center,
                               style: const TextStyle(
                                 color: _textSub,
@@ -682,18 +697,18 @@ class _AppleAuthView extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(18),
                                 border: Border.all(color: _surfaceBorder),
                               ),
-                              child: const Row(
+                              child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(
+                                  const Icon(
                                     Icons.lock_rounded,
                                     size: 16,
                                     color: _textPrimary,
                                   ),
-                                  SizedBox(width: 8),
+                                  const SizedBox(width: 8),
                                   Text(
-                                    'Acceso seguro con Apple',
-                                    style: TextStyle(
+                                    context.t.text('Acceso seguro con Apple'),
+                                    style: const TextStyle(
                                       color: _textPrimary,
                                       fontSize: 13,
                                       fontWeight: FontWeight.w600,
@@ -716,10 +731,10 @@ class _AppleAuthView extends StatelessWidget {
                                   keyboardType: TextInputType.emailAddress,
                                   validator: (v) {
                                     if (v == null || v.trim().isEmpty) {
-                                      return 'Introduzca su email';
+                                      return context.t.enterEmail;
                                     }
                                     if (!v.contains('@')) {
-                                      return 'Email no válido';
+                                      return context.t.invalidEmail;
                                     }
                                     return null;
                                   },
@@ -728,7 +743,9 @@ class _AppleAuthView extends StatelessWidget {
                                   const SizedBox(height: 14),
                                   _AppleField(
                                     controller: data.linkCodeCtrl,
-                                    label: 'Código del administrador',
+                                    label: context.t.text(
+                                      'Código del administrador',
+                                    ),
                                     hint: 'XXXXXX',
                                     textCapitalization:
                                         TextCapitalization.characters,
@@ -740,10 +757,12 @@ class _AppleAuthView extends StatelessWidget {
                                           )
                                           .trim();
                                       if (n == null || n.isEmpty) {
-                                        return 'Introduzca el código';
+                                        return context.t.text(
+                                          'Introduzca el código',
+                                        );
                                       }
                                       if (n.length != 6) {
-                                        return 'El código debe tener 6 caracteres';
+                                        return context.t.adminCodeLength;
                                       }
                                       return null;
                                     },
@@ -752,13 +771,17 @@ class _AppleAuthView extends StatelessWidget {
                                 const SizedBox(height: 14),
                                 _AppleField(
                                   controller: data.passCtrl,
-                                  label: 'Contraseña',
+                                  label: context.t.password,
                                   hint: '',
                                   obscure: !data.passVisible,
                                   suffix: GestureDetector(
                                     onTap: data.onTogglePass,
                                     child: Text(
-                                      data.passVisible ? 'Ocultar' : 'Mostrar',
+                                      context.t.text(
+                                        data.passVisible
+                                            ? 'Ocultar'
+                                            : 'Mostrar',
+                                      ),
                                       style: const TextStyle(
                                         color: _blue,
                                         fontSize: 14,
@@ -768,10 +791,10 @@ class _AppleAuthView extends StatelessWidget {
                                   ),
                                   validator: (v) {
                                     if (v == null || v.isEmpty) {
-                                      return 'Introduzca una contraseña';
+                                      return context.t.createPassword;
                                     }
                                     if (v.length < 6) {
-                                      return 'Mínimo 6 caracteres';
+                                      return context.t.minSixChars;
                                     }
                                     return null;
                                   },
@@ -780,15 +803,15 @@ class _AppleAuthView extends StatelessWidget {
                                   const SizedBox(height: 14),
                                   _AppleField(
                                     controller: data.confirmCtrl,
-                                    label: 'Confirmar contraseña',
+                                    label: context.t.confirmPassword,
                                     hint: '',
                                     obscure: !data.confirmVisible,
                                     suffix: GestureDetector(
                                       onTap: data.onToggleConfirm,
                                       child: Text(
                                         data.confirmVisible
-                                            ? 'Ocultar'
-                                            : 'Mostrar',
+                                            ? context.t.text('Ocultar')
+                                            : context.t.text('Mostrar'),
                                         style: const TextStyle(
                                           color: _blue,
                                           fontSize: 14,
@@ -798,10 +821,10 @@ class _AppleAuthView extends StatelessWidget {
                                     ),
                                     validator: (v) {
                                       if (v == null || v.isEmpty) {
-                                        return 'Confirme la contraseña';
+                                        return context.t.confirmPasswordError;
                                       }
                                       if (v != data.passCtrl.text) {
-                                        return 'Las contraseñas no coinciden';
+                                        return context.t.passwordsDontMatch;
                                       }
                                       return null;
                                     },
@@ -838,8 +861,8 @@ class _AppleAuthView extends StatelessWidget {
                                           ),
                                     label: Text(
                                       data.isSignup
-                                          ? 'Crear cuenta'
-                                          : 'Iniciar sesión',
+                                          ? context.t.text('Crear cuenta')
+                                          : context.t.text('Iniciar sesión'),
                                     ),
                                     onPressed: data.isLoading
                                         ? null
@@ -852,8 +875,12 @@ class _AppleAuthView extends StatelessWidget {
                                     onTap: data.onSwitchMode,
                                     child: Text(
                                       data.isSignup
-                                          ? '¿Ya tiene cuenta? Inicie sesión'
-                                          : '¿No tiene cuenta? Regístrese',
+                                          ? context.t.text(
+                                              '¿Ya tiene cuenta? Inicie sesión',
+                                            )
+                                          : context.t.text(
+                                              '¿No tiene cuenta? Regístrese',
+                                            ),
                                       style: const TextStyle(
                                         color: _blue,
                                         fontSize: 15,
@@ -1029,11 +1056,15 @@ class _GoogleAuthView extends StatelessWidget {
                           final compactHeader = constraints.maxWidth < 420;
                           final stackedActions = constraints.maxWidth < 420;
                           final title = data.isSignup
-                              ? 'Crear cuenta'
-                              : 'Iniciar sesión';
+                              ? context.t.text('Crear cuenta')
+                              : context.t.text('Iniciar sesión');
                           final subtitle = data.isSignup
-                              ? 'con Google para sincronizar su cuenta de Aviso Vital'
-                              : 'con Google para seguir con sus recordatorios';
+                              ? context.t.text(
+                                  'con Google para sincronizar su cuenta de Aviso Vital',
+                                )
+                              : context.t.text(
+                                  'con Google para seguir con sus recordatorios',
+                                );
 
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1156,18 +1187,20 @@ class _GoogleAuthView extends StatelessWidget {
                                     color: const Color(0xFFDCE8FF),
                                   ),
                                 ),
-                                child: const Row(
+                                child: Row(
                                   children: [
-                                    Icon(
+                                    const Icon(
                                       Icons.shield_outlined,
                                       color: _blue,
                                       size: 18,
                                     ),
-                                    SizedBox(width: 10),
+                                    const SizedBox(width: 10),
                                     Expanded(
                                       child: Text(
-                                        'Acceso seguro y sincronización de medicación, citas y alertas.',
-                                        style: TextStyle(
+                                        context.t.text(
+                                          'Acceso seguro y sincronización de medicación, citas y alertas.',
+                                        ),
+                                        style: const TextStyle(
                                           color: _textPrimary,
                                           fontSize: 13,
                                           fontWeight: FontWeight.w500,
@@ -1187,14 +1220,16 @@ class _GoogleAuthView extends StatelessWidget {
                                   children: [
                                     _GoogleField(
                                       controller: data.emailCtrl,
-                                      label: 'Correo electrónico o teléfono',
+                                      label: context.t.text(
+                                        'Correo electrónico o teléfono',
+                                      ),
                                       keyboardType: TextInputType.emailAddress,
                                       validator: (v) {
                                         if (v == null || v.trim().isEmpty) {
-                                          return 'Introduzca su email';
+                                          return context.t.enterEmail;
                                         }
                                         if (!v.contains('@')) {
-                                          return 'Email no válido';
+                                          return context.t.invalidEmail;
                                         }
                                         return null;
                                       },
@@ -1203,7 +1238,9 @@ class _GoogleAuthView extends StatelessWidget {
                                       const SizedBox(height: 16),
                                       _GoogleField(
                                         controller: data.linkCodeCtrl,
-                                        label: 'Código del administrador',
+                                        label: context.t.text(
+                                          'Código del administrador',
+                                        ),
                                         textCapitalization:
                                             TextCapitalization.characters,
                                         validator: (v) {
@@ -1214,10 +1251,12 @@ class _GoogleAuthView extends StatelessWidget {
                                               )
                                               .trim();
                                           if (n == null || n.isEmpty) {
-                                            return 'Introduzca el código';
+                                            return context.t.text(
+                                              'Introduzca el código',
+                                            );
                                           }
                                           if (n.length != 6) {
-                                            return 'El código debe tener 6 caracteres';
+                                            return context.t.adminCodeLength;
                                           }
                                           return null;
                                         },
@@ -1226,7 +1265,7 @@ class _GoogleAuthView extends StatelessWidget {
                                     const SizedBox(height: 16),
                                     _GoogleField(
                                       controller: data.passCtrl,
-                                      label: 'Contraseña',
+                                      label: context.t.password,
                                       obscure: !data.passVisible,
                                       suffix: TextButton(
                                         style: TextButton.styleFrom(
@@ -1238,8 +1277,8 @@ class _GoogleAuthView extends StatelessWidget {
                                         onPressed: data.onTogglePass,
                                         child: Text(
                                           data.passVisible
-                                              ? 'Ocultar'
-                                              : 'Mostrar',
+                                              ? context.t.text('Ocultar')
+                                              : context.t.text('Mostrar'),
                                           style: const TextStyle(
                                             color: _blue,
                                             fontSize: 13,
@@ -1249,10 +1288,10 @@ class _GoogleAuthView extends StatelessWidget {
                                       ),
                                       validator: (v) {
                                         if (v == null || v.isEmpty) {
-                                          return 'Introduzca una contraseña';
+                                          return context.t.createPassword;
                                         }
                                         if (v.length < 6) {
-                                          return 'Mínimo 6 caracteres';
+                                          return context.t.minSixChars;
                                         }
                                         return null;
                                       },
@@ -1261,7 +1300,7 @@ class _GoogleAuthView extends StatelessWidget {
                                       const SizedBox(height: 16),
                                       _GoogleField(
                                         controller: data.confirmCtrl,
-                                        label: 'Confirmar contraseña',
+                                        label: context.t.confirmPassword,
                                         obscure: !data.confirmVisible,
                                         suffix: TextButton(
                                           style: TextButton.styleFrom(
@@ -1273,8 +1312,8 @@ class _GoogleAuthView extends StatelessWidget {
                                           onPressed: data.onToggleConfirm,
                                           child: Text(
                                             data.confirmVisible
-                                                ? 'Ocultar'
-                                                : 'Mostrar',
+                                                ? context.t.text('Ocultar')
+                                                : context.t.text('Mostrar'),
                                             style: const TextStyle(
                                               color: _blue,
                                               fontSize: 13,
@@ -1284,10 +1323,12 @@ class _GoogleAuthView extends StatelessWidget {
                                         ),
                                         validator: (v) {
                                           if (v == null || v.isEmpty) {
-                                            return 'Confirme la contraseña';
+                                            return context
+                                                .t
+                                                .confirmPasswordError;
                                           }
                                           if (v != data.passCtrl.text) {
-                                            return 'Las contraseñas no coinciden';
+                                            return context.t.passwordsDontMatch;
                                           }
                                           return null;
                                         },
@@ -1328,8 +1369,12 @@ class _GoogleAuthView extends StatelessWidget {
                                                 )
                                               : Text(
                                                   data.isSignup
-                                                      ? 'Registrarse'
-                                                      : 'Siguiente',
+                                                      ? context.t.text(
+                                                          'Registrarse',
+                                                        )
+                                                      : context.t.text(
+                                                          'Siguiente',
+                                                        ),
                                                 ),
                                         ),
                                       ),
@@ -1348,8 +1393,12 @@ class _GoogleAuthView extends StatelessWidget {
                                           ),
                                           child: Text(
                                             data.isSignup
-                                                ? 'Iniciar sesión'
-                                                : 'Crear cuenta',
+                                                ? context.t.text(
+                                                    'Iniciar sesión',
+                                                  )
+                                                : context.t.text(
+                                                    'Crear cuenta',
+                                                  ),
                                             style: const TextStyle(
                                               color: _blue,
                                               fontSize: 14,
@@ -1379,8 +1428,12 @@ class _GoogleAuthView extends StatelessWidget {
                                                 ),
                                                 child: Text(
                                                   data.isSignup
-                                                      ? 'Iniciar sesión'
-                                                      : 'Crear cuenta',
+                                                      ? context.t.text(
+                                                          'Iniciar sesión',
+                                                        )
+                                                      : context.t.text(
+                                                          'Crear cuenta',
+                                                        ),
                                                   style: const TextStyle(
                                                     color: _blue,
                                                     fontSize: 14,
@@ -1426,9 +1479,11 @@ class _GoogleAuthView extends StatelessWidget {
                                                           ),
                                                     )
                                                   : Text(
-                                                      data.isSignup
-                                                          ? 'Registrarse'
-                                                          : 'Siguiente',
+                                                      context.t.text(
+                                                        data.isSignup
+                                                            ? 'Registrarse'
+                                                            : 'Siguiente',
+                                                      ),
                                                     ),
                                             ),
                                           ),
@@ -1604,7 +1659,7 @@ class _ProviderSwitcher extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            'Cambiar de proveedor',
+            context.t.text('Cambiar de proveedor'),
             style: TextStyle(color: labelColor, fontSize: 13),
           ),
           const SizedBox(height: 12),
@@ -1659,7 +1714,9 @@ class _PrivacyNote extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Text(
-      'Al continuar aceptas los términos de uso y la política de privacidad de Aviso Vital.',
+      context.t.text(
+        'Al continuar aceptas los términos de uso y la política de privacidad de Aviso Vital.',
+      ),
       textAlign: TextAlign.center,
       style: TextStyle(
         color: dark ? const Color(0xFF8B9BB4) : const Color(0xFF9AA0A6),

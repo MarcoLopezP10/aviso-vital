@@ -5,7 +5,7 @@ import 'package:aviso_vital_2/data/models/models.dart';
 import 'package:aviso_vital_2/data/repositories/alerts_repository.dart';
 import 'package:aviso_vital_2/data/repositories/appointments_repository.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
-import 'package:aviso_vital_2/shared/utils/plural_helper.dart';
+import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 import 'package:aviso_vital_2/shared/widgets/shared_widgets.dart';
 
 /// Pantalla: Alerta de Cita Médica — flujo Carmen
@@ -35,18 +35,19 @@ class _AlertaCitaScreenState extends State<AlertaCitaScreen> {
   bool _isSubmitting = false;
 
   String _tiempoHastaCita(String hora) {
+    final strings = AppStrings.current;
     final parts = hora.split(':');
-    if (parts.length != 2) return 'próximamente';
+    if (parts.length != 2) return strings.soon;
     final citaMin =
         (int.tryParse(parts[0]) ?? 0) * 60 + (int.tryParse(parts[1]) ?? 0);
     final now = DateTime.now();
     final nowMin = now.hour * 60 + now.minute;
     final diff = citaMin - nowMin;
-    if (diff <= 0) return 'Ahora';
-    if (diff < 60) return PluralHelper.minutesUntil(diff);
+    if (diff <= 0) return strings.now;
+    if (diff < 60) return strings.minutesUntil(diff);
     final h = diff ~/ 60;
     final m = diff % 60;
-    return PluralHelper.hoursUntil(h, m);
+    return strings.hoursUntil(h, m);
   }
 
   Future<void> _confirmar(_AppointmentAlertData data) async {
@@ -110,7 +111,9 @@ class _AlertaCitaScreenState extends State<AlertaCitaScreen> {
 
             if (snapshot.hasError) {
               return _AppointmentUnavailableView(
-                message: 'No se pudo cargar la cita. ${snapshot.error}',
+                message: context.t.appointmentLoadError(
+                  snapshot.error.toString(),
+                ),
                 onBack: _handleBack,
               );
             }
@@ -118,7 +121,7 @@ class _AlertaCitaScreenState extends State<AlertaCitaScreen> {
             final data = snapshot.data;
             if (data == null) {
               return _AppointmentUnavailableView(
-                message: 'No hay citas próximas.',
+                message: context.t.noUpcomingAppointments,
                 onBack: _handleBack,
               );
             }
@@ -215,7 +218,7 @@ class _AppointmentUnavailableView extends StatelessWidget {
                   ),
                   const SizedBox(height: AppSpacing.xl),
                   PrimaryButton(
-                    label: 'Volver',
+                    label: context.t.back,
                     icon: Icons.arrow_back_rounded,
                     onPressed: onBack,
                   ),
@@ -326,7 +329,7 @@ class _CitaAlertaView extends StatelessWidget {
                         border: Border.all(color: AppColors.orangeBorder),
                       ),
                       child: Text(
-                        'Cita $tiempoLabel',
+                        context.t.appointmentTiming(tiempoLabel),
                         style: AppTextStyles.label.copyWith(
                           color: AppColors.orange,
                         ),
@@ -359,7 +362,7 @@ class _CitaAlertaView extends StatelessWidget {
                     ),
                     SizedBox(height: compact ? AppSpacing.lg : AppSpacing.xl),
                     Text(
-                      'Tiene una cita médica',
+                      context.t.medicalAppointment,
                       style: AppTextStyles.h1.copyWith(
                         fontSize: titleSize,
                         height: 1.08,
@@ -436,7 +439,7 @@ class _CitaAlertaView extends StatelessWidget {
                     ),
                     SizedBox(height: compact ? AppSpacing.lg : AppSpacing.xl),
                     PrimaryButton(
-                      label: 'Entendido, gracias',
+                      label: context.t.understoodThanks,
                       icon: Icons.thumb_up_alt_rounded,
                       backgroundColor: AppColors.orange,
                       foregroundColor: AppColors.textPrimary,
@@ -490,7 +493,7 @@ class _ConfirmadoView extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.xxl),
             Text(
-              'Anotado',
+              context.t.noted,
               style: AppTextStyles.h1.copyWith(
                 color: AppColors.success,
                 fontSize: 30,
@@ -498,7 +501,7 @@ class _ConfirmadoView extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              'Recuerde llevar su documentación\ny llegar con tiempo.',
+              context.t.appointmentRememberDocuments,
               textAlign: TextAlign.center,
               style: AppTextStyles.bodyLarge.copyWith(
                 color: AppColors.textSecondary,

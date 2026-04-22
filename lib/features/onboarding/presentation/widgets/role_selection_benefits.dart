@@ -1,35 +1,37 @@
 import 'package:flutter/material.dart';
 
+import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 
 class RoleSelectionBenefits extends StatelessWidget {
   const RoleSelectionBenefits({super.key});
 
-  static const _items = <({IconData icon, String label, Color color})>[
-    (
-      icon: Icons.notifications_none_rounded,
-      label: 'Recordatorios claros',
-      color: AppColors.amber,
-    ),
-    (
-      icon: Icons.event_note_rounded,
-      label: 'Citas organizadas',
-      color: AppColors.orangeLight,
-    ),
-    (
-      icon: Icons.favorite_border_rounded,
-      label: 'Apoyo diario',
-      color: AppColors.amberLight,
-    ),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final strings = context.t;
+    final items = <({IconData icon, String label, Color color})>[
+      (
+        icon: Icons.notifications_none_rounded,
+        label: strings.clearReminders,
+        color: AppColors.amber,
+      ),
+      (
+        icon: Icons.event_note_rounded,
+        label: strings.organizedAppointments,
+        color: AppColors.orangeLight,
+      ),
+      (
+        icon: Icons.favorite_border_rounded,
+        label: strings.dailySupport,
+        color: AppColors.amberLight,
+      ),
+    ];
+
     return Wrap(
       alignment: WrapAlignment.center,
       spacing: 6,
       runSpacing: 6,
-      children: _items
+      children: items
           .map(
             (item) => _BenefitChip(
               icon: item.icon,

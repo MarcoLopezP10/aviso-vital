@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:aviso_vital_2/app/router/app_routes.dart';
 import 'package:aviso_vital_2/data/repositories/auth_repository.dart';
+import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 import 'package:aviso_vital_2/shared/widgets/aviso_vital_logo.dart';
 import 'package:aviso_vital_2/shared/widgets/shared_widgets.dart';
@@ -332,7 +333,7 @@ class _SidebarItem extends StatelessWidget {
               ),
               const SizedBox(width: 12),
               Text(
-                dest.label,
+                context.t.text(dest.label),
                 style: AppTextStyles.label.copyWith(
                   color: color,
                   fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
@@ -409,7 +410,7 @@ class _BottomNavItem extends StatelessWidget {
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
                     child: Text(
-                      destination.label,
+                      context.t.text(destination.label),
                       maxLines: 1,
                       style: AppTextStyles.labelSmall.copyWith(
                         color: selected ? activeTextColor : inactiveColor,
@@ -477,7 +478,7 @@ class SearchFilterBar extends StatelessWidget {
             onChanged: onSearch,
             style: AppTextStyles.body,
             decoration: InputDecoration(
-              hintText: hint,
+              hintText: context.t.text(hint),
               filled: false,
               border: InputBorder.none,
               enabledBorder: InputBorder.none,
@@ -533,7 +534,7 @@ class SearchFilterBar extends StatelessWidget {
                       ),
                     ),
                     child: FilterChip(
-                      label: Text(f.label),
+                      label: Text(context.t.text(f.label)),
                       selected: active,
                       onSelected: (_) => onFilterChanged?.call(f.value),
                       backgroundColor: Colors.transparent,
@@ -629,13 +630,15 @@ class ConnectionStatusCard extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                conectado ? 'Dispositivo conectado' : 'Sin conexión',
+                conectado
+                    ? context.t.text('Dispositivo conectado')
+                    : context.t.text('Sin conexión'),
                 style: AppTextStyles.labelLarge.copyWith(color: color),
               ),
               const Spacer(),
               if (conectado && notificacionesActivas)
                 StatusBadge(
-                  label: 'Alertas activas',
+                  label: context.t.text('Alertas activas'),
                   variant: BadgeVariant.success,
                   icon: Icons.notifications_active_outlined,
                   small: true,
@@ -648,13 +651,13 @@ class ConnectionStatusCard extends StatelessWidget {
           if (ultimaSincronizacion != null)
             _InfoRow(
               icon: Icons.sync_rounded,
-              text: 'Última sync: ${_formatDateTime(ultimaSincronizacion!)}',
+              text: context.t.lastSyncTime(ultimaSincronizacion!),
             ),
           if (fechaVinculacion != null) ...[
             const SizedBox(height: 4),
             _InfoRow(
               icon: Icons.link_rounded,
-              text: 'Vinculado el ${_formatDate(fechaVinculacion!)}',
+              text: context.t.linkedOn(fechaVinculacion!),
             ),
           ],
           if (onDesvincular != null) ...[
@@ -666,9 +669,9 @@ class ConnectionStatusCard extends StatelessWidget {
                 size: 16,
                 color: AppColors.danger,
               ),
-              label: const Text(
-                'Desvincular dispositivo',
-                style: TextStyle(color: AppColors.danger),
+              label: Text(
+                context.t.text('Desvincular dispositivo'),
+                style: const TextStyle(color: AppColors.danger),
               ),
               style: TextButton.styleFrom(
                 minimumSize: const Size(0, 40),
@@ -680,18 +683,6 @@ class ConnectionStatusCard extends StatelessWidget {
       ),
     );
   }
-
-  String _formatDateTime(DateTime dt) {
-    final diff = DateTime.now().difference(dt);
-    if (diff.inMinutes < 1) return 'ahora mismo';
-    if (diff.inMinutes < 60) return 'hace ${diff.inMinutes} min';
-    if (diff.inHours < 24) return 'hace ${diff.inHours} h';
-    if (diff.inDays < 7) return 'hace ${diff.inDays} días';
-    if (diff.inDays < 30) return 'hace ${(diff.inDays / 7).floor()} semanas';
-    return 'hace mucho tiempo · revisa la conexión';
-  }
-
-  String _formatDate(DateTime dt) => '${dt.day}/${dt.month}/${dt.year}';
 }
 
 class _InfoRow extends StatelessWidget {

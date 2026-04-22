@@ -10,6 +10,7 @@ import 'package:aviso_vital_2/features/admin_home/presentation/widgets/admin_das
 import 'package:aviso_vital_2/features/admin_home/presentation/widgets/admin_device_status_banner.dart';
 import 'package:aviso_vital_2/features/admin_home/presentation/widgets/admin_quick_nav_cards.dart';
 import 'package:aviso_vital_2/features/admin_home/presentation/widgets/admin_recent_activity_preview.dart';
+import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 import 'package:aviso_vital_2/shared/widgets/content_widgets.dart';
 import 'package:aviso_vital_2/shared/widgets/shared_widgets.dart';
@@ -164,7 +165,9 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                 child: Padding(
                   padding: const EdgeInsets.all(AppSpacing.xl),
                   child: Text(
-                    'No se pudo cargar el dashboard: ${snapshot.error}',
+                    context.t.isEnglish
+                        ? 'Could not load the dashboard: ${snapshot.error}'
+                        : 'No se pudo cargar el dashboard: ${snapshot.error}',
                     textAlign: TextAlign.center,
                   ),
                 ),

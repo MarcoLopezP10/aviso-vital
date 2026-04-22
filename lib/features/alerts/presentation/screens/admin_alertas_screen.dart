@@ -4,6 +4,7 @@ import 'package:aviso_vital_2/data/models/models.dart';
 import 'package:aviso_vital_2/data/repositories/alerts_repository.dart';
 import 'package:aviso_vital_2/data/repositories/user_repository.dart';
 import 'package:aviso_vital_2/features/admin_home/presentation/widgets/admin_section_scaffold.dart';
+import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 import 'package:aviso_vital_2/shared/widgets/shared_widgets.dart';
 
@@ -75,7 +76,7 @@ class _AdminAlertasScreenState extends State<AdminAlertasScreen>
             .toList();
 
         return AdminSectionScaffold(
-          title: 'Historial de alertas',
+          title: context.t.text('Historial de alertas'),
           subtitle: user.nombre,
           onBack: widget.showBackButton
               ? () => Navigator.maybePop(context)
@@ -84,9 +85,9 @@ class _AdminAlertasScreenState extends State<AdminAlertasScreen>
           stats: _AdherenciaPanel(adherencia: data.adherencia),
           filters: TabBar(
             controller: _tabCtrl,
-            tabs: const [
-              Tab(height: 34, text: 'Medicación'),
-              Tab(height: 34, text: 'Citas'),
+            tabs: [
+              Tab(height: 34, text: context.t.text('Medicación')),
+              Tab(height: 34, text: context.t.text('Citas')),
             ],
             padding: EdgeInsets.zero,
             dividerColor: Colors.transparent,
@@ -146,7 +147,7 @@ class _AdherenciaPanel extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Adherencia esta semana',
+                context.t.text('Adherencia esta semana'),
                 style: AppTextStyles.label.copyWith(
                   color: AppColors.textSecondary,
                   fontSize: 12,
@@ -174,15 +175,15 @@ class _AdherenciaPanel extends StatelessWidget {
             runSpacing: 6,
             children: [
               _StatPill(
-                label: '${adherencia.tomasConfirmadas} confirmadas',
+                label: context.t.confirmedStat(adherencia.tomasConfirmadas),
                 color: AppColors.success,
               ),
               _StatPill(
-                label: '${adherencia.tomasOmitidas} omitidas',
+                label: context.t.omittedStat(adherencia.tomasOmitidas),
                 color: AppColors.danger,
               ),
               _StatPill(
-                label: '${adherencia.tomasPendientes} pendientes',
+                label: context.t.pendingStat(adherencia.tomasPendientes),
                 color: AppColors.warning,
               ),
             ],
@@ -243,12 +244,12 @@ class _AlertasList extends StatelessWidget {
       ),
       children: [
         if (hoy.isNotEmpty) ...[
-          _GroupLabel('Hoy'),
+          _GroupLabel(context.t.today),
           ...hoy.map((a) => _AlertaCard(alerta: a)),
           const SizedBox(height: AppSpacing.lg),
         ],
         if (ayer.isNotEmpty) ...[
-          _GroupLabel('Ayer'),
+          _GroupLabel(context.t.yesterday),
           ...ayer.map((a) => _AlertaCard(alerta: a)),
         ],
       ],
@@ -344,7 +345,7 @@ class _AlertaCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 3),
-              _estadoBadge(),
+              _estadoBadge(context),
             ],
           ),
         ],
@@ -363,21 +364,21 @@ class _AlertaCard extends StatelessWidget {
     EstadoAlerta.pendiente => (AppColors.warning, Icons.schedule_outlined),
   };
 
-  Widget _estadoBadge() => switch (alerta.estado) {
-    EstadoAlerta.confirmada => const _HistoryStatusBadge(
-      label: 'Confirmada',
+  Widget _estadoBadge(BuildContext context) => switch (alerta.estado) {
+    EstadoAlerta.confirmada => _HistoryStatusBadge(
+      label: context.t.text('Confirmada'),
       color: AppColors.success,
     ),
-    EstadoAlerta.omitida => const _HistoryStatusBadge(
-      label: 'Omitida',
+    EstadoAlerta.omitida => _HistoryStatusBadge(
+      label: context.t.text('Omitida'),
       color: AppColors.danger,
     ),
-    EstadoAlerta.expirada => const _HistoryStatusBadge(
-      label: 'Expirada',
+    EstadoAlerta.expirada => _HistoryStatusBadge(
+      label: context.t.text('Expirada'),
       color: AppColors.danger,
     ),
-    EstadoAlerta.pendiente => const _HistoryStatusBadge(
-      label: 'Pendiente',
+    EstadoAlerta.pendiente => _HistoryStatusBadge(
+      label: context.t.text('Pendiente'),
       color: AppColors.warning,
     ),
     _ => const SizedBox.shrink(),

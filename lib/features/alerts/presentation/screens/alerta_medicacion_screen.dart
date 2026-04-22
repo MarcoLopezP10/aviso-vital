@@ -4,6 +4,7 @@ import 'package:aviso_vital_2/core/services/care_plan_context_service.dart';
 import 'package:aviso_vital_2/data/models/models.dart';
 import 'package:aviso_vital_2/data/repositories/medications_repository.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
+import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 import 'package:aviso_vital_2/shared/utils/alert_formatters.dart';
 import 'package:aviso_vital_2/shared/widgets/shared_widgets.dart';
 
@@ -105,8 +106,9 @@ class _AlertaMedicacionScreenState extends State<AlertaMedicacionScreen>
 
               if (snapshot.hasError) {
                 return _AlertUnavailableView(
-                  message:
-                      'No se pudo cargar la medicación pendiente. ${snapshot.error}',
+                  message: context.t.medicationLoadError(
+                    snapshot.error.toString(),
+                  ),
                   onBack: _handleBack,
                 );
               }
@@ -114,7 +116,7 @@ class _AlertaMedicacionScreenState extends State<AlertaMedicacionScreen>
               final data = snapshot.data;
               if (data == null) {
                 return _AlertUnavailableView(
-                  message: 'No hay medicación pendiente.',
+                  message: context.t.noPendingMedication,
                   onBack: _handleBack,
                 );
               }
@@ -254,21 +256,13 @@ class _AlertaMedicacionScreenState extends State<AlertaMedicacionScreen>
 
   String _formatNextDose(DateTime? next, DateTime now) {
     if (next == null) return '--:--';
+    final strings = AppStrings.current;
     final hourStr =
         '${next.hour.toString().padLeft(2, '0')}:${next.minute.toString().padLeft(2, '0')}';
     final isToday =
         next.year == now.year && next.month == now.month && next.day == now.day;
-    if (isToday) return 'Hoy a las $hourStr';
-    const weekdays = [
-      'lunes',
-      'martes',
-      'miércoles',
-      'jueves',
-      'viernes',
-      'sábado',
-      'domingo',
-    ];
-    return '${weekdays[next.weekday - 1]} ${next.day} a las $hourStr';
+    if (isToday) return strings.todayAt(hourStr);
+    return strings.weekdayDayAt(next, hourStr);
   }
 
   DateTime _dateForHour(DateTime date, String value) {
@@ -342,7 +336,7 @@ class _AlertUnavailableView extends StatelessWidget {
                   ),
                   const SizedBox(height: AppSpacing.xl),
                   PrimaryButton(
-                    label: 'Volver',
+                    label: context.t.back,
                     icon: Icons.arrow_back_rounded,
                     onPressed: onBack,
                   ),
@@ -601,7 +595,7 @@ class _MedicationDetailHeader extends StatelessWidget {
             border: Border.all(color: AppColors.amberBorder),
           ),
           child: Text(
-            'Recordatorio de medicación',
+            context.t.medicationReminder,
             style: AppTextStyles.labelLarge.copyWith(
               color: AppColors.amberLight,
               fontSize: 16,
@@ -611,7 +605,7 @@ class _MedicationDetailHeader extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         Text(
-          '$userFirstName, es hora de su medicación',
+          context.t.medicationTimeFor(userFirstName),
           textAlign: TextAlign.center,
           style: AppTextStyles.h1.copyWith(
             fontSize: titleSize,
@@ -621,7 +615,7 @@ class _MedicationDetailHeader extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          'Revise la toma con calma y confirme cuando la haya tomado.',
+          context.t.reviewMedicationCalm,
           textAlign: TextAlign.center,
           style: AppTextStyles.bodyLarge.copyWith(
             color: const Color(0xFFABABAB),
@@ -725,7 +719,7 @@ class _MedicationAlertCard extends StatelessWidget {
           SizedBox(height: compact ? AppSpacing.md : AppSpacing.lg),
           _CardInfoRow(
             icon: Icons.water_drop_outlined,
-            text: med.instrucciones ?? 'Tómela con agua',
+            text: med.instrucciones ?? context.t.takeWithWater,
             compact: compact,
           ),
           if (med.resumenTomas.isNotEmpty) ...[
@@ -832,15 +826,13 @@ class _MedicationBottomActions extends StatelessWidget {
         children: [
           _PrimaryAlertButton(
             onPressed: isSubmitting ? null : onConfirm,
-            label: isSubmitting ? 'Guardando...' : 'Ya la he tomado',
+            label: isSubmitting ? context.t.saving : context.t.taken,
             compact: true,
           ),
           const SizedBox(height: AppSpacing.sm),
           _SecondarySnoozeButton(
             onPressed: isSubmitting || pospuesto ? null : onSnooze,
-            label: pospuesto
-                ? 'Recordatorio en 10 min'
-                : 'Recordármelo en 10 min',
+            label: pospuesto ? context.t.reminderIn10 : context.t.remindIn10,
             compact: compact,
           ),
           const SizedBox(height: AppSpacing.sm),
@@ -848,8 +840,8 @@ class _MedicationBottomActions extends StatelessWidget {
             children: [
               Text(
                 nextDose == '--:--'
-                    ? 'Sin tomas programadas'
-                    : 'Siguiente: $nextDose',
+                    ? context.t.noScheduledDoses
+                    : context.t.nextDoseAt(nextDose),
                 textAlign: TextAlign.center,
                 style: AppTextStyles.labelLarge.copyWith(
                   color: const Color(0xFFABABAB),

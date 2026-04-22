@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 
 export 'premium_background.dart';
@@ -117,7 +118,7 @@ class PrimaryButton extends StatelessWidget {
                     const SizedBox(width: 10),
                   ],
                   Text(
-                    label,
+                    context.t.text(label),
                     style: AppTextStyles.buttonLarge.copyWith(
                       fontSize: fontSize,
                       color: fg,
@@ -168,7 +169,10 @@ class SecondaryButton extends StatelessWidget {
               Icon(icon, size: 18, color: c),
               const SizedBox(width: 8),
             ],
-            Text(label, style: AppTextStyles.button.copyWith(color: c)),
+            Text(
+              context.t.text(label),
+              style: AppTextStyles.button.copyWith(color: c),
+            ),
           ],
         ),
       ),
@@ -258,7 +262,7 @@ class StatusBadge extends StatelessWidget {
             SizedBox(width: small ? 3 : 4),
           ],
           Text(
-            label,
+            context.t.text(label),
             style: AppTextStyles.overline.copyWith(
               fontSize: fs,
               color: fg,
@@ -337,13 +341,13 @@ class SectionHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                title,
+                context.t.text(title),
                 style: AppTextStyles.h3.copyWith(fontSize: 22, height: 1.1),
               ),
               if (subtitle != null) ...[
                 const SizedBox(height: 2),
                 Text(
-                  subtitle!,
+                  context.t.text(subtitle!),
                   style: AppTextStyles.bodySmall.copyWith(
                     color: AppColors.textSecondary,
                   ),
@@ -362,7 +366,7 @@ class SectionHeader extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 8),
             ),
             child: Text(
-              actionLabel!,
+              context.t.text(actionLabel!),
               style: AppTextStyles.label.copyWith(color: AppColors.amber),
             ),
           ),
@@ -466,11 +470,15 @@ class EmptyStateCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          Text(title, style: AppTextStyles.h4, textAlign: TextAlign.center),
+          Text(
+            context.t.text(title),
+            style: AppTextStyles.h4,
+            textAlign: TextAlign.center,
+          ),
           if (subtitle != null) ...[
             const SizedBox(height: 8),
             Text(
-              subtitle!,
+              context.t.text(subtitle!),
               style: AppTextStyles.bodySmall,
               textAlign: TextAlign.center,
             ),
@@ -563,10 +571,10 @@ class ConfirmDialog extends StatelessWidget {
               ),
               const SizedBox(height: 16),
             ],
-            Text(title, style: AppTextStyles.h3),
+            Text(context.t.text(title), style: AppTextStyles.h3),
             const SizedBox(height: 8),
             Text(
-              message,
+              context.t.text(message),
               style: AppTextStyles.body.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -576,7 +584,7 @@ class ConfirmDialog extends StatelessWidget {
               children: [
                 Expanded(
                   child: SecondaryButton(
-                    label: cancelLabel,
+                    label: context.t.text(cancelLabel),
                     onPressed: () => Navigator.of(context).pop(false),
                     height: 48,
                   ),
@@ -584,7 +592,7 @@ class ConfirmDialog extends StatelessWidget {
                 const SizedBox(width: 10),
                 Expanded(
                   child: PrimaryButton(
-                    label: confirmLabel,
+                    label: context.t.text(confirmLabel),
                     onPressed: () {
                       Navigator.of(context).pop(true);
                       onConfirm();

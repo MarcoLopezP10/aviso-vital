@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 
 class RoleSelectionIntro extends StatelessWidget {
@@ -8,7 +9,7 @@ class RoleSelectionIntro extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Text(
-      'Elija cómo quiere acceder a Aviso Vital.',
+      context.t.chooseAccess,
       textAlign: TextAlign.center,
       style: AppTextStyles.body.copyWith(
         color: AppColors.textSecondary,
