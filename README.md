@@ -71,21 +71,32 @@ Este proyecto ya no es un esqueleto de Flutter: se ha convertido en una aplicaci
 
 ### Refactorización reciente destacada
 
-En esta fase se ha hecho una mejora importante del sistema de simulación y del flujo de alertas:
+En esta fase se ha hecho una mejora importante del sistema de simulación, del home de usuario y del despliegue web:
 
 - rediseño dark de las tarjetas de notificación del lock screen simulado;
+- uso del logo real de Aviso Vital en la cabecera de las notificaciones;
 - mejora de contraste, jerarquía visual y legibilidad para personas mayores;
-- unificación del badge de acción `Pulse para abrir`;
+- notificación de medicación centrada en nombre del medicamento y hora, sin dosis en el título;
+- notificación de cita centrada en especialidad, hora y centro/hospital;
+- centro u hospital mostrado con icono de ubicación en la notificación de cita;
+- hora de medicación y cita reforzada visualmente para lectura rápida;
+- texto adaptable en las notificaciones para reducir cortes bruscos cuando el espacio es limitado;
+- duración visible de recordatorios de cita no finales ajustada a `15 minutos`;
+- mantenimiento de la regla de negocio de recordatorios: no aparecen antes de su hora programada;
 - formateo consistente de dosis, por ejemplo `50 mg`;
-- refactor de la pantalla de detalle de medicación para que el CTA principal quede visible abajo;
+- home de usuario mayor rediseñado para priorizar medicamento y hora de próxima toma;
+- botón y tarjetas del home de usuario suavizados para reducir ruido visual;
 - soporte para múltiples notificaciones visibles en la simulación con scroll interno;
 - corrección del comportamiento tras confirmar alertas:
   - medicación confirmada: desaparece;
   - cita confirmada de `24h` o `3h`: desaparece;
   - cita gestionada de `30 min`: se colapsa y permanece hasta la hora real de la cita;
-- mejora de robustez de la simulación para que no se quede indefinidamente cargando;
-- corrección de la mini tarjeta de citas del home de usuario para que muestre y abra la cita correcta;
-- ajuste del recordatorio de `24h` para respetar el horario local incluso en cambios de hora.
+- conexión de la simulación a Supabase Realtime;
+- refresco forzado sin caché al recibir cambios de tomas, citas, alertas o medicamentos;
+- polling de respaldo cada `30 segundos` para mantener la simulación sincronizada;
+- mejora responsive del móvil simulado para evitar desbordes en pantallas pequeñas;
+- preparación para despliegue en Vercel con build web y rewrites de SPA;
+- actualización de metadata web/PWA para que aparezca como `Aviso Vital`.
 
 ## Arquitectura técnica
 
@@ -109,6 +120,7 @@ Servicios transversales:
 - `supabase_service.dart`: inicialización de Supabase y acceso al cliente.
 - `care_plan_context_service.dart`: resuelve el contexto real de trabajo, incluyendo quién es el propietario del plan de cuidados y quién es el visor actual.
 - `app_link_service.dart`: persistencia local de la vinculación con administrador mediante `SharedPreferences`.
+- `realtime_service.dart`: suscripción a cambios en Supabase Realtime para `tomas`, `citas`, `alertas` y `medicamentos`.
 - `realtime_simulation_service.dart`: motor que construye el snapshot de notificaciones visibles para la simulación.
 
 #### 3. `data/models/`
@@ -389,10 +401,19 @@ El motor está en:
 Este servicio:
 
 - resuelve el contexto del usuario;
-- carga medicamentos, tomas, citas y alertas;
+- carga medicamentos, tomas, citas y alertas, con opción de forzar refresco para evitar caché vieja;
 - expira tomas atrasadas si han superado la ventana de respuesta;
 - construye una lista de `LiveNotificationItem`;
 - devuelve un `LiveSimulationSnapshot` con las notificaciones activas y próximas.
+
+La pantalla de simulación (`simulacion_alertas_screen.dart`) se conecta además a `RealtimeService`, por lo que escucha cambios remotos en:
+
+- `tomas`;
+- `citas`;
+- `alertas`;
+- `medicamentos`.
+
+Cuando llega un evento realtime, la simulación refresca el snapshot con `forceRefresh: true`. También mantiene un refresco de respaldo cada `30 segundos`.
 
 ### Tipos de notificación soportados
 
@@ -404,9 +425,11 @@ Este servicio:
 #### Medicación
 
 - una toma pendiente o pospuesta entra en la simulación;
+- la notificación aparece desde la hora programada, no antes;
 - si se confirma, desaparece;
 - si se pospone, reaparece más tarde;
-- si no se responde dentro de la ventana prevista, puede expirar.
+- si no se responde dentro de la ventana prevista, puede expirar;
+- la ventana de expiración de una toma es de `15 minutos`.
 
 #### Citas
 
@@ -418,9 +441,13 @@ La app soporta recordatorios derivados a:
 
 Comportamiento esperado:
 
+- la notificación aparece desde la hora programada del recordatorio, no antes;
 - la alerta de `24h` aparece cuando toca y desaparece al confirmarse;
 - la alerta de `3h` aparece cuando toca y desaparece al confirmarse;
-- la alerta de `30 min` aparece cuando toca y, al gestionarse, se mantiene colapsada hasta la hora real de la cita.
+- la alerta de `30 min` aparece cuando toca y, al gestionarse, se mantiene colapsada hasta la hora real de la cita;
+- los recordatorios de cita no finales permanecen visibles durante `15 minutos` si no se gestionan.
+
+No se aplica una ventana de `±2 horas`: al ser una app de recordatorios, las notificaciones no se adelantan a la hora real que corresponde.
 
 ### Aspectos técnicos relevantes de la simulación
 
@@ -428,8 +455,22 @@ Comportamiento esperado:
 - puede derivar recordatorios directamente desde las citas;
 - soporta múltiples notificaciones simultáneas;
 - la pantalla del móvil simulado tiene scroll interno;
+- el marco del móvil se adapta al ancho disponible para funcionar mejor en pantallas pequeñas;
+- las tarjetas usan claves estables para evitar errores de duplicidad en Flutter;
 - incorpora manejo de error y reintento para no quedarse cargando indefinidamente;
 - el cálculo del recordatorio de `24h` se hace preservando la hora local del día anterior para evitar errores en cambios de horario.
+
+### Diseño actual de las notificaciones simuladas
+
+Las tarjetas de lock screen están optimizadas para lectura rápida:
+
+- cabecera con logo real de Aviso Vital;
+- nombre de medicamento o especialidad en grande;
+- hora destacada con alto contraste;
+- medicación: muestra `Expira HH:MM` de forma discreta;
+- cita: muestra el centro/hospital con icono de ubicación;
+- acción inferior clara: `Ver recordatorio` o `Ver cita`;
+- textos con ajuste automático de tamaño cuando el ancho es limitado.
 
 ## Diseño visual y accesibilidad
 
@@ -451,7 +492,9 @@ La app sigue una línea visual oscura, sobria y cálida. El objetivo no es solo 
 - áreas táctiles amplias;
 - contraste alto sobre fondos oscuros;
 - textos y CTAs simplificados;
-- reducción de ruido visual en pantallas de alerta.
+- reducción de ruido visual en pantallas de alerta;
+- hora de medicación y cita reforzada visualmente para personas mayores;
+- tarjetas de inicio de usuario pensadas para lectura rápida sin interacción frecuente.
 
 ## Flujos principales de navegación
 
@@ -479,7 +522,7 @@ El home del usuario mayor muestra:
 
 - saludo contextual;
 - progreso diario;
-- próxima medicación;
+- próxima medicación con nombre y hora en gran tamaño;
 - próxima cita médica;
 - acceso directo a la simulación en tiempo real;
 - acciones rápidas.
@@ -507,7 +550,10 @@ Vista de simulación del lock screen del móvil:
 - muestra tarjetas dark de notificación;
 - unifica el lenguaje visual entre medicación y citas;
 - permite ver varias alertas a la vez;
-- refresca periódicamente el estado visible.
+- refresca periódicamente el estado visible;
+- escucha cambios en tiempo real desde Supabase;
+- fuerza refresco de datos cuando llegan cambios remotos;
+- mantiene responsive el marco del móvil para escritorio y móvil.
 
 ## Rutas principales
 
@@ -562,6 +608,44 @@ flutter run --dart-define-from-file=env/dev.json
 
 Si no se proporcionan variables válidas, la app entra en modo local y utiliza datos de ejemplo.
 
+## Web y despliegue en Vercel
+
+El proyecto está preparado para compilar como Flutter Web y desplegarse en Vercel como aplicación estática.
+
+Archivos relevantes:
+
+- `vercel.json`: configura el build, la carpeta de salida y el rewrite de SPA hacia `index.html`.
+- `scripts/vercel-build.sh`: instala o reutiliza Flutter, ejecuta `flutter pub get` y compila web.
+- `web/index.html`: metadata web actualizada para `Aviso Vital`.
+- `web/manifest.json`: nombre, descripción, colores y orientación PWA ajustados.
+
+### Variables necesarias en Vercel
+
+En Vercel deben configurarse estas variables de entorno:
+
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY`
+
+Flutter Web lee estas variables en tiempo de build mediante `--dart-define`, por eso el script de Vercel las pasa explícitamente al compilar:
+
+```bash
+flutter build web --release \
+  --dart-define=SUPABASE_URL="$SUPABASE_URL" \
+  --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
+```
+
+### Rewrites de SPA
+
+`vercel.json` envía todas las rutas a `index.html` para que rutas internas como `/home-usuario`, `/simulacion-alertas` o `/alerta-cita` funcionen al abrir o recargar directamente desde el navegador.
+
+### Nota sobre Git
+
+Si `vercel.json` o `scripts/vercel-build.sh` no aparecen en `git status` por reglas locales de exclusión, se pueden añadir al commit con:
+
+```bash
+git add -f vercel.json scripts/vercel-build.sh
+```
+
 ## Comandos útiles
 
 ### Instalar dependencias
@@ -588,11 +672,41 @@ flutter analyze
 flutter test
 ```
 
+### Compilar web localmente
+
+```bash
+flutter build web --release
+```
+
+Con Supabase:
+
+```bash
+flutter build web --release \
+  --dart-define=SUPABASE_URL="https://TU-PROYECTO.supabase.co" \
+  --dart-define=SUPABASE_ANON_KEY="TU_ANON_KEY"
+```
+
 ### Formatear código
 
 ```bash
 dart format lib test
 ```
+
+### Verificación usada tras los últimos cambios
+
+```bash
+flutter analyze
+flutter test
+flutter build web --release
+```
+
+Estado actual:
+
+- `flutter analyze`: OK
+- `flutter test`: OK
+- `flutter build web --release`: OK
+
+El build web puede mostrar una advertencia de dry-run WebAssembly por `universal_html` y `dart:html`; no bloquea el build JavaScript normal generado en `build/web`.
 
 ## Decisiones técnicas relevantes
 
