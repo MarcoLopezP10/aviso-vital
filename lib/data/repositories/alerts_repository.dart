@@ -34,11 +34,15 @@ class AlertsRepository {
   Future<List<Alerta>> fetchRecent({
     String? userId,
     bool forceRefresh = false,
+    int limit = 50,
   }) async {
     if (forceRefresh) _cachedAlerts = const [];
     if (!SupabaseService.isReady) return getRecent();
 
-    dynamic query = SupabaseService.client.from('alertas').select();
+    dynamic query = SupabaseService.client
+        .from('alertas')
+        .select()
+        .limit(limit);
     final resolvedUserId = await _userRepository.resolveCareRecipientUserId(
       explicitUserId: userId,
     );
@@ -213,23 +217,28 @@ class AlertsRepository {
     final rawAlerts = await fetchRecent(
       userId: resolvedUserId,
       forceRefresh: forceRefresh,
+      limit: 100,
     );
-    final dosesResponse = await SupabaseService.client
-        .from('tomas')
-        .select()
-        .eq('id_usuario', resolvedUserId)
-        .gte(
-          'fecha_programada',
-          DateTime.now()
-              .subtract(const Duration(days: 7))
-              .toUtc()
-              .toIso8601String(),
-        )
-        .order('fecha_programada', ascending: false);
-    final medsResponse = await SupabaseService.client
-        .from('medicamentos')
-        .select()
-        .eq('id_usuario', resolvedUserId);
+    final doseSince = DateTime.now()
+        .subtract(const Duration(days: 7))
+        .toUtc()
+        .toIso8601String();
+    final results = await Future.wait<dynamic>([
+      SupabaseService.client
+          .from('tomas')
+          .select()
+          .eq('id_usuario', resolvedUserId)
+          .gte('fecha_programada', doseSince)
+          .order('fecha_programada', ascending: false)
+          .limit(100),
+      SupabaseService.client
+          .from('medicamentos')
+          .select()
+          .eq('id_usuario', resolvedUserId)
+          .limit(100),
+    ]);
+    final dosesResponse = results[0];
+    final medsResponse = results[1];
 
     final medicationsById = {
       for (final medication in List<Map<String, dynamic>>.from(

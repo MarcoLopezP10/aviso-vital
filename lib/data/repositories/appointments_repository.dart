@@ -40,7 +40,7 @@ class AppointmentsRepository {
       query = query.eq('id_usuario', resolvedUserId);
     }
 
-    final response = await query.order('fecha');
+    final response = await query.order('fecha').limit(100);
     final appointments = List<Map<String, dynamic>>.from(
       response as List,
     ).map(Cita.fromJson).toList(growable: false);

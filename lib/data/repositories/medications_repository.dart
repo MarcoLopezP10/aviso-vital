@@ -66,7 +66,7 @@ class MedicationsRepository {
         ? baseQuery.eq('id_usuario', resolvedUserId)
         : baseQuery;
 
-    final response = await query.order('created_at');
+    final response = await query.order('created_at').limit(100);
     final medications = List<Map<String, dynamic>>.from(
       response as List,
     ).map(Medicamento.fromJson).toList(growable: false);
@@ -221,10 +221,16 @@ class MedicationsRepository {
     }
 
     final now = DateTime.now();
-    final weekStart = DateTime(now.year, now.month, now.day)
-        .subtract(const Duration(days: 6));
-    final dayEnd = DateTime(now.year, now.month, now.day)
-        .add(const Duration(days: 1));
+    final weekStart = DateTime(
+      now.year,
+      now.month,
+      now.day,
+    ).subtract(const Duration(days: 6));
+    final dayEnd = DateTime(
+      now.year,
+      now.month,
+      now.day,
+    ).add(const Duration(days: 1));
 
     final baseWeekQuery = SupabaseService.client
         .from('tomas')
@@ -236,9 +242,9 @@ class MedicationsRepository {
         : baseWeekQuery;
 
     final response = await weekQuery.order('fecha_programada');
-    return List<Map<String, dynamic>>.from(response as List)
-        .map(Toma.fromJson)
-        .toList(growable: false);
+    return List<Map<String, dynamic>>.from(
+      response as List,
+    ).map(Toma.fromJson).toList(growable: false);
   }
 
   Future<List<Toma>> fetchTodayDoses({
@@ -494,15 +500,17 @@ class MedicationsRepository {
     const note = 'Sin respuesta en 15 minutos desde la notificacion';
 
     if (!SupabaseService.isReady) {
-      final updated = _cachedTodayDoses.map((dose) {
-        final isPending =
-            dose.estado == EstadoToma.pendiente ||
-            dose.estado == EstadoToma.pospuesta;
-        if (isPending && dose.fechaProgramada.isBefore(threshold)) {
-          return dose.copyWith(estado: EstadoToma.expirada, nota: note);
-        }
-        return dose;
-      }).toList(growable: false);
+      final updated = _cachedTodayDoses
+          .map((dose) {
+            final isPending =
+                dose.estado == EstadoToma.pendiente ||
+                dose.estado == EstadoToma.pospuesta;
+            if (isPending && dose.fechaProgramada.isBefore(threshold)) {
+              return dose.copyWith(estado: EstadoToma.expirada, nota: note);
+            }
+            return dose;
+          })
+          .toList(growable: false);
       _cachedTodayDoses = List.unmodifiable(updated);
       _invalidateDailySnapshot();
       return;
@@ -717,10 +725,7 @@ class MedicationsRepository {
         })
         .eq('id', medicationId);
     _upsertCache(
-      medication.copyWith(
-        stockActual: newStock,
-        ultimaEdicion: DateTime.now(),
-      ),
+      medication.copyWith(stockActual: newStock, ultimaEdicion: DateTime.now()),
     );
   }
 
@@ -807,20 +812,21 @@ class MedicationsRepository {
   /// are treated as daily (backwards-compatible).
   bool _shouldTakeOnDay(Medicamento medication, DateTime date) {
     return switch (medication.frecuencia) {
-      FrecuenciaMed.diasSemana => medication.diasSemana.isEmpty
-          ? true
-          : medication.diasSemana.contains(date.weekday),
+      FrecuenciaMed.diasSemana =>
+        medication.diasSemana.isEmpty
+            ? true
+            : medication.diasSemana.contains(date.weekday),
       FrecuenciaMed.cadaDias => () {
-          if (medication.intervaloDias <= 1) return true;
-          final anchor = DateTime(
-            medication.fechaCreacion.year,
-            medication.fechaCreacion.month,
-            medication.fechaCreacion.day,
-          );
-          final target = DateTime(date.year, date.month, date.day);
-          final diff = target.difference(anchor).inDays;
-          return diff >= 0 && diff % medication.intervaloDias == 0;
-        }(),
+        if (medication.intervaloDias <= 1) return true;
+        final anchor = DateTime(
+          medication.fechaCreacion.year,
+          medication.fechaCreacion.month,
+          medication.fechaCreacion.day,
+        );
+        final target = DateTime(date.year, date.month, date.day);
+        final diff = target.difference(anchor).inDays;
+        return diff >= 0 && diff % medication.intervaloDias == 0;
+      }(),
       _ => true,
     };
   }
@@ -844,7 +850,10 @@ class MedicationsRepository {
     }
 
     // Check enough days ahead to cover any interval pattern (min 14, or 2× the medication interval)
-    final lookahead = math.max(AppDurations.medicationLookaheadDays, medication.intervaloDias * 2);
+    final lookahead = math.max(
+      AppDurations.medicationLookaheadDays,
+      medication.intervaloDias * 2,
+    );
     for (var i = 1; i <= lookahead; i++) {
       final candidate = from.add(Duration(days: i));
       if (_shouldTakeOnDay(medication, candidate)) {

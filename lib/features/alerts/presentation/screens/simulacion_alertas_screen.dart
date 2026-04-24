@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:aviso_vital_2/app/router/app_route_args.dart';
 import 'package:aviso_vital_2/app/router/app_routes.dart';
 import 'package:aviso_vital_2/core/services/realtime_service.dart';
 import 'package:aviso_vital_2/core/services/realtime_simulation_service.dart';
@@ -42,11 +43,18 @@ class _SimulacionAlertasScreenState extends State<SimulacionAlertasScreen> {
     _realtimeService.start();
     _realtimeSub = _realtimeService.changes.listen(_onRealtimeChange);
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (!mounted) return;
-      _tick += 1;
-      _nowNotifier.value = DateTime.now();
-      if (_tick % 30 == 0) {
-        _refreshSnapshot(forceRefresh: true);
+      try {
+        if (!mounted) return;
+        _tick += 1;
+        _nowNotifier.value = DateTime.now();
+        if (_tick % 30 == 0) {
+          _refreshSnapshot(forceRefresh: true);
+        }
+      } catch (error, stackTrace) {
+        debugPrint(
+          '[SimulacionAlertasScreen] timer refresh error: '
+          '$error\n$stackTrace',
+        );
       }
     });
   }
@@ -54,8 +62,15 @@ class _SimulacionAlertasScreenState extends State<SimulacionAlertasScreen> {
   void _onRealtimeChange(RealtimeChangeType _) {
     _realtimeDebounce?.cancel();
     _realtimeDebounce = Timer(const Duration(milliseconds: 500), () {
-      if (!mounted) return;
-      _refreshSnapshot(forceRefresh: true);
+      try {
+        if (!mounted) return;
+        _refreshSnapshot(forceRefresh: true);
+      } catch (error, stackTrace) {
+        debugPrint(
+          '[SimulacionAlertasScreen] realtime refresh error: '
+          '$error\n$stackTrace',
+        );
+      }
     });
   }
 
@@ -109,18 +124,18 @@ class _SimulacionAlertasScreenState extends State<SimulacionAlertasScreen> {
       await Navigator.pushNamed(
         context,
         AppRoutes.alertaMedicacion,
-        arguments: {'doseId': item.dose!.id},
+        arguments: AlertaMedicacionRouteArgs(doseId: item.dose!.id),
       );
     } else if (item.type == LiveNotificationType.appointment) {
       await Navigator.pushNamed(
         context,
         AppRoutes.alertaCita,
-        arguments: {
-          'alertId': item.alert?.id,
-          'appointmentId': item.appointment?.id,
-          'reminderKind': item.reminderKind,
-          'reminderInstanceId': item.id,
-        },
+        arguments: AlertaCitaRouteArgs(
+          alertId: item.alert?.id,
+          appointmentId: item.appointment?.id,
+          reminderKind: item.reminderKind,
+          reminderInstanceId: item.id,
+        ),
       );
     }
 
