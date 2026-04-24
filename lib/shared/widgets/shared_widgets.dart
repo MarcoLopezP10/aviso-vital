@@ -892,6 +892,72 @@ class _Capsule extends StatelessWidget {
   }
 }
 
+// ────────────────────────────────────────────────────────────────────
+// ERROR RETRY VIEW
+// ────────────────────────────────────────────────────────────────────
+
+class ErrorRetryView extends StatelessWidget {
+  final String? title;
+  final String? message;
+  final VoidCallback? onRetry;
+  final bool useScaffold;
+
+  const ErrorRetryView({
+    super.key,
+    this.title,
+    this.message,
+    this.onRetry,
+    this.useScaffold = true,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = context.t;
+    final content = Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 420),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.wifi_off_rounded,
+                size: 52,
+                color: AppColors.textSecondary,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                title ?? strings.loadErrorTitle,
+                style: AppTextStyles.h3,
+                textAlign: TextAlign.center,
+              ),
+              if (message != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  message!,
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.body.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+              if (onRetry != null) ...[
+                const SizedBox(height: 24),
+                PrimaryButton(label: strings.retry, onPressed: onRetry),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (!useScaffold) return content;
+
+    return Scaffold(body: Center(child: content));
+  }
+}
+
 class _PillLinePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {

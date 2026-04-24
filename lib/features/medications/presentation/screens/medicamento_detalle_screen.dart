@@ -20,12 +20,21 @@ class MedicamentoDetalleScreen extends StatefulWidget {
 
 class _MedicamentoDetalleScreenState extends State<MedicamentoDetalleScreen> {
   static const _medicationsRepository = MedicationsRepository();
-  late final Future<Medicamento?> _medicationFuture;
+  late Future<Medicamento?> _medicationFuture;
 
   @override
   void initState() {
     super.initState();
     _medicationFuture = _medicationsRepository.fetchById(widget.medicamentoId);
+  }
+
+  void _retry() {
+    setState(
+      () => _medicationFuture = _medicationsRepository.fetchById(
+        widget.medicamentoId,
+        forceRefresh: true,
+      ),
+    );
   }
 
   @override
@@ -36,6 +45,17 @@ class _MedicamentoDetalleScreenState extends State<MedicamentoDetalleScreen> {
         if (snapshot.connectionState != ConnectionState.done) {
           return const AppDetailScaffold(
             content: Center(child: CircularProgressIndicator()),
+            scrollable: false,
+          );
+        }
+
+        if (snapshot.hasError) {
+          return AppDetailScaffold(
+            content: ErrorRetryView(
+              useScaffold: false,
+              message: context.t.loadErrorMessage,
+              onRetry: _retry,
+            ),
             scrollable: false,
           );
         }
@@ -265,7 +285,6 @@ class _InfoSection extends StatelessWidget {
     );
   }
 }
-
 
 class _InfoItem extends StatelessWidget {
   final String label;

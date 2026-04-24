@@ -18,12 +18,21 @@ class CitaDetalleScreen extends StatefulWidget {
 
 class _CitaDetalleScreenState extends State<CitaDetalleScreen> {
   static const _appointmentsRepository = AppointmentsRepository();
-  late final Future<Cita?> _appointmentFuture;
+  late Future<Cita?> _appointmentFuture;
 
   @override
   void initState() {
     super.initState();
     _appointmentFuture = _appointmentsRepository.fetchById(widget.citaId);
+  }
+
+  void _retry() {
+    setState(
+      () => _appointmentFuture = _appointmentsRepository.fetchById(
+        widget.citaId,
+        forceRefresh: true,
+      ),
+    );
   }
 
   @override
@@ -34,6 +43,17 @@ class _CitaDetalleScreenState extends State<CitaDetalleScreen> {
         if (snapshot.connectionState != ConnectionState.done) {
           return const AppDetailScaffold(
             content: Center(child: CircularProgressIndicator()),
+            scrollable: false,
+          );
+        }
+
+        if (snapshot.hasError) {
+          return AppDetailScaffold(
+            content: ErrorRetryView(
+              useScaffold: false,
+              message: context.t.loadErrorMessage,
+              onRetry: _retry,
+            ),
             scrollable: false,
           );
         }

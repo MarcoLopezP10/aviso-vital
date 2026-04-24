@@ -34,6 +34,10 @@ class _AdminAlertasScreenState extends State<AdminAlertasScreen>
     _screenDataFuture = _loadData();
   }
 
+  void _retry() {
+    setState(() => _screenDataFuture = _loadData());
+  }
+
   @override
   void dispose() {
     _tabCtrl.dispose();
@@ -56,6 +60,27 @@ class _AdminAlertasScreenState extends State<AdminAlertasScreen>
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
           return const Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.hasError) {
+          return AdminSectionScaffold(
+            title: context.t.text('Historial de alertas'),
+            subtitle: context.t.displayName(user.nombre),
+            onBack: widget.showBackButton
+                ? () => Navigator.maybePop(context)
+                : null,
+            compactHeader: true,
+            body: ErrorRetryView(
+              useScaffold: false,
+              message: context.t.loadErrorMessage,
+              onRetry: _retry,
+            ),
+            primaryGlowColor: AppColors.amber,
+            secondaryGlowColor: AppColors.orange,
+            primaryGlowAlignment: const Alignment(1, -0.92),
+            secondaryGlowAlignment: const Alignment(-0.95, 0.18),
+            intensity: 0.64,
+          );
         }
 
         final data =

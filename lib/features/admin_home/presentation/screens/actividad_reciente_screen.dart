@@ -40,6 +40,27 @@ class _ActividadRecienteScreenState extends State<ActividadRecienteScreen> {
           );
         }
 
+        if (snapshot.hasError) {
+          return Scaffold(
+            backgroundColor: AppColors.background,
+            appBar: AppBar(
+              backgroundColor: AppColors.background,
+              leading: const AppBackButton(),
+              title: Text(context.t.text('Actividad reciente')),
+            ),
+            body: ErrorRetryView(
+              useScaffold: false,
+              message: context.t.loadErrorMessage,
+              onRetry: () {
+                setState(
+                  () =>
+                      _alertsFuture = _alertsRepository.fetchHistoryTimeline(),
+                );
+              },
+            ),
+          );
+        }
+
         final alertas = snapshot.data ?? _alertsRepository.getRecent();
 
         return Scaffold(
