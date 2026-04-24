@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:aviso_vital_2/app/router/app_routes.dart';
 import 'package:aviso_vital_2/core/services/care_plan_context_service.dart';
@@ -32,6 +34,7 @@ class _AlertaCitaScreenState extends State<AlertaCitaScreen> {
   static const _appointmentsRepository = AppointmentsRepository();
   static const _alertsRepository = AlertsRepository();
   static const _carePlanContextService = CarePlanContextService();
+  Timer? _dismissTimer;
   bool _confirmado = false;
   late Future<_AppointmentAlertData?> _appointmentFuture;
   bool _isSubmitting = false;
@@ -72,9 +75,15 @@ class _AlertaCitaScreenState extends State<AlertaCitaScreen> {
       _confirmado = true;
       _isSubmitting = false;
     });
-    Future.delayed(const Duration(seconds: 2), () {
+    _dismissTimer = Timer(const Duration(seconds: 2), () {
       if (mounted) Navigator.of(context).pop();
     });
+  }
+
+  @override
+  void dispose() {
+    _dismissTimer?.cancel();
+    super.dispose();
   }
 
   @override
@@ -85,7 +94,10 @@ class _AlertaCitaScreenState extends State<AlertaCitaScreen> {
 
   Future<void> _handleBack() async {
     final navigator = Navigator.of(context);
-    if (await navigator.maybePop()) return;
+    if (navigator.canPop()) {
+      navigator.pop();
+      return;
+    }
     final contextData = await _carePlanContextService.resolve();
     if (!mounted) return;
     final fallbackRoute =
@@ -258,7 +270,7 @@ class _AppointmentUnavailableView extends StatelessWidget {
 // ── Vista principal de la alerta ────────────────────────────────────
 
 class _CitaAlertaView extends StatelessWidget {
-  final dynamic cita;
+  final Cita cita;
   final String tiempoLabel;
   final bool isReadOnly;
   final VoidCallback onClose;

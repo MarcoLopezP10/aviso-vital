@@ -5,6 +5,7 @@ import 'package:aviso_vital_2/data/repositories/medications_repository.dart';
 import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 import 'package:aviso_vital_2/shared/widgets/layout/app_detail_scaffold.dart';
+import 'package:aviso_vital_2/shared/utils/alert_formatters.dart';
 import 'package:aviso_vital_2/shared/widgets/shared_widgets.dart';
 
 class MedicamentoDetalleScreen extends StatefulWidget {
@@ -220,7 +221,7 @@ class _MedicationDetailHero extends StatelessWidget {
       child: Center(
         child: PillVisual(
           color: medicamento.colorPastilla,
-          shape: _toFormShape(medicamento.formaPastilla),
+          shape: formShapeFor(medicamento.formaPastilla),
           size: 80,
           showGlow: true,
         ),
@@ -265,11 +266,6 @@ class _InfoSection extends StatelessWidget {
   }
 }
 
-FormShape _toFormShape(FormaPastilla shape) => switch (shape) {
-  FormaPastilla.redonda => FormShape.round,
-  FormaPastilla.ovalada => FormShape.oval,
-  FormaPastilla.capsula => FormShape.capsule,
-};
 
 class _InfoItem extends StatelessWidget {
   final String label;

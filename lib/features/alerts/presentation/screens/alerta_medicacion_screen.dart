@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:aviso_vital_2/app/router/app_routes.dart';
 import 'package:aviso_vital_2/core/services/care_plan_context_service.dart';
@@ -27,8 +29,9 @@ class _AlertaMedicacionScreenState extends State<AlertaMedicacionScreen>
   late final AnimationController _pulseCtrl;
   late final Animation<double> _pulseAnim;
   late Future<_MedicationAlertData?> _alertFuture;
+  Timer? _dismissTimer;
   bool _confirmado = false;
-  final bool _pospuesto = false;
+  bool _pospuesto = false;
   bool _isSubmitting = false;
 
   @override
@@ -45,13 +48,17 @@ class _AlertaMedicacionScreenState extends State<AlertaMedicacionScreen>
 
   @override
   void dispose() {
+    _dismissTimer?.cancel();
     _pulseCtrl.dispose();
     super.dispose();
   }
 
   Future<void> _handleBack() async {
     final navigator = Navigator.of(context);
-    if (await navigator.maybePop()) return;
+    if (navigator.canPop()) {
+      navigator.pop();
+      return;
+    }
     final contextData = await _carePlanContextService.resolve();
     if (!mounted) return;
     final fallbackRoute =
@@ -70,14 +77,17 @@ class _AlertaMedicacionScreenState extends State<AlertaMedicacionScreen>
       _confirmado = true;
       _isSubmitting = false;
     });
-    Future.delayed(AppDurations.success, () {
+    _dismissTimer = Timer(AppDurations.success, () {
       if (mounted) Navigator.of(context).pop();
     });
   }
 
   Future<void> _posponer(_MedicationAlertData data) async {
     if (_isSubmitting) return;
-    setState(() => _isSubmitting = true);
+    setState(() {
+      _isSubmitting = true;
+      _pospuesto = true;
+    });
     await _medicationsRepository.snoozeDose(data.dose.id);
     if (!mounted) return;
     // Cerrar la pantalla: la notificación desaparece del simulador y reaparece
@@ -89,6 +99,10 @@ class _AlertaMedicacionScreenState extends State<AlertaMedicacionScreen>
   @override
   Widget build(BuildContext context) {
     return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _handleBack();
+      },
       child: PremiumScreenScaffold(
         variant: PremiumBackgroundVariant.focus,
         primaryGlowColor: AppColors.amber,
@@ -409,7 +423,7 @@ class _MedicationAlertView extends StatelessWidget {
                         _GlowHeaderIcon(
                           pulseAnim: pulseAnim,
                           color: AppColors.amberLight,
-                          shape: _toFormShape(med.formaPastilla),
+                          shape: formShapeFor(med.formaPastilla),
                           compact: true,
                         ),
                         const SizedBox(height: 14),
@@ -1007,8 +1021,3 @@ class _ConfirmedMedicationView extends StatelessWidget {
   }
 }
 
-FormShape _toFormShape(FormaPastilla shape) => switch (shape) {
-  FormaPastilla.redonda => FormShape.round,
-  FormaPastilla.ovalada => FormShape.oval,
-  FormaPastilla.capsula => FormShape.capsule,
-};

@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import 'package:aviso_vital_2/core/services/appointment_reminder_service.dart';
 import 'package:aviso_vital_2/core/services/care_plan_context_service.dart';
 import 'package:aviso_vital_2/data/models/models.dart';
@@ -113,7 +115,9 @@ class RealtimeSimulationService {
     final ownerId = context.ownerUserId!;
     try {
       await medicationsRepository.expireOverdueDoses(userId: ownerId);
-    } catch (_) {}
+    } catch (e, st) {
+      debugPrint('[SimulationService] expireOverdueDoses error: $e\n$st');
+    }
 
     final results = await Future.wait([
       medicationsRepository.fetchDailySnapshot(

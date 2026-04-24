@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:aviso_vital_2/app/router/app_routes.dart';
+import 'package:aviso_vital_2/data/models/models.dart';
 import 'package:aviso_vital_2/data/repositories/auth_repository.dart';
+import 'package:aviso_vital_2/data/repositories/user_repository.dart';
 import 'package:aviso_vital_2/features/admin_home/presentation/screens/home_admin_screen.dart';
 import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_divider.dart';
 import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_form_card.dart';
@@ -25,6 +27,7 @@ class AdminLoginScreen extends StatefulWidget {
 
 class _AdminLoginScreenState extends State<AdminLoginScreen> {
   static const _authRepository = AuthRepository();
+  static const _userRepository = UserRepository();
   final _formKey = GlobalKey<FormState>();
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
@@ -46,9 +49,18 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
         email: _emailCtrl.text.trim(),
         password: _passCtrl.text,
       );
-
+      final profile = await _userRepository.getSignedInUserProfile();
       if (!mounted) return;
       setState(() => _isLoading = false);
+      if (profile == null) {
+        throw StateError('No se pudo cargar el perfil.');
+      }
+      if (profile.rol != RolUsuario.administrador) {
+        await _authRepository.signOut();
+        throw StateError(
+          'Esta pantalla es solo para administradores. Usa el acceso de usuario mayor.',
+        );
+      }
       Navigator.pushNamedAndRemoveUntil(
         context,
         HomeAdminScreen.routeName,

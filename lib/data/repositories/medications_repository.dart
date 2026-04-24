@@ -56,15 +56,15 @@ class MedicationsRepository {
       return List.unmodifiable(_cachedMedications);
     }
 
-    dynamic query = SupabaseService.client.from('medicamentos').select();
     if (resolvedUserId == null && SupabaseService.currentUser != null) {
       _cachedMedications = const [];
       _cachedMedicationsKey = cacheKey;
       return const [];
     }
-    if (resolvedUserId != null && resolvedUserId.isNotEmpty) {
-      query = query.eq('id_usuario', resolvedUserId);
-    }
+    final baseQuery = SupabaseService.client.from('medicamentos').select();
+    final query = (resolvedUserId != null && resolvedUserId.isNotEmpty)
+        ? baseQuery.eq('id_usuario', resolvedUserId)
+        : baseQuery;
 
     final response = await query.order('created_at');
     final medications = List<Map<String, dynamic>>.from(
@@ -226,17 +226,16 @@ class MedicationsRepository {
     final dayEnd = DateTime(now.year, now.month, now.day)
         .add(const Duration(days: 1));
 
-    dynamic query = SupabaseService.client
+    final baseWeekQuery = SupabaseService.client
         .from('tomas')
         .select()
         .gte('fecha_programada', weekStart.toUtc().toIso8601String())
         .lt('fecha_programada', dayEnd.toUtc().toIso8601String());
+    final weekQuery = (resolvedUserId != null && resolvedUserId.isNotEmpty)
+        ? baseWeekQuery.eq('id_usuario', resolvedUserId)
+        : baseWeekQuery;
 
-    if (resolvedUserId != null && resolvedUserId.isNotEmpty) {
-      query = query.eq('id_usuario', resolvedUserId);
-    }
-
-    final response = await query.order('fecha_programada');
+    final response = await weekQuery.order('fecha_programada');
     return List<Map<String, dynamic>>.from(response as List)
         .map(Toma.fromJson)
         .toList(growable: false);
@@ -277,20 +276,19 @@ class MedicationsRepository {
     final dayStart = DateTime(start.year, start.month, start.day);
     final dayEnd = dayStart.add(const Duration(days: 1));
 
-    dynamic query = SupabaseService.client
+    final baseTodayQuery = SupabaseService.client
         .from('tomas')
         .select()
         .gte('fecha_programada', dayStart.toUtc().toIso8601String())
         .lt('fecha_programada', dayEnd.toUtc().toIso8601String());
+    final userFiltered = (resolvedUserId != null && resolvedUserId.isNotEmpty)
+        ? baseTodayQuery.eq('id_usuario', resolvedUserId)
+        : baseTodayQuery;
+    final todayQuery = (medicationId != null && medicationId.isNotEmpty)
+        ? userFiltered.eq('id_medicamento', medicationId)
+        : userFiltered;
 
-    if (resolvedUserId != null && resolvedUserId.isNotEmpty) {
-      query = query.eq('id_usuario', resolvedUserId);
-    }
-    if (medicationId != null && medicationId.isNotEmpty) {
-      query = query.eq('id_medicamento', medicationId);
-    }
-
-    final response = await query.order('fecha_programada');
+    final response = await todayQuery.order('fecha_programada');
     final doses = List<Map<String, dynamic>>.from(
       response as List,
     ).map(Toma.fromJson).toList(growable: false);
@@ -710,9 +708,17 @@ class MedicationsRepository {
   Future<void> _decrementStock(String medicationId) async {
     final medication = await fetchById(medicationId);
     if (medication == null || medication.stockActual <= 0) return;
-    await update(
+    final newStock = medication.stockActual - 1;
+    await SupabaseService.client
+        .from('medicamentos')
+        .update({
+          'stock_actual': newStock,
+          'updated_at': DateTime.now().toUtc().toIso8601String(),
+        })
+        .eq('id', medicationId);
+    _upsertCache(
       medication.copyWith(
-        stockActual: medication.stockActual - 1,
+        stockActual: newStock,
         ultimaEdicion: DateTime.now(),
       ),
     );

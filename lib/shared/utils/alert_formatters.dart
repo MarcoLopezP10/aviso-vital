@@ -1,4 +1,11 @@
 import 'package:aviso_vital_2/data/models/models.dart';
+import 'package:aviso_vital_2/shared/widgets/shared_widgets.dart';
+
+FormShape formShapeFor(FormaPastilla shape) => switch (shape) {
+  FormaPastilla.redonda => FormShape.round,
+  FormaPastilla.ovalada => FormShape.oval,
+  FormaPastilla.capsula => FormShape.capsule,
+};
 
 String formatAlertHour(DateTime value) =>
     '${value.hour.toString().padLeft(2, '0')}:${value.minute.toString().padLeft(2, '0')}';

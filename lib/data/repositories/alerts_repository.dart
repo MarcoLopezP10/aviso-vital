@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import 'package:aviso_vital_2/core/services/appointment_reminder_service.dart';
 import 'package:aviso_vital_2/core/services/supabase_service.dart';
 import 'package:aviso_vital_2/data/mock/mock_data.dart';
@@ -288,19 +290,18 @@ class AlertsRepository {
         );
       }
 
-      dynamic dosesQuery = SupabaseService.client
+      final dosesQuery = SupabaseService.client
           .from('tomas')
           .select('estado, fecha_programada')
           .gte('fecha_programada', startOfWeek.toUtc().toIso8601String())
-          .lt('fecha_programada', endOfWeek.toUtc().toIso8601String());
-      dynamic appointmentsQuery = SupabaseService.client
+          .lt('fecha_programada', endOfWeek.toUtc().toIso8601String())
+          .eq('id_usuario', resolvedUserId);
+      final appointmentsQuery = SupabaseService.client
           .from('citas')
           .select('estado, fecha')
           .gte('fecha', startOfWeek.toUtc().toIso8601String())
-          .lt('fecha', endOfWeek.toUtc().toIso8601String());
-
-      dosesQuery = dosesQuery.eq('id_usuario', resolvedUserId);
-      appointmentsQuery = appointmentsQuery.eq('id_usuario', resolvedUserId);
+          .lt('fecha', endOfWeek.toUtc().toIso8601String())
+          .eq('id_usuario', resolvedUserId);
 
       final results = await Future.wait<dynamic>([
         dosesQuery,
@@ -346,7 +347,8 @@ class AlertsRepository {
 
       _cachedAdherenceSummary = summary;
       return summary;
-    } catch (_) {
+    } catch (e, st) {
+      debugPrint('[AlertsRepository] fetchAdherenceSummary error: $e\n$st');
       return getAdherenceSummary();
     }
   }
