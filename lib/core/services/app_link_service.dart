@@ -45,16 +45,24 @@ class AppLinkService {
   }
 
   Future<void> _writeSecureValue(String key, String? value) async {
+    final prefs = await _prefs();
     final trimmed = value?.trim();
     if (trimmed == null || trimmed.isEmpty) {
       await secureStorage.delete(key);
+      await prefs.remove(key);
       return;
     }
-    await secureStorage.write(key, trimmed);
+    if (await secureStorage.isAvailable()) {
+      await secureStorage.write(key, trimmed);
+      await prefs.remove(key);
+      return;
+    }
+    await prefs.setString(key, trimmed);
   }
 
   Future<String?> _readSecureValue(String key) async {
-    final value = await secureStorage.read(key);
+    final prefs = await _prefs();
+    final value = await secureStorage.read(key) ?? prefs.getString(key);
     final trimmed = value?.trim();
     return trimmed == null || trimmed.isEmpty ? null : trimmed;
   }
@@ -205,6 +213,9 @@ class AppLinkService {
   Future<void> clear() async {
     final prefs = await _prefs();
     await secureStorage.deleteAll(_secureKeys);
+    for (final key in _secureKeys) {
+      await prefs.remove(key);
+    }
     await prefs.remove(_knownAdminCreatedAtKey);
     await prefs.remove(_knownAdminLastSyncKey);
     await clearPendingSocialAuth();
