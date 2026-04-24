@@ -1,6 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:aviso_vital_2/app/router/app_route_args.dart';
 import 'package:aviso_vital_2/app/router/app_routes.dart';
 import 'package:aviso_vital_2/core/services/care_plan_context_service.dart';
+import 'package:aviso_vital_2/core/services/realtime_service.dart';
 import 'package:aviso_vital_2/data/models/models.dart';
 import 'package:aviso_vital_2/data/repositories/auth_repository.dart';
 import 'package:aviso_vital_2/data/repositories/appointments_repository.dart';
@@ -28,12 +32,25 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
   static const _medicationsRepository = MedicationsRepository();
   static const _carePlanContextService = CarePlanContextService();
 
+  final _realtimeService = RealtimeService();
   late Future<_UserHomeViewData> _viewDataFuture;
+  StreamSubscription<RealtimeChangeType>? _realtimeSub;
+  Timer? _reloadDebounce;
 
   @override
   void initState() {
     super.initState();
     _viewDataFuture = _buildViewData();
+    _realtimeService.start();
+    _realtimeSub = _realtimeService.changes.listen(_scheduleReload);
+  }
+
+  @override
+  void dispose() {
+    _reloadDebounce?.cancel();
+    _realtimeSub?.cancel();
+    _realtimeService.dispose();
+    super.dispose();
   }
 
   @override
@@ -76,11 +93,7 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
 
   Widget _buildLoadedState({required _UserHomeViewData data}) {
     return RefreshIndicator(
-      onRefresh: () async {
-        final future = _buildViewData(forceRefresh: true);
-        setState(() => _viewDataFuture = future);
-        await future;
-      },
+      onRefresh: () => _reloadViewData(forceRefresh: true),
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl),
@@ -112,10 +125,7 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
                 NextMedicationCard(
                   medication: data.nextMedication!,
                   timeLabel: data.nextMedicationTime,
-                  onTap: () => Navigator.pushNamed(
-                    context,
-                    AlertaMedicacionScreen.routeName,
-                  ),
+                  onTap: _openMedicationAlert,
                 )
               else
                 const _EmptyMedicationCard(),
@@ -128,20 +138,13 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
                 const SizedBox(height: AppSpacing.sm),
                 NextAppointmentCard(
                   appointment: data.todayAppointment,
-                  onTap: () => Navigator.pushNamed(
-                    context,
-                    AlertaCitaScreen.routeName,
-                    arguments: {'appointmentId': data.todayAppointment!.id},
-                  ),
+                  onTap: () => _openAppointmentAlert(data.todayAppointment!.id),
                 ),
                 const SizedBox(height: AppSpacing.xxl),
               ],
 
               // ── ZONA D: Botón simulador ─────────────────────────────
-              _SimulationButtonCard(
-                onTap: () =>
-                    Navigator.pushNamed(context, AppRoutes.simulacionAlertas),
-              ),
+              _SimulationButtonCard(onTap: _openSimulation),
 
               const SizedBox(height: AppSpacing.xxl),
             ],
@@ -166,6 +169,44 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
     await _authRepository.signOut();
     if (!mounted) return;
     navigator.pushNamedAndRemoveUntil(AppRoutes.roleSelection, (_) => false);
+  }
+
+  void _scheduleReload(RealtimeChangeType _) {
+    _reloadDebounce?.cancel();
+    _reloadDebounce = Timer(const Duration(milliseconds: 800), () {
+      if (!mounted) return;
+      _reloadViewData(forceRefresh: true);
+    });
+  }
+
+  Future<_UserHomeViewData> _reloadViewData({bool forceRefresh = false}) {
+    final future = _buildViewData(forceRefresh: forceRefresh);
+    if (mounted) {
+      setState(() => _viewDataFuture = future);
+    }
+    return future;
+  }
+
+  Future<void> _openMedicationAlert() async {
+    await Navigator.pushNamed(context, AlertaMedicacionScreen.routeName);
+    if (!mounted) return;
+    await _reloadViewData(forceRefresh: true);
+  }
+
+  Future<void> _openAppointmentAlert(String appointmentId) async {
+    await Navigator.pushNamed(
+      context,
+      AlertaCitaScreen.routeName,
+      arguments: AlertaCitaRouteArgs(appointmentId: appointmentId),
+    );
+    if (!mounted) return;
+    await _reloadViewData(forceRefresh: true);
+  }
+
+  Future<void> _openSimulation() async {
+    await Navigator.pushNamed(context, AppRoutes.simulacionAlertas);
+    if (!mounted) return;
+    await _reloadViewData(forceRefresh: true);
   }
 
   Future<_UserHomeViewData> _buildViewData({bool forceRefresh = false}) async {

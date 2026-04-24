@@ -58,26 +58,33 @@ class _AlertaCitaScreenState extends State<AlertaCitaScreen> {
   Future<void> _confirmar(_AppointmentAlertData data) async {
     if (_isSubmitting) return;
     setState(() => _isSubmitting = true);
-    if (data.alertId != null) {
-      await _alertsRepository.confirmAlert(data.alertId!);
-    }
-    if (widget.appointmentId != null &&
-        widget.appointmentId!.isNotEmpty &&
-        widget.reminderKind != null &&
-        widget.reminderKind!.isNotEmpty) {
-      _alertsRepository.markAppointmentReminderHandled(
-        appointmentId: widget.appointmentId!,
-        reminderKind: widget.reminderKind!,
-        instanceId: widget.reminderInstanceId,
+    try {
+      if (data.alertId != null) {
+        await _alertsRepository.confirmAlert(data.alertId!);
+      }
+      if (widget.appointmentId != null &&
+          widget.appointmentId!.isNotEmpty &&
+          widget.reminderKind != null &&
+          widget.reminderKind!.isNotEmpty) {
+        _alertsRepository.markAppointmentReminderHandled(
+          appointmentId: widget.appointmentId!,
+          reminderKind: widget.reminderKind!,
+          instanceId: widget.reminderInstanceId,
+        );
+      }
+      if (!mounted) return;
+      setState(() => _confirmado = true);
+      _dismissTimer = Timer(const Duration(seconds: 2), () {
+        if (mounted) Navigator.of(context).pop();
+      });
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.t.appointmentActionFailed)),
       );
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
     }
-    setState(() {
-      _confirmado = true;
-      _isSubmitting = false;
-    });
-    _dismissTimer = Timer(const Duration(seconds: 2), () {
-      if (mounted) Navigator.of(context).pop();
-    });
   }
 
   @override

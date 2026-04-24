@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:aviso_vital_2/app/router/app_route_args.dart';
 import 'package:aviso_vital_2/app/router/app_routes.dart';
 import 'package:aviso_vital_2/app/router/app_transitions.dart';
 import 'package:aviso_vital_2/features/admin_home/presentation/screens/actividad_reciente_screen.dart';
@@ -28,7 +29,16 @@ class AppRouter {
   const AppRouter._();
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
-    final args = settings.arguments as Map<String, dynamic>?;
+    final socialAuthArgs = SocialAuthRouteArgs.from(settings.arguments);
+    final homeAdminArgs = HomeAdminRouteArgs.from(settings.arguments);
+    final medicamentoDetalleArgs = MedicamentoDetalleRouteArgs.from(
+      settings.arguments,
+    );
+    final citaDetalleArgs = CitaDetalleRouteArgs.from(settings.arguments);
+    final alertaMedicacionArgs = AlertaMedicacionRouteArgs.from(
+      settings.arguments,
+    );
+    final alertaCitaArgs = AlertaCitaRouteArgs.from(settings.arguments);
 
     final page = switch (settings.name) {
       AppRoutes.roleSelection => const RoleSelectionScreen(),
@@ -42,31 +52,29 @@ class AppRouter {
       AppRoutes.userLogin => const UserLoginScreen(),
       AppRoutes.userCrearCuenta => const UserSignupScreen(),
       AppRoutes.socialAuth => SocialAuthScreen(
-        providerId: args?['providerId'] as String? ?? 'google',
-        roleId: args?['roleId'] as String? ?? 'user',
-        modeId: args?['modeId'] as String? ?? 'login',
+        providerId: socialAuthArgs.providerId,
+        roleId: socialAuthArgs.roleId,
+        modeId: socialAuthArgs.modeId,
       ),
-      AppRoutes.homeAdmin => HomeAdminScreen(
-        initialIndex: args?['tab'] as int? ?? 0,
-      ),
+      AppRoutes.homeAdmin => HomeAdminScreen(initialIndex: homeAdminArgs.tab),
       AppRoutes.adminMedicamentos => const AdminMedicamentosScreen(),
       AppRoutes.medicamentoDetalle => MedicamentoDetalleScreen(
-        medicamentoId: args?['id'] ?? '',
+        medicamentoId: medicamentoDetalleArgs.id,
       ),
       AppRoutes.adminCitas => const AdminCitasScreen(),
-      AppRoutes.citaDetalle => CitaDetalleScreen(citaId: args?['id'] ?? ''),
+      AppRoutes.citaDetalle => CitaDetalleScreen(citaId: citaDetalleArgs.id),
       AppRoutes.adminAlertas => const AdminAlertasScreen(),
       AppRoutes.simulacionAlertas => const SimulacionAlertasScreen(),
       AppRoutes.actividadReciente => const ActividadRecienteScreen(),
       AppRoutes.homeUsuario => const HomeUsuarioScreen(),
       AppRoutes.alertaMedicacion => AlertaMedicacionScreen(
-        doseId: args?['doseId'] as String?,
+        doseId: alertaMedicacionArgs.doseId,
       ),
       AppRoutes.alertaCita => AlertaCitaScreen(
-        alertId: args?['alertId'] as String?,
-        appointmentId: args?['appointmentId'] as String?,
-        reminderKind: args?['reminderKind'] as String?,
-        reminderInstanceId: args?['reminderInstanceId'] as String?,
+        alertId: alertaCitaArgs.alertId,
+        appointmentId: alertaCitaArgs.appointmentId,
+        reminderKind: alertaCitaArgs.reminderKind,
+        reminderInstanceId: alertaCitaArgs.reminderInstanceId,
       ),
       _ => const RoleSelectionScreen(),
     };

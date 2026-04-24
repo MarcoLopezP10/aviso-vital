@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:aviso_vital_2/app/router/app_route_args.dart';
 import 'package:aviso_vital_2/app/router/app_routes.dart';
 import 'package:aviso_vital_2/core/services/pdf_export_service.dart';
 import 'package:aviso_vital_2/shared/i18n/app_language.dart';
@@ -317,7 +318,7 @@ class _AdminMedicamentosScreenState extends State<AdminMedicamentosScreen> {
     final result = await Navigator.pushNamed(
       context,
       MedicamentoDetalleScreen.routeName,
-      arguments: {'id': med.id},
+      arguments: MedicamentoDetalleRouteArgs(id: med.id),
     );
     if (!mounted) return;
     if (result == 'edit') _showEditForm(context, med);

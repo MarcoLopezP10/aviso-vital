@@ -183,7 +183,7 @@ class _ActionsMenu extends StatelessWidget {
                 const SizedBox(width: 10),
                 Text(
                   context.t.text('Editar'),
-                  style: const TextStyle(fontFamily: 'Inter', fontSize: 14),
+                  style: AppTextStyles.body.copyWith(fontSize: 14),
                 ),
               ],
             ),
@@ -201,8 +201,7 @@ class _ActionsMenu extends StatelessWidget {
                 const SizedBox(width: 10),
                 Text(
                   context.t.text('Eliminar'),
-                  style: const TextStyle(
-                    fontFamily: 'Inter',
+                  style: AppTextStyles.body.copyWith(
                     fontSize: 14,
                     color: AppColors.danger,
                   ),
@@ -481,7 +480,7 @@ class _ActionsMenuCita extends StatelessWidget {
                 const SizedBox(width: 10),
                 Text(
                   context.t.text('Editar'),
-                  style: const TextStyle(fontFamily: 'Inter', fontSize: 14),
+                  style: AppTextStyles.body.copyWith(fontSize: 14),
                 ),
               ],
             ),
@@ -499,8 +498,7 @@ class _ActionsMenuCita extends StatelessWidget {
                 const SizedBox(width: 10),
                 Text(
                   context.t.text('Eliminar'),
-                  style: const TextStyle(
-                    fontFamily: 'Inter',
+                  style: AppTextStyles.body.copyWith(
                     fontSize: 14,
                     color: AppColors.danger,
                   ),

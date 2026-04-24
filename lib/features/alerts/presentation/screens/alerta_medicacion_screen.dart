@@ -71,29 +71,43 @@ class _AlertaMedicacionScreenState extends State<AlertaMedicacionScreen>
   Future<void> _confirmar(_MedicationAlertData data) async {
     if (_isSubmitting) return;
     setState(() => _isSubmitting = true);
-    await _medicationsRepository.confirmDose(data.dose.id);
-    _pulseCtrl.stop();
-    setState(() {
-      _confirmado = true;
-      _isSubmitting = false;
-    });
-    _dismissTimer = Timer(AppDurations.success, () {
-      if (mounted) Navigator.of(context).pop();
-    });
+    try {
+      await _medicationsRepository.confirmDose(data.dose.id);
+      _pulseCtrl.stop();
+      if (!mounted) return;
+      setState(() => _confirmado = true);
+      _dismissTimer = Timer(AppDurations.success, () {
+        if (mounted) Navigator.of(context).pop();
+      });
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.t.medicationActionFailed)),
+      );
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
   }
 
   Future<void> _posponer(_MedicationAlertData data) async {
     if (_isSubmitting) return;
-    setState(() {
-      _isSubmitting = true;
-      _pospuesto = true;
-    });
-    await _medicationsRepository.snoozeDose(data.dose.id);
-    if (!mounted) return;
-    // Cerrar la pantalla: la notificación desaparece del simulador y reaparece
-    // en 10 min cuando el servicio recarga el snapshot y la toma pospuesta
-    // pase el umbral scheduledAt.
-    Navigator.of(context).pop();
+    setState(() => _isSubmitting = true);
+    try {
+      await _medicationsRepository.snoozeDose(data.dose.id);
+      if (!mounted) return;
+      // Cerrar la pantalla: la notificación desaparece del simulador y reaparece
+      // en 10 min cuando el servicio recarga el snapshot y la toma pospuesta
+      // pase el umbral scheduledAt.
+      setState(() => _pospuesto = true);
+      Navigator.of(context).pop();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.t.medicationActionFailed)),
+      );
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
   }
 
   @override

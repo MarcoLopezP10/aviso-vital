@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:aviso_vital_2/app/router/app_route_args.dart';
 import 'package:aviso_vital_2/app/router/app_routes.dart';
 import 'package:aviso_vital_2/core/services/pdf_export_service.dart';
 import 'package:aviso_vital_2/shared/i18n/app_language.dart';
@@ -314,7 +315,7 @@ class _AdminCitasScreenState extends State<AdminCitasScreen> {
     final result = await Navigator.pushNamed(
       context,
       CitaDetalleScreen.routeName,
-      arguments: {'id': cita.id},
+      arguments: CitaDetalleRouteArgs(id: cita.id),
     );
     if (!mounted) return;
     if (result == 'edit') _showAddForm(context, cita: cita);

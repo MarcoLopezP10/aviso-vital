@@ -10,7 +10,11 @@ void main() async {
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
   await AppLocaleController.instance.load();
-  await SupabaseService.initialize();
+  try {
+    await SupabaseService.initialize();
+  } catch (_) {
+    // Error stored in SupabaseService.initializationError; shown by app.
+  }
 
   runApp(const AvisoVitalApp());
 }

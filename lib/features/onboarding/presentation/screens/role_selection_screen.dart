@@ -30,11 +30,6 @@ class RoleSelectionScreen extends StatelessWidget {
       body: SafeArea(
         child: Stack(
           children: [
-            const Positioned(
-              top: AppSpacing.sm,
-              right: AppSpacing.md,
-              child: LanguageToggle(),
-            ),
             Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 440),
@@ -105,6 +100,11 @@ class RoleSelectionScreen extends StatelessWidget {
                   ),
                 ),
               ),
+            ),
+            const Positioned(
+              top: AppSpacing.sm,
+              right: AppSpacing.md,
+              child: LanguageToggle(),
             ),
           ],
         ),

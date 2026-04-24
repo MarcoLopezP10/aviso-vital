@@ -12,6 +12,7 @@ import 'package:aviso_vital_2/features/onboarding/presentation/screens/role_sele
 import 'package:aviso_vital_2/features/user_home/presentation/screens/home_usuario_screen.dart';
 import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
+import 'package:aviso_vital_2/shared/widgets/shared_widgets.dart';
 
 /// Punto de entrada de la aplicación Aviso Vital.
 class AvisoVitalApp extends StatelessWidget {
@@ -96,6 +97,13 @@ class _AppBootstrapScreenState extends State<_AppBootstrapScreen> {
       builder: (context, profileSnapshot) {
         if (profileSnapshot.connectionState != ConnectionState.done) {
           return const _SplashScreen();
+        }
+
+        if (profileSnapshot.hasError) {
+          return ErrorRetryView(
+            message: context.t.loadErrorMessage,
+            onRetry: () => setState(() => _profileFuture = _loadProfile()),
+          );
         }
 
         final profile = profileSnapshot.data;
