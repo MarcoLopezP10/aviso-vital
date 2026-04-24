@@ -384,6 +384,16 @@ class AppStrings {
       : 'Gestiona medicación, citas y alertas desde un panel claro y seguro.';
   String get forgotPassword =>
       isEnglish ? 'Forgot your password?' : '¿Ha olvidado la contraseña?';
+  String get passwordResetDialogDescription => isEnglish
+      ? 'Enter your email and we will send you a recovery link.'
+      : 'Introduzca su email y le enviaremos un enlace de recuperación.';
+  String get passwordResetAction => isEnglish ? 'Send email' : 'Enviar correo';
+  String get passwordResetSent => isEnglish
+      ? 'Recovery email sent. Check your inbox.'
+      : 'Correo de recuperación enviado. Revise su bandeja de entrada.';
+  String passwordResetFailed(String message) => isEnglish
+      ? 'Could not send the recovery email: $message'
+      : 'No se pudo enviar el correo de recuperación: $message';
   String get adminSignIn => isEnglish ? 'Sign in' : 'Iniciar Sesión';
   String get userLoginTitle =>
       isEnglish ? 'Your alert\nspace' : 'Su espacio\nde avisos';
@@ -406,8 +416,8 @@ class AppStrings {
       ? 'Enter the administrator code'
       : 'Introduzca el código del administrador';
   String get adminCodeLength => isEnglish
-      ? 'The code must have 6 characters'
-      : 'El código debe tener 6 caracteres';
+      ? 'Use 6 characters or the full 8-character code with AV'
+      : 'Use 6 caracteres o el código completo de 8 con AV';
   String get createUserAccount =>
       isEnglish ? 'Create user account' : 'Crear cuenta de usuario';
   String get accountCreated => isEnglish
@@ -659,6 +669,17 @@ class AppStrings {
 
   String get testScreen => isEnglish ? 'Test screen' : 'Pantalla de pruebas';
   String get retry => isEnglish ? 'Retry' : 'Reintentar';
+  String get medicationActionFailed => isEnglish
+      ? 'Could not complete the action. Please try again.'
+      : 'No se pudo completar la acción. Inténtelo de nuevo.';
+  String get appointmentActionFailed => isEnglish
+      ? 'Could not confirm the reminder. Please try again.'
+      : 'No se pudo confirmar el recordatorio. Inténtelo de nuevo.';
+  String get loadErrorTitle =>
+      isEnglish ? 'Something went wrong' : 'Algo salió mal';
+  String get loadErrorMessage => isEnglish
+      ? 'Could not load your data. Check your connection and try again.'
+      : 'No se pudieron cargar los datos. Compruebe la conexión e inténtelo de nuevo.';
   String get simulationLoadError => isEnglish
       ? 'Could not load the simulation'
       : 'No se pudo cargar la simulación';

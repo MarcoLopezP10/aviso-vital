@@ -6,12 +6,14 @@ import 'package:aviso_vital_2/data/repositories/user_repository.dart';
 import 'package:aviso_vital_2/shared/utils/auth_error_mapper.dart';
 import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_form_card.dart';
 import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_hero_card.dart';
+import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_password_reset_dialog.dart';
 import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_scaffold.dart';
 import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_switch_link.dart';
 import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_text_field.dart';
 import 'package:aviso_vital_2/features/user_home/presentation/screens/home_usuario_screen.dart';
 import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
+import 'package:aviso_vital_2/shared/utils/validators.dart';
 import 'package:aviso_vital_2/shared/widgets/shared_widgets.dart';
 
 import 'user_signup_screen.dart';
@@ -55,6 +57,7 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
         throw StateError('No se pudo cargar el perfil del usuario.');
       }
       if (profile.rol != RolUsuario.mayor) {
+        await _authRepository.signOut();
         throw StateError(
           'Esta pantalla es solo para usuarios mayores. Usa el acceso de administrador.',
         );
@@ -72,6 +75,14 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
         context,
       ).showSnackBar(SnackBar(content: Text(AuthErrorMapper.fromLogin(error))));
     }
+  }
+
+  Future<void> _openPasswordReset() {
+    return showAuthPasswordResetDialog(
+      context,
+      authRepository: _authRepository,
+      initialEmail: _emailCtrl.text,
+    );
   }
 
   @override
@@ -106,7 +117,9 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
                       if (v == null || v.trim().isEmpty) {
                         return strings.enterEmail;
                       }
-                      if (!v.contains('@')) return strings.invalidEmail;
+                      if (!AppValidators.isValidEmail(v)) {
+                        return strings.invalidEmail;
+                      }
                       return null;
                     },
                   ),
@@ -134,6 +147,23 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
                       if (v.length < 6) return strings.minSixChars;
                       return null;
                     },
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: _openPasswordReset,
+                      style: TextButton.styleFrom(
+                        minimumSize: const Size(48, 42),
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
+                      ),
+                      child: Text(
+                        strings.forgotPassword,
+                        style: AppTextStyles.label.copyWith(
+                          color: AppColors.amberLight,
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),

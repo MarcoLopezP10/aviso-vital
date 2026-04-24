@@ -94,10 +94,22 @@ class AuthRepository {
     return response;
   }
 
+  Future<void> sendPasswordResetEmail({required String email}) async {
+    if (!SupabaseService.isReady) {
+      throw StateError(
+        'Supabase no esta configurado. Añade SUPABASE_URL y '
+        'SUPABASE_ANON_KEY con --dart-define.',
+      );
+    }
+
+    await SupabaseService.client.auth.resetPasswordForEmail(email.trim());
+  }
+
   Future<void> signOut() async {
-    if (!SupabaseService.isReady) return;
-    await SupabaseService.client.auth.signOut();
-    await appLinkService.clearPendingSocialAuth();
+    await appLinkService.clear();
+    if (SupabaseService.isReady) {
+      await SupabaseService.client.auth.signOut();
+    }
     UserRepository.clearCache();
     MedicationsRepository.clearCache();
     AppointmentsRepository.clearCache();

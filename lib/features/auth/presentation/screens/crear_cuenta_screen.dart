@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:aviso_vital_2/app/router/app_route_args.dart';
 import 'package:aviso_vital_2/app/router/app_routes.dart';
 import 'package:aviso_vital_2/data/models/models.dart';
 import 'package:aviso_vital_2/data/repositories/auth_repository.dart';
@@ -12,6 +13,7 @@ import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_switch_lin
 import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_text_field.dart';
 import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
+import 'package:aviso_vital_2/shared/utils/validators.dart';
 import 'package:aviso_vital_2/shared/widgets/shared_widgets.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'admin_login_screen.dart';
@@ -91,11 +93,11 @@ class _CrearCuentaScreenState extends State<CrearCuentaScreen> {
     Navigator.pushNamed(
       context,
       AppRoutes.socialAuth,
-      arguments: {
-        'providerId': provider.id,
-        'roleId': 'admin',
-        'modeId': 'signup',
-      },
+      arguments: SocialAuthRouteArgs(
+        providerId: provider.id,
+        roleId: 'admin',
+        modeId: 'signup',
+      ),
     );
   }
 
@@ -139,7 +141,9 @@ class _CrearCuentaScreenState extends State<CrearCuentaScreen> {
                       if (v == null || v.trim().isEmpty) {
                         return strings.enterEmail;
                       }
-                      if (!v.contains('@')) return strings.invalidEmail;
+                      if (!AppValidators.isValidEmail(v)) {
+                        return strings.invalidEmail;
+                      }
                       return null;
                     },
                   ),

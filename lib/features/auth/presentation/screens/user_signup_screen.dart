@@ -11,6 +11,7 @@ import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_text_field
 import 'package:aviso_vital_2/features/user_home/presentation/screens/home_usuario_screen.dart';
 import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
+import 'package:aviso_vital_2/shared/utils/validators.dart';
 import 'package:aviso_vital_2/shared/widgets/shared_widgets.dart';
 
 import 'user_login_screen.dart';
@@ -102,7 +103,9 @@ class _UserSignupScreenState extends State<UserSignupScreen> {
                       if (v == null || v.trim().isEmpty) {
                         return strings.enterEmail;
                       }
-                      if (!v.contains('@')) return strings.invalidEmail;
+                      if (!AppValidators.isValidEmail(v)) {
+                        return strings.invalidEmail;
+                      }
                       return null;
                     },
                   ),
@@ -113,13 +116,11 @@ class _UserSignupScreenState extends State<UserSignupScreen> {
                     icon: Icons.link_rounded,
                     textCapitalization: TextCapitalization.characters,
                     validator: (v) {
-                      final normalized = v
-                          ?.replaceAll(RegExp(r'[^A-Za-z0-9]'), '')
-                          .trim();
-                      if (normalized == null || normalized.isEmpty) {
+                      final value = v?.trim() ?? '';
+                      if (value.isEmpty) {
                         return strings.enterAdminCode;
                       }
-                      if (normalized.length != 6) {
+                      if (!AppValidators.isValidLinkCode(value)) {
                         return strings.adminCodeLength;
                       }
                       return null;

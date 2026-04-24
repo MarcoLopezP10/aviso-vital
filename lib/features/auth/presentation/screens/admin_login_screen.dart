@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:aviso_vital_2/app/router/app_route_args.dart';
 import 'package:aviso_vital_2/app/router/app_routes.dart';
 import 'package:aviso_vital_2/data/models/models.dart';
 import 'package:aviso_vital_2/data/repositories/auth_repository.dart';
@@ -7,6 +8,7 @@ import 'package:aviso_vital_2/features/admin_home/presentation/screens/home_admi
 import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_divider.dart';
 import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_form_card.dart';
 import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_hero_card.dart';
+import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_password_reset_dialog.dart';
 import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_scaffold.dart';
 import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_social_row.dart';
 import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_switch_link.dart';
@@ -14,6 +16,7 @@ import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_text_field
 import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 import 'package:aviso_vital_2/shared/utils/auth_error_mapper.dart';
+import 'package:aviso_vital_2/shared/utils/validators.dart';
 import 'package:aviso_vital_2/shared/widgets/shared_widgets.dart';
 import 'crear_cuenta_screen.dart';
 
@@ -79,11 +82,19 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
     Navigator.pushNamed(
       context,
       AppRoutes.socialAuth,
-      arguments: {
-        'providerId': provider.id,
-        'roleId': 'admin',
-        'modeId': 'login',
-      },
+      arguments: SocialAuthRouteArgs(
+        providerId: provider.id,
+        roleId: 'admin',
+        modeId: 'login',
+      ),
+    );
+  }
+
+  Future<void> _openPasswordReset() {
+    return showAuthPasswordResetDialog(
+      context,
+      authRepository: _authRepository,
+      initialEmail: _emailCtrl.text,
     );
   }
 
@@ -126,7 +137,9 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                       if (v == null || v.trim().isEmpty) {
                         return strings.enterEmail;
                       }
-                      if (!v.contains('@')) return strings.invalidEmail;
+                      if (!AppValidators.isValidEmail(v)) {
+                        return strings.invalidEmail;
+                      }
                       return null;
                     },
                   ),
@@ -159,7 +172,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
-                      onPressed: () {},
+                      onPressed: _openPasswordReset,
                       style: TextButton.styleFrom(
                         minimumSize: const Size(48, 42),
                         padding: const EdgeInsets.symmetric(horizontal: 6),

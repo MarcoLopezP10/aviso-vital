@@ -4,6 +4,7 @@ import 'package:aviso_vital_2/core/services/app_link_service.dart';
 import 'package:aviso_vital_2/core/services/supabase_service.dart';
 import 'package:aviso_vital_2/data/mock/mock_data.dart';
 import 'package:aviso_vital_2/data/models/models.dart';
+import 'package:aviso_vital_2/shared/utils/validators.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 // Repositorio de perfil conectado a Supabase manteniendo el contrato de
@@ -122,7 +123,9 @@ class UserRepository {
     }
 
     final existing = await _fetchProfileById(userId);
-    final normalizedCode = codigoVinculacion?.replaceAll('-', '').toUpperCase();
+    final normalizedCode = codigoVinculacion == null
+        ? null
+        : AppValidators.normalizeLinkCode(codigoVinculacion);
     final response = await SupabaseService.client
         .from('usuarios')
         .upsert({
@@ -163,8 +166,8 @@ class UserRepository {
     String code, {
     String displayName = 'Usuario mayor',
   }) async {
-    final normalizedCode = code.replaceAll('-', '').trim().toUpperCase();
-    if (normalizedCode.isEmpty) return null;
+    final normalizedCode = AppValidators.normalizeLinkCode(code);
+    if (!AppValidators.isValidLinkCode(normalizedCode)) return null;
 
     if (!SupabaseService.isReady) {
       final admin = await findAdminByLinkCode(normalizedCode);
@@ -220,8 +223,8 @@ class UserRepository {
     String code, {
     bool forceRefresh = false,
   }) async {
-    final normalizedCode = code.replaceAll('-', '').trim().toUpperCase();
-    if (normalizedCode.isEmpty) return null;
+    final normalizedCode = AppValidators.normalizeLinkCode(code);
+    if (!AppValidators.isValidLinkCode(normalizedCode)) return null;
 
     if (!forceRefresh) {
       final cached = _cachedAdminsByLinkCode[normalizedCode];
@@ -229,7 +232,10 @@ class UserRepository {
     }
 
     if (!SupabaseService.isReady) {
-      return MockData.administrador.codigoVinculacion == normalizedCode
+      return AppValidators.normalizeLinkCode(
+                MockData.administrador.codigoVinculacion ?? '',
+              ) ==
+              normalizedCode
           ? MockData.administrador
           : null;
     }
@@ -265,8 +271,8 @@ class UserRepository {
       );
     }
 
-    final normalizedCode = code.replaceAll('-', '').trim().toUpperCase();
-    if (normalizedCode.isEmpty) {
+    final normalizedCode = AppValidators.normalizeLinkCode(code);
+    if (!AppValidators.isValidLinkCode(normalizedCode)) {
       throw StateError('Introduce un código de vinculación válido.');
     }
 
@@ -364,7 +370,9 @@ class UserRepository {
           'nombre': (displayName?.trim().isNotEmpty ?? false)
               ? displayName!.trim()
               : 'Usuario mayor',
-          'email': '',
+          // Email sintético para garantizar unicidad cuando el mayor todavía
+          // no se ha registrado con un correo real.
+          'email': 'mayor-${admin.id}@local.avisoVital',
           'rol': RolUsuario.mayor.name,
           'auth_provider': TipoAccesoUsuario.app.name,
           'id_administrador': admin.id,
@@ -485,7 +493,9 @@ class UserRepository {
   }
 
   void _cacheAdminByLinkCode(String? code, Usuario user) {
-    final normalizedCode = code?.replaceAll('-', '').trim().toUpperCase();
+    final normalizedCode = code == null
+        ? null
+        : AppValidators.normalizeLinkCode(code);
     if (normalizedCode == null ||
         normalizedCode.isEmpty ||
         user.rol != RolUsuario.administrador) {
@@ -574,10 +584,9 @@ class UserRepository {
   Future<Usuario?> _findKnownAdminLocally(String normalizedCode) async {
     final knownAdmin = await _appLinkService.getKnownAdminProfile();
     if (knownAdmin == null) return null;
-    final storedCode = knownAdmin.codigoVinculacion
-        ?.replaceAll('-', '')
-        .trim()
-        .toUpperCase();
+    final storedCode = knownAdmin.codigoVinculacion == null
+        ? null
+        : AppValidators.normalizeLinkCode(knownAdmin.codigoVinculacion!);
     if (storedCode == normalizedCode) {
       return knownAdmin;
     }

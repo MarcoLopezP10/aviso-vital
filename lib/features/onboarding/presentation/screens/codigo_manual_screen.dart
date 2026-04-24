@@ -6,6 +6,7 @@ import 'package:aviso_vital_2/core/services/app_link_service.dart';
 import 'package:aviso_vital_2/data/repositories/user_repository.dart';
 import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
+import 'package:aviso_vital_2/shared/utils/validators.dart';
 import 'package:aviso_vital_2/shared/widgets/shared_widgets.dart';
 import 'dispositivo_conectado_screen.dart';
 
@@ -30,7 +31,7 @@ class _CodigoManualScreenState extends State<CodigoManualScreen> {
   String get _codigoCompleto =>
       _controllers.map((c) => c.text.toUpperCase()).join();
   String get _codigoNormalizado =>
-      _codigoCompleto.replaceAll('-', '').trim().toUpperCase();
+      AppValidators.normalizeLinkCode(_codigoCompleto);
 
   bool get _codigoLleno => _codigoCompleto.length == 6;
 
@@ -113,12 +114,15 @@ class _CodigoManualScreenState extends State<CodigoManualScreen> {
 
   Future<void> _pasteFromClipboard() async {
     final data = await Clipboard.getData(Clipboard.kTextPlain);
-    final value = data?.text
-        ?.replaceAll(RegExp(r'[^A-Za-z0-9]'), '')
-        .toUpperCase();
-    if (value == null || value.isEmpty) return;
+    final normalized = data?.text == null
+        ? ''
+        : AppValidators.normalizeLinkCode(data!.text!);
+    if (normalized.isEmpty) return;
 
-    final chars = value.split('').take(6).toList(growable: false);
+    final suffix = normalized.length >= 8
+        ? normalized.substring(normalized.length - 6)
+        : normalized;
+    final chars = suffix.split('').take(6).toList(growable: false);
     for (var i = 0; i < _controllers.length; i++) {
       _controllers[i].text = i < chars.length ? chars[i] : '';
     }
@@ -200,7 +204,7 @@ class _CodigoManualScreenState extends State<CodigoManualScreen> {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      'AV-1234',
+                      'XYZ123',
                       style: AppTextStyles.h3.copyWith(
                         color: AppColors.amber,
                         letterSpacing: 2.2,

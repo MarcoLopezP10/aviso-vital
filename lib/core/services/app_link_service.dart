@@ -1,4 +1,6 @@
 import 'package:aviso_vital_2/data/models/models.dart';
+import 'package:aviso_vital_2/core/services/secure_storage_service.dart';
+import 'package:aviso_vital_2/shared/utils/validators.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AppLinkService {
@@ -17,10 +19,45 @@ class AppLinkService {
   static const _pendingSocialProviderKey = 'pending_social_provider';
   static Future<SharedPreferences>? _preferencesFuture;
 
-  const AppLinkService();
+  static const _secureKeys = <String>{
+    _linkedAdminCodeKey,
+    _linkedAdminIdKey,
+    _linkedUserIdKey,
+    _linkedUserNameKey,
+    _knownAdminIdKey,
+    _knownAdminCodeKey,
+    _knownAdminNameKey,
+    _knownAdminEmailKey,
+  };
 
-  Future<SharedPreferences> _prefs() =>
-      _preferencesFuture ??= SharedPreferences.getInstance();
+  const AppLinkService({this.secureStorage = const SecureStorageService()});
+
+  final SecureStorageService secureStorage;
+
+  Future<SharedPreferences> _prefs() async {
+    final prefs = await (_preferencesFuture ??=
+        SharedPreferences.getInstance());
+    await secureStorage.migrateFromPreferences(
+      preferences: prefs,
+      keys: _secureKeys,
+    );
+    return prefs;
+  }
+
+  Future<void> _writeSecureValue(String key, String? value) async {
+    final trimmed = value?.trim();
+    if (trimmed == null || trimmed.isEmpty) {
+      await secureStorage.delete(key);
+      return;
+    }
+    await secureStorage.write(key, trimmed);
+  }
+
+  Future<String?> _readSecureValue(String key) async {
+    final value = await secureStorage.read(key);
+    final trimmed = value?.trim();
+    return trimmed == null || trimmed.isEmpty ? null : trimmed;
+  }
 
   Future<String> getOrCreateLocalDeviceId() async {
     final prefs = await _prefs();
@@ -39,39 +76,34 @@ class AppLinkService {
     String? userId,
     String displayName = 'Usuario',
   }) async {
-    final prefs = await _prefs();
-    await prefs.setString(_linkedAdminCodeKey, adminCode);
-    if (adminId != null && adminId.isNotEmpty) {
-      await prefs.setString(_linkedAdminIdKey, adminId);
-    }
-    if (userId != null && userId.isNotEmpty) {
-      await prefs.setString(_linkedUserIdKey, userId);
-    }
-    await prefs.setString(_linkedUserNameKey, displayName);
+    await _prefs();
+    await _writeSecureValue(
+      _linkedAdminCodeKey,
+      AppValidators.normalizeLinkCode(adminCode),
+    );
+    await _writeSecureValue(_linkedAdminIdKey, adminId);
+    await _writeSecureValue(_linkedUserIdKey, userId);
+    await _writeSecureValue(_linkedUserNameKey, displayName);
   }
 
   Future<String?> getLinkedAdminCode() async {
-    final prefs = await _prefs();
-    final value = prefs.getString(_linkedAdminCodeKey)?.trim();
-    return value == null || value.isEmpty ? null : value;
+    await _prefs();
+    return _readSecureValue(_linkedAdminCodeKey);
   }
 
   Future<String?> getLinkedAdminId() async {
-    final prefs = await _prefs();
-    final value = prefs.getString(_linkedAdminIdKey)?.trim();
-    return value == null || value.isEmpty ? null : value;
+    await _prefs();
+    return _readSecureValue(_linkedAdminIdKey);
   }
 
   Future<String?> getLinkedUserId() async {
-    final prefs = await _prefs();
-    final value = prefs.getString(_linkedUserIdKey)?.trim();
-    return value == null || value.isEmpty ? null : value;
+    await _prefs();
+    return _readSecureValue(_linkedUserIdKey);
   }
 
   Future<String?> getLinkedUserName() async {
-    final prefs = await _prefs();
-    final value = prefs.getString(_linkedUserNameKey)?.trim();
-    return value == null || value.isEmpty ? null : value;
+    await _prefs();
+    return _readSecureValue(_linkedUserNameKey);
   }
 
   Future<bool> hasLinkedAdmin() async => (await getLinkedAdminCode()) != null;
@@ -79,13 +111,15 @@ class AppLinkService {
   Future<void> saveKnownAdminProfile(Usuario admin) async {
     final prefs = await _prefs();
     if (admin.rol != RolUsuario.administrador) return;
-    await prefs.setString(_knownAdminIdKey, admin.id);
-    if (admin.codigoVinculacion != null &&
-        admin.codigoVinculacion!.isNotEmpty) {
-      await prefs.setString(_knownAdminCodeKey, admin.codigoVinculacion!);
-    }
-    await prefs.setString(_knownAdminNameKey, admin.nombre);
-    await prefs.setString(_knownAdminEmailKey, admin.email);
+    await _writeSecureValue(_knownAdminIdKey, admin.id);
+    await _writeSecureValue(
+      _knownAdminCodeKey,
+      admin.codigoVinculacion == null
+          ? null
+          : AppValidators.normalizeLinkCode(admin.codigoVinculacion!),
+    );
+    await _writeSecureValue(_knownAdminNameKey, admin.nombre);
+    await _writeSecureValue(_knownAdminEmailKey, admin.email);
     await prefs.setString(
       _knownAdminCreatedAtKey,
       admin.fechaCreacion.toUtc().toIso8601String(),
@@ -143,12 +177,12 @@ class AppLinkService {
 
   Future<Usuario?> getKnownAdminProfile() async {
     final prefs = await _prefs();
-    final id = prefs.getString(_knownAdminIdKey)?.trim();
+    final id = await _readSecureValue(_knownAdminIdKey);
     if (id == null || id.isEmpty) return null;
 
-    final code = prefs.getString(_knownAdminCodeKey)?.trim();
-    final name = prefs.getString(_knownAdminNameKey)?.trim() ?? 'Administrador';
-    final email = prefs.getString(_knownAdminEmailKey)?.trim() ?? '';
+    final code = await _readSecureValue(_knownAdminCodeKey);
+    final name = await _readSecureValue(_knownAdminNameKey) ?? 'Administrador';
+    final email = await _readSecureValue(_knownAdminEmailKey) ?? '';
     final createdAtRaw = prefs.getString(_knownAdminCreatedAtKey);
     final lastSyncRaw = prefs.getString(_knownAdminLastSyncKey);
 
@@ -170,10 +204,9 @@ class AppLinkService {
 
   Future<void> clear() async {
     final prefs = await _prefs();
-    await prefs.remove(_linkedAdminCodeKey);
-    await prefs.remove(_linkedAdminIdKey);
-    await prefs.remove(_linkedUserIdKey);
-    await prefs.remove(_linkedUserNameKey);
+    await secureStorage.deleteAll(_secureKeys);
+    await prefs.remove(_knownAdminCreatedAtKey);
+    await prefs.remove(_knownAdminLastSyncKey);
     await clearPendingSocialAuth();
   }
 }

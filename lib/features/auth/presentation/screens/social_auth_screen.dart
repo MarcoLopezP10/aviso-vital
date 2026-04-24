@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:aviso_vital_2/app/router/app_route_args.dart';
 import 'package:aviso_vital_2/app/router/app_routes.dart';
 import 'package:aviso_vital_2/data/models/models.dart';
 import 'package:aviso_vital_2/data/repositories/auth_repository.dart';
 import 'package:aviso_vital_2/data/repositories/user_repository.dart';
 import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_social_row.dart';
 import 'package:aviso_vital_2/shared/i18n/app_language.dart';
+import 'package:aviso_vital_2/shared/utils/validators.dart';
 
 class SocialAuthScreen extends StatefulWidget {
   final String providerId;
@@ -148,11 +150,11 @@ class _SocialAuthScreenState extends State<SocialAuthScreen> {
     Navigator.pushReplacementNamed(
       context,
       AppRoutes.socialAuth,
-      arguments: {
-        'providerId': _providerId,
-        'roleId': widget.roleId,
-        'modeId': _isSignup ? 'login' : 'signup',
-      },
+      arguments: SocialAuthRouteArgs(
+        providerId: _providerId,
+        roleId: widget.roleId,
+        modeId: _isSignup ? 'login' : 'signup',
+      ),
     );
   }
 
@@ -184,6 +186,27 @@ class _SocialAuthScreenState extends State<SocialAuthScreen> {
       _ => _GoogleAuthView(data: data),
     };
   }
+}
+
+String? _validateEmail(BuildContext context, String? value) {
+  if (value == null || value.trim().isEmpty) {
+    return context.t.enterEmail;
+  }
+  if (!AppValidators.isValidEmail(value)) {
+    return context.t.invalidEmail;
+  }
+  return null;
+}
+
+String? _validateLinkCode(BuildContext context, String? value) {
+  final raw = value?.trim() ?? '';
+  if (raw.isEmpty) {
+    return context.t.enterAdminCode;
+  }
+  if (!AppValidators.isValidLinkCode(raw)) {
+    return context.t.adminCodeLength;
+  }
+  return null;
 }
 
 // ---------------------------------------------------------------------------
@@ -316,13 +339,7 @@ class _FacebookAuthView extends StatelessWidget {
                       controller: data.emailCtrl,
                       hint: context.t.text('Correo electrónico o teléfono'),
                       keyboardType: TextInputType.emailAddress,
-                      validator: (v) {
-                        if (v == null || v.trim().isEmpty) {
-                          return context.t.enterEmail;
-                        }
-                        if (!v.contains('@')) return context.t.invalidEmail;
-                        return null;
-                      },
+                      validator: (v) => _validateEmail(context, v),
                     ),
                     if (data.isSignup && !data.isAdmin) ...[
                       const SizedBox(height: 12),
@@ -330,18 +347,7 @@ class _FacebookAuthView extends StatelessWidget {
                         controller: data.linkCodeCtrl,
                         hint: context.t.text('Código del administrador'),
                         textCapitalization: TextCapitalization.characters,
-                        validator: (v) {
-                          final n = v
-                              ?.replaceAll(RegExp(r'[^A-Za-z0-9]'), '')
-                              .trim();
-                          if (n == null || n.isEmpty) {
-                            return context.t.text('Introduzca el código');
-                          }
-                          if (n.length != 6) {
-                            return context.t.adminCodeLength;
-                          }
-                          return null;
-                        },
+                        validator: (v) => _validateLinkCode(context, v),
                       ),
                     ],
                     const SizedBox(height: 12),
@@ -729,15 +735,7 @@ class _AppleAuthView extends StatelessWidget {
                                   label: 'Apple ID',
                                   hint: 'nombre@icloud.com',
                                   keyboardType: TextInputType.emailAddress,
-                                  validator: (v) {
-                                    if (v == null || v.trim().isEmpty) {
-                                      return context.t.enterEmail;
-                                    }
-                                    if (!v.contains('@')) {
-                                      return context.t.invalidEmail;
-                                    }
-                                    return null;
-                                  },
+                                  validator: (v) => _validateEmail(context, v),
                                 ),
                                 if (data.isSignup && !data.isAdmin) ...[
                                   const SizedBox(height: 14),
@@ -749,23 +747,8 @@ class _AppleAuthView extends StatelessWidget {
                                     hint: 'XXXXXX',
                                     textCapitalization:
                                         TextCapitalization.characters,
-                                    validator: (v) {
-                                      final n = v
-                                          ?.replaceAll(
-                                            RegExp(r'[^A-Za-z0-9]'),
-                                            '',
-                                          )
-                                          .trim();
-                                      if (n == null || n.isEmpty) {
-                                        return context.t.text(
-                                          'Introduzca el código',
-                                        );
-                                      }
-                                      if (n.length != 6) {
-                                        return context.t.adminCodeLength;
-                                      }
-                                      return null;
-                                    },
+                                    validator: (v) =>
+                                        _validateLinkCode(context, v),
                                   ),
                                 ],
                                 const SizedBox(height: 14),
@@ -1224,15 +1207,8 @@ class _GoogleAuthView extends StatelessWidget {
                                         'Correo electrónico o teléfono',
                                       ),
                                       keyboardType: TextInputType.emailAddress,
-                                      validator: (v) {
-                                        if (v == null || v.trim().isEmpty) {
-                                          return context.t.enterEmail;
-                                        }
-                                        if (!v.contains('@')) {
-                                          return context.t.invalidEmail;
-                                        }
-                                        return null;
-                                      },
+                                      validator: (v) =>
+                                          _validateEmail(context, v),
                                     ),
                                     if (data.isSignup && !data.isAdmin) ...[
                                       const SizedBox(height: 16),
@@ -1243,23 +1219,8 @@ class _GoogleAuthView extends StatelessWidget {
                                         ),
                                         textCapitalization:
                                             TextCapitalization.characters,
-                                        validator: (v) {
-                                          final n = v
-                                              ?.replaceAll(
-                                                RegExp(r'[^A-Za-z0-9]'),
-                                                '',
-                                              )
-                                              .trim();
-                                          if (n == null || n.isEmpty) {
-                                            return context.t.text(
-                                              'Introduzca el código',
-                                            );
-                                          }
-                                          if (n.length != 6) {
-                                            return context.t.adminCodeLength;
-                                          }
-                                          return null;
-                                        },
+                                        validator: (v) =>
+                                            _validateLinkCode(context, v),
                                       ),
                                     ],
                                     const SizedBox(height: 16),
