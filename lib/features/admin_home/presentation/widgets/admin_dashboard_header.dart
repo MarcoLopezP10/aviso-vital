@@ -150,36 +150,30 @@ class _HeaderActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: tooltip,
-      child: Tooltip(
-        message: tooltip,
-        child: GestureDetector(
-          onTap: onTap,
-          child: ExcludeSemantics(
-            child: Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [AppColors.surfaceElevated, AppColors.surfaceStrong],
-                ),
-                borderRadius: AppRadius.icon,
-                border: Border.all(color: AppColors.surfaceBorderSoft),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.14),
-                    blurRadius: 10,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-              ),
-              child: Icon(icon, color: AppColors.textSecondary, size: 18),
+    return Tooltip(
+      message: tooltip,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          width: 42,
+          height: 42,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [AppColors.surfaceElevated, AppColors.surfaceStrong],
             ),
+            borderRadius: AppRadius.icon,
+            border: Border.all(color: AppColors.surfaceBorderSoft),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.14),
+                blurRadius: 10,
+                offset: const Offset(0, 6),
+              ),
+            ],
           ),
+          child: Icon(icon, color: AppColors.textSecondary, size: 18),
         ),
       ),
     );
