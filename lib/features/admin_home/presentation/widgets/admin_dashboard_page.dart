@@ -8,7 +8,6 @@ import 'package:aviso_vital_2/data/repositories/device_repository.dart';
 import 'package:aviso_vital_2/data/repositories/medications_repository.dart';
 import 'package:aviso_vital_2/features/admin_home/presentation/widgets/admin_dashboard_header.dart';
 import 'package:aviso_vital_2/features/admin_home/presentation/widgets/admin_dashboard_stats_grid.dart';
-import 'package:aviso_vital_2/features/admin_home/presentation/widgets/admin_quick_nav_cards.dart';
 import 'package:aviso_vital_2/features/admin_home/presentation/widgets/admin_recent_activity_preview.dart';
 import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
@@ -244,20 +243,6 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                       stockBajoCount: data.lowStock.length,
                       citaHoy: data.todayAppointment,
                       pendientesHoy: data.pendingToday,
-                    ),
-                    SizedBox(height: sectionGap),
-                    const SectionHeader(title: 'Gestión'),
-                    const SizedBox(height: AppSpacing.sm),
-                    AdminQuickNavCards(
-                      onOpenMedications: () =>
-                          widget.onSwitchTab(AdminHomeTabIndex.medicamentos),
-                      onOpenAppointments: () =>
-                          widget.onSwitchTab(AdminHomeTabIndex.citas),
-                      onOpenAlerts: () =>
-                          widget.onSwitchTab(AdminHomeTabIndex.alertas),
-                      medicationsCount: data.medicationsCount,
-                      upcomingAppointmentsCount: data.upcomingAppointmentsCount,
-                      omissionsCount: data.omissionsCount,
                     ),
                     SizedBox(height: sectionGap),
                     if (data.lowStock.isNotEmpty) ...[
