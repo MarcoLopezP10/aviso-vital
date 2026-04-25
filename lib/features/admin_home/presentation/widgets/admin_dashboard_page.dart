@@ -4,10 +4,10 @@ import 'package:aviso_vital_2/core/services/realtime_service.dart';
 import 'package:aviso_vital_2/data/models/models.dart';
 import 'package:aviso_vital_2/data/repositories/alerts_repository.dart';
 import 'package:aviso_vital_2/data/repositories/appointments_repository.dart';
+import 'package:aviso_vital_2/data/repositories/device_repository.dart';
 import 'package:aviso_vital_2/data/repositories/medications_repository.dart';
 import 'package:aviso_vital_2/features/admin_home/presentation/widgets/admin_dashboard_header.dart';
 import 'package:aviso_vital_2/features/admin_home/presentation/widgets/admin_dashboard_stats_grid.dart';
-import 'package:aviso_vital_2/features/admin_home/presentation/widgets/admin_device_status_banner.dart';
 import 'package:aviso_vital_2/features/admin_home/presentation/widgets/admin_quick_nav_cards.dart';
 import 'package:aviso_vital_2/features/admin_home/presentation/widgets/admin_recent_activity_preview.dart';
 import 'package:aviso_vital_2/shared/i18n/app_language.dart';
@@ -40,10 +40,10 @@ class AdminDashboardPage extends StatefulWidget {
 class _AdminDashboardPageState extends State<AdminDashboardPage> {
   static const _alertsRepository = AlertsRepository();
   static const _appointmentsRepository = AppointmentsRepository();
+  static const _deviceRepository = DeviceRepository();
   static const _medicationsRepository = MedicationsRepository();
 
   late Future<_DashboardData> _dashboardFuture;
-  int _deviceBannerRefreshSeed = 0;
   final _realtimeService = RealtimeService();
   StreamSubscription<RealtimeChangeType>? _realtimeSub;
   Timer? _debounce;
@@ -63,7 +63,6 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       final future = _loadDashboardData(forceRefresh: true);
       setState(() {
         _dashboardFuture = future;
-        _deviceBannerRefreshSeed++;
       });
     });
   }
@@ -86,17 +85,20 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       final appointmentsFuture = _appointmentsRepository.fetchAll(
         forceRefresh: forceRefresh,
       );
+      final linkedDeviceFuture = _loadLinkedDeviceStatusSafely();
 
       final alerts = await alertsFuture;
       final results = await Future.wait([
         medicationSnapshotFuture,
         appointmentsFuture,
         _alertsRepository.fetchAdherenceSummary(historyTimeline: alerts),
+        linkedDeviceFuture,
       ]).timeout(AppDurations.networkTimeout);
 
       final medicationSnapshot = results[0] as MedicationDailySnapshot;
       final appointments = results[1] as List<Cita>;
       final adherence = results[2] as ResumenAdherencia;
+      final linkedDevice = results[3] as LinkedDeviceStatus?;
       final medications = medicationSnapshot.medications;
       final lowStock = medications
           .where((item) => item.stockBajo && item.activo)
@@ -117,6 +119,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         upcomingAppointmentsCount: appointments
             .where((item) => !item.esPasada)
             .length,
+        linkedUserConnected: linkedDevice?.connected == true,
+        linkedUserName: linkedDevice?.displayName,
         omissionsCount: alerts
             .where(
               (item) =>
@@ -126,6 +130,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             .length,
       );
     } catch (_) {
+      final linkedDevice = await _loadLinkedDeviceStatusSafely();
       return _DashboardData(
         adherence: _alertsRepository.getAdherenceSummary(),
         lowStock: _medicationsRepository.getLowStock(),
@@ -135,8 +140,18 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         pendingToday: _medicationsRepository.getPendingTodayCount(),
         medicationsCount: _medicationsRepository.getAll().length,
         upcomingAppointmentsCount: _appointmentsRepository.getUpcomingCount(),
+        linkedUserConnected: linkedDevice?.connected == true,
+        linkedUserName: linkedDevice?.displayName,
         omissionsCount: _alertsRepository.getRecentOmissionsCount(),
       );
+    }
+  }
+
+  Future<LinkedDeviceStatus?> _loadLinkedDeviceStatusSafely() async {
+    try {
+      return await _deviceRepository.getLinkedDeviceStatus();
+    } catch (_) {
+      return null;
     }
   }
 
@@ -180,7 +195,6 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                 final future = _loadDashboardData(forceRefresh: true);
                 setState(() {
                   _dashboardFuture = future;
-                  _deviceBannerRefreshSeed++;
                 });
                 await future;
               },
@@ -196,10 +210,11 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const AdminDashboardHeader(),
-                    const SizedBox(height: AppSpacing.md),
-                    AdminDeviceStatusBanner(
-                      refreshSeed: _deviceBannerRefreshSeed,
+                    AdminDashboardHeader(
+                      caredUserName:
+                          data.linkedUserName ??
+                          context.t.text('Usuario mayor'),
+                      isConnected: data.linkedUserConnected,
                     ),
                     SizedBox(height: sectionGap),
                     if (data.upcomingMedication != null ||
@@ -363,6 +378,8 @@ class _DashboardData {
   final int pendingToday;
   final int medicationsCount;
   final int upcomingAppointmentsCount;
+  final bool linkedUserConnected;
+  final String? linkedUserName;
   final int omissionsCount;
 
   const _DashboardData({
@@ -374,6 +391,8 @@ class _DashboardData {
     required this.pendingToday,
     required this.medicationsCount,
     required this.upcomingAppointmentsCount,
+    required this.linkedUserConnected,
+    required this.linkedUserName,
     required this.omissionsCount,
   });
 }
