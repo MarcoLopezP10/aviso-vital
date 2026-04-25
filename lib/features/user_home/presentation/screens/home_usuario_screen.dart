@@ -11,6 +11,7 @@ import 'package:aviso_vital_2/data/repositories/appointments_repository.dart';
 import 'package:aviso_vital_2/data/repositories/medications_repository.dart';
 import 'package:aviso_vital_2/features/alerts/presentation/screens/alerta_cita_screen.dart';
 import 'package:aviso_vital_2/features/alerts/presentation/screens/alerta_medicacion_screen.dart';
+import 'package:aviso_vital_2/features/user_home/presentation/widgets/daily_progress_card.dart';
 import 'package:aviso_vital_2/features/user_home/presentation/widgets/next_appointment_card.dart';
 import 'package:aviso_vital_2/features/user_home/presentation/widgets/next_medication_card.dart';
 import 'package:aviso_vital_2/features/user_home/presentation/widgets/user_home_header.dart';
@@ -115,6 +116,15 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
                 avatarInitial: data.avatarInitial,
                 trailing: _LogoutButton(onPressed: _handleUserAreaBack),
               ),
+
+              if (data.totalCount > 0) ...[
+                const SizedBox(height: AppSpacing.lg),
+                DailyProgressCard(
+                  confirmed: data.confirmedCount,
+                  total: data.totalCount,
+                  pending: data.pendingCount,
+                ),
+              ],
 
               const SizedBox(height: AppSpacing.xxl),
 
@@ -238,6 +248,12 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
         ? strings.greetingForHour(now.hour)
         : '${strings.greetingForHour(now.hour)}, $firstName';
 
+    final doses = medicationSnapshot.doses;
+    final confirmedCount =
+        doses.where((d) => d.estado == EstadoToma.confirmada).length;
+    final pendingCount =
+        doses.where((d) => d.estado == EstadoToma.pendiente).length;
+
     return _UserHomeViewData(
       greeting: greeting,
       dateLabel: strings.fullDate(now),
@@ -245,6 +261,9 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
       nextMedication: medicationSnapshot.upcomingMedication,
       nextMedicationTime: medicationSnapshot.upcomingTime,
       todayAppointment: nextAppointment,
+      confirmedCount: confirmedCount,
+      totalCount: confirmedCount + pendingCount,
+      pendingCount: pendingCount,
     );
   }
 }
@@ -258,6 +277,9 @@ class _UserHomeViewData {
   final Medicamento? nextMedication;
   final String nextMedicationTime;
   final Cita? todayAppointment;
+  final int confirmedCount;
+  final int totalCount;
+  final int pendingCount;
 
   const _UserHomeViewData({
     required this.greeting,
@@ -266,6 +288,9 @@ class _UserHomeViewData {
     required this.nextMedication,
     required this.nextMedicationTime,
     required this.todayAppointment,
+    required this.confirmedCount,
+    required this.totalCount,
+    required this.pendingCount,
   });
 }
 
@@ -328,69 +353,26 @@ class _SimulationButtonCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Ink(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 18),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-            borderRadius: BorderRadius.circular(16),
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: onTap,
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.textSecondary,
+          side: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+          backgroundColor: AppColors.surface,
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
           ),
-          child: Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: AppColors.info.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(13),
-                ),
-                child: const Icon(
-                  Icons.smartphone_rounded,
-                  color: AppColors.info,
-                  size: 23,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      context.t.mobileSimulationSubtitle,
-                      style: AppTextStyles.labelLarge.copyWith(
-                        color: AppColors.textPrimary,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 0,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      context.t.mobileSimulation,
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.textSecondary,
-                        fontSize: 13,
-                        height: 1.2,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const Text(
-                '›',
-                style: TextStyle(
-                  color: AppColors.textDisabled,
-                  fontSize: 20,
-                  height: 1,
-                ),
-              ),
-            ],
+          alignment: Alignment.centerLeft,
+        ),
+        icon: const Icon(Icons.smartphone_rounded, size: 18, color: AppColors.info),
+        label: Text(
+          context.t.mobileSimulationSubtitle,
+          style: AppTextStyles.body.copyWith(
+            color: AppColors.textSecondary,
+            fontSize: 14,
           ),
         ),
       ),

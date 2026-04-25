@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:aviso_vital_2/app/router/app_routes.dart';
 import 'package:aviso_vital_2/features/auth/presentation/screens/admin_login_screen.dart';
 import 'package:aviso_vital_2/features/auth/presentation/screens/user_login_screen.dart';
-import 'package:aviso_vital_2/features/onboarding/presentation/widgets/role_selection_benefits.dart';
 import 'package:aviso_vital_2/features/onboarding/presentation/widgets/role_option_card.dart';
 import 'package:aviso_vital_2/features/onboarding/presentation/widgets/role_selection_header.dart';
 import 'package:aviso_vital_2/features/onboarding/presentation/widgets/role_selection_intro.dart';
@@ -51,12 +50,10 @@ class RoleSelectionScreen extends StatelessWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
-                                const SizedBox(height: AppSpacing.xxl),
+                                const SizedBox(height: AppSpacing.lg),
                                 const RoleSelectionHeader(),
                                 const SizedBox(height: AppSpacing.xl),
                                 const RoleSelectionIntro(),
-                                const SizedBox(height: AppSpacing.md),
-                                const RoleSelectionBenefits(),
                                 const Spacer(),
                                 Text(
                                   strings.selectProfile,

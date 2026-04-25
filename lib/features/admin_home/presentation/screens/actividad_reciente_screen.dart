@@ -87,7 +87,13 @@ class _ActividadRecienteScreenState extends State<ActividadRecienteScreen> {
                       ),
                       _GroupSection(
                         label: context.t.yesterday,
-                        alertas: alertas.where((a) => !a.esHoy).toList(),
+                        alertas: alertas.where((a) => a.esAyer).toList(),
+                      ),
+                      _GroupSection(
+                        label: context.t.earlier,
+                        alertas: alertas
+                            .where((a) => !a.esHoy && !a.esAyer)
+                            .toList(),
                       ),
                     ],
                   ),

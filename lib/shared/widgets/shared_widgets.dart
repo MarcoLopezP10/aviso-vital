@@ -435,7 +435,8 @@ class EmptyStateCard extends StatelessWidget {
   factory EmptyStateCard.noDevice({VoidCallback? onConnect}) => EmptyStateCard(
     icon: Icons.phone_android_outlined,
     title: 'Dispositivo no vinculado',
-    subtitle: 'Vincule el móvil de Carmen para empezar a enviarle alertas',
+    subtitle:
+        'Vincule el teléfono del usuario mayor para empezar a enviarle alertas',
     actionLabel: onConnect != null ? 'Vincular dispositivo' : null,
     onAction: onConnect,
     iconColor: AppColors.info,

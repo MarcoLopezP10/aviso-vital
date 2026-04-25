@@ -317,11 +317,21 @@ class _PhoneFrame extends StatelessWidget {
         final availableWidth = constraints.maxWidth.isFinite
             ? constraints.maxWidth
             : 360.0;
-        final phoneWidth =
-            (availableWidth >= 320.0
-                    ? availableWidth.clamp(320.0, 360.0)
-                    : availableWidth)
-                .toDouble();
+        final availableHeight = constraints.maxHeight.isFinite
+            ? constraints.maxHeight
+            : double.infinity;
+
+        // Derive width from available height too so the phone never overflows
+        // in landscape or constrained layouts.
+        double phoneWidth = availableWidth >= 320.0
+            ? availableWidth.clamp(320.0, 380.0)
+            : availableWidth;
+        if (availableHeight.isFinite) {
+          final maxWidthFromHeight = availableHeight / _phoneAspectRatio;
+          if (maxWidthFromHeight < phoneWidth) {
+            phoneWidth = maxWidthFromHeight.clamp(240.0, 380.0);
+          }
+        }
         final phoneHeight = phoneWidth * _phoneAspectRatio;
 
         return SizedBox(
@@ -380,7 +390,7 @@ class _PhoneFrame extends StatelessWidget {
                       // ── Área de notificaciones — ocupa todo el espacio libre ──
                       Expanded(
                         child: visibleNotifications.isEmpty
-                            ? const SizedBox.shrink()
+                            ? _PhoneEmptyState(scale: phoneWidth / 320)
                             : _NotificationList(
                                 notifications: visibleNotifications,
                                 onTap: onTapNotification,
@@ -420,6 +430,44 @@ class _PhoneFrame extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Empty state inside the phone frame
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _PhoneEmptyState extends StatelessWidget {
+  final double scale;
+  const _PhoneEmptyState({required this.scale});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 24 * scale),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.notifications_off_outlined,
+              size: 32 * scale,
+              color: Colors.white.withValues(alpha: 0.18),
+            ),
+            SizedBox(height: 10 * scale),
+            Text(
+              context.t.noActiveAlerts,
+              textAlign: TextAlign.center,
+              style: AppTextStyles.body.copyWith(
+                color: Colors.white.withValues(alpha: 0.25),
+                fontSize: 13 * scale,
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

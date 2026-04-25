@@ -692,6 +692,13 @@ class Alerta {
         fechaHora.day == now.day;
   }
 
+  bool get esAyer {
+    final ayer = DateTime.now().subtract(const Duration(days: 1));
+    return fechaHora.year == ayer.year &&
+        fechaHora.month == ayer.month &&
+        fechaHora.day == ayer.day;
+  }
+
   Alerta copyWith({
     String? id,
     String? idUsuario,

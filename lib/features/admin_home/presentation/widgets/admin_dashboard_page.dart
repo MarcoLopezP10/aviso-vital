@@ -335,41 +335,9 @@ class _UpcomingMedicationCard extends StatelessWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      '${pendiente.fechaProgramada.hour.toString().padLeft(2, '0')}:${pendiente.fechaProgramada.minute.toString().padLeft(2, '0')}',
-                      style: AppTextStyles.h4.copyWith(color: AppColors.amber),
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    OutlinedButton(
-                      onPressed: () {
-                        debugPrint(
-                          '[AdminHome] Recordatorio solicitado para ${medicamento.nombre}',
-                        );
-                      },
-                      style: OutlinedButton.styleFrom(
-                        minimumSize: const Size(0, 34),
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        foregroundColor: AppColors.amber,
-                        side: BorderSide(
-                          color: AppColors.amber.withValues(alpha: 0.28),
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        visualDensity: VisualDensity.compact,
-                      ),
-                      child: Text(
-                        context.t.text('Recordar'),
-                        style: AppTextStyles.label.copyWith(
-                          color: AppColors.amber,
-                        ),
-                      ),
-                    ),
-                  ],
+                Text(
+                  '${pendiente.fechaProgramada.hour.toString().padLeft(2, '0')}:${pendiente.fechaProgramada.minute.toString().padLeft(2, '0')}',
+                  style: AppTextStyles.h4.copyWith(color: AppColors.amber),
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 StatusBadge.pending(small: true),

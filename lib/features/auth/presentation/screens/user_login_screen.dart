@@ -56,17 +56,16 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
       if (profile == null) {
         throw StateError('No se pudo cargar el perfil del usuario.');
       }
-      if (profile.rol != RolUsuario.mayor) {
-        await _authRepository.signOut();
-        throw StateError(
-          'Esta pantalla es solo para usuarios mayores. Usa el acceso de administrador.',
-        );
-      }
 
-      final target =
-          profile.idAdministrador == null || profile.idAdministrador!.isEmpty
-          ? AppRoutes.codigoManual
-          : HomeUsuarioScreen.routeName;
+      final String target;
+      if (profile.rol == RolUsuario.administrador) {
+        target = AppRoutes.homeAdmin;
+      } else if (profile.idAdministrador == null ||
+          profile.idAdministrador!.isEmpty) {
+        target = AppRoutes.codigoManual;
+      } else {
+        target = HomeUsuarioScreen.routeName;
+      }
       Navigator.pushNamedAndRemoveUntil(context, target, (_) => false);
     } catch (error) {
       if (!mounted) return;
@@ -88,6 +87,10 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
   @override
   Widget build(BuildContext context) {
     final strings = context.t;
+    final height = MediaQuery.of(context).size.height;
+    final compact = height < 780;
+    final sectionGap = compact ? AppSpacing.md : AppSpacing.xl;
+    final footerGap = compact ? AppSpacing.sm : AppSpacing.lg;
 
     return AuthScaffold(
       child: Form(
@@ -97,14 +100,14 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
           children: [
             const SizedBox(height: AppSpacing.sm),
             const AppBackButton(),
-            const SizedBox(height: AppSpacing.xl),
+            SizedBox(height: sectionGap),
             AuthHeroCard(
               eyebrow: strings.userAccess,
               eyebrowColor: AppColors.amberLight,
               title: strings.userLoginTitle,
               description: strings.userLoginDescription,
             ),
-            const SizedBox(height: AppSpacing.xl),
+            SizedBox(height: sectionGap),
             AuthFormCard(
               child: Column(
                 children: [
@@ -168,7 +171,7 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: AppSpacing.xl),
+            SizedBox(height: sectionGap),
             PrimaryButton(
               label: strings.userSignIn,
               backgroundColor: AppColors.amber,
@@ -176,14 +179,14 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
               isLoading: _isLoading,
               onPressed: _login,
             ),
-            const SizedBox(height: AppSpacing.lg),
+            SizedBox(height: footerGap),
             AuthSwitchLink(
               prompt: strings.noAccountPrompt,
               actionLabel: strings.createAccount,
               onPressed: () =>
                   Navigator.pushNamed(context, UserSignupScreen.routeName),
             ),
-            const SizedBox(height: AppSpacing.lg),
+            SizedBox(height: footerGap),
           ],
         ),
       ),

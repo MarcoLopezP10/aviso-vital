@@ -256,9 +256,9 @@ class _AlertasList extends StatelessWidget {
       );
     }
 
-    // Agrupar por fecha
     final hoy = alertas.where((a) => a.esHoy).toList();
-    final ayer = alertas.where((a) => !a.esHoy).toList();
+    final ayer = alertas.where((a) => a.esAyer).toList();
+    final anterior = alertas.where((a) => !a.esHoy && !a.esAyer).toList();
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(
@@ -276,6 +276,11 @@ class _AlertasList extends StatelessWidget {
         if (ayer.isNotEmpty) ...[
           _GroupLabel(context.t.yesterday),
           ...ayer.map((a) => _AlertaCard(alerta: a)),
+          const SizedBox(height: AppSpacing.lg),
+        ],
+        if (anterior.isNotEmpty) ...[
+          _GroupLabel(context.t.earlier),
+          ...anterior.map((a) => _AlertaCard(alerta: a)),
         ],
       ],
     );
@@ -387,8 +392,8 @@ class _AlertaCard extends StatelessWidget {
 
   (Color, IconData) _style() => switch (alerta.estado) {
     EstadoAlerta.confirmada => (AppColors.success, Icons.check_circle_outline),
-    EstadoAlerta.omitida => (AppColors.danger, Icons.cancel_outlined),
-    EstadoAlerta.expirada => (AppColors.danger, Icons.timer_off_outlined),
+    EstadoAlerta.omitida => (AppColors.textTertiary, Icons.cancel_outlined),
+    EstadoAlerta.expirada => (AppColors.textTertiary, Icons.timer_off_outlined),
     EstadoAlerta.vista =>
       alerta.tipo == TipoAlerta.stockBajo
           ? (AppColors.warning, Icons.warning_amber_outlined)
@@ -403,11 +408,11 @@ class _AlertaCard extends StatelessWidget {
     ),
     EstadoAlerta.omitida => _HistoryStatusBadge(
       label: context.t.text('Omitida'),
-      color: AppColors.danger,
+      color: AppColors.textTertiary,
     ),
     EstadoAlerta.expirada => _HistoryStatusBadge(
       label: context.t.text('Expirada'),
-      color: AppColors.danger,
+      color: AppColors.textTertiary,
     ),
     EstadoAlerta.pendiente => _HistoryStatusBadge(
       label: context.t.text('Pendiente'),

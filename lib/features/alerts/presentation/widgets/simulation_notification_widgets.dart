@@ -231,7 +231,7 @@ class _NotificationHeader extends StatelessWidget {
             ),
           ),
           Text(
-            'ahora',
+            context.t.now.toLowerCase(),
             style: AppTextStyles.caption.copyWith(
               color: Colors.white.withValues(alpha: 0.3),
               fontSize: 11,

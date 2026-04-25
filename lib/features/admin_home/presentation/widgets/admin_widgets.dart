@@ -360,70 +360,52 @@ class _BottomNavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final activeTextColor = AppColors.textOnAmber;
+    final activeColor = AppColors.amber;
     final inactiveColor = AppColors.textTertiary;
 
-    return AnimatedContainer(
-      duration: AppDurations.normal,
-      curve: Curves.easeOutCubic,
-      margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        gradient: selected
-            ? const LinearGradient(
-                colors: [AppColors.amberLight, AppColors.amber],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              )
-            : null,
-        boxShadow: selected
-            ? [
-                BoxShadow(
-                  color: AppColors.amber.withValues(alpha: 0.24),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ]
-            : null,
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(20),
-          child: Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: selected ? 9 : 6,
-              vertical: 8,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  selected ? destination.selectedIcon : destination.icon,
-                  size: selected ? 22 : 20,
-                  color: selected ? activeTextColor : inactiveColor,
-                ),
-                const SizedBox(height: 3),
-                SizedBox(
-                  width: double.infinity,
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      context.t.text(destination.label),
-                      maxLines: 1,
-                      style: AppTextStyles.labelSmall.copyWith(
-                        color: selected ? activeTextColor : inactiveColor,
-                        fontWeight: selected
-                            ? FontWeight.w800
-                            : FontWeight.w500,
-                        letterSpacing: 0,
-                      ),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                selected ? destination.selectedIcon : destination.icon,
+                size: 22,
+                color: selected ? activeColor : inactiveColor,
+              ),
+              const SizedBox(height: 3),
+              SizedBox(
+                width: double.infinity,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    context.t.text(destination.label),
+                    maxLines: 1,
+                    style: AppTextStyles.labelSmall.copyWith(
+                      color: selected ? activeColor : inactiveColor,
+                      fontWeight:
+                          selected ? FontWeight.w700 : FontWeight.w500,
+                      letterSpacing: 0,
                     ),
                   ),
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 4),
+              AnimatedContainer(
+                duration: AppDurations.fast,
+                width: selected ? 16 : 0,
+                height: 3,
+                decoration: BoxDecoration(
+                  color: activeColor,
+                  borderRadius: BorderRadius.circular(99),
+                ),
+              ),
+            ],
           ),
         ),
       ),

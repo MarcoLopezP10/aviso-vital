@@ -158,6 +158,7 @@ class _AlertaCitaScreenState extends State<AlertaCitaScreen> {
                       cita: data.appointment,
                       tiempoLabel: tiempoLabel,
                       isReadOnly: data.isReminderHandled,
+                      isSubmitting: _isSubmitting,
                       onClose: _handleBack,
                       onConfirm: () => _confirmar(data),
                     ),
@@ -280,6 +281,7 @@ class _CitaAlertaView extends StatelessWidget {
   final Cita cita;
   final String tiempoLabel;
   final bool isReadOnly;
+  final bool isSubmitting;
   final VoidCallback onClose;
   final VoidCallback onConfirm;
 
@@ -288,6 +290,7 @@ class _CitaAlertaView extends StatelessWidget {
     required this.cita,
     required this.tiempoLabel,
     required this.isReadOnly,
+    this.isSubmitting = false,
     required this.onClose,
     required this.onConfirm,
   });
@@ -506,7 +509,8 @@ class _CitaAlertaView extends StatelessWidget {
                         backgroundColor: AppColors.orange,
                         foregroundColor: AppColors.textPrimary,
                         height: compact ? 52 : 56,
-                        onPressed: onConfirm,
+                        isLoading: isSubmitting,
+                        onPressed: isSubmitting ? null : onConfirm,
                       ),
                   ],
                 ),

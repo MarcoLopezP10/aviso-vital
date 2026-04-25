@@ -39,10 +39,7 @@ class AlertsRepository {
     if (forceRefresh) _cachedAlerts = const [];
     if (!SupabaseService.isReady) return getRecent();
 
-    dynamic query = SupabaseService.client
-        .from('alertas')
-        .select()
-        .limit(limit);
+    dynamic query = SupabaseService.client.from('alertas').select();
     final resolvedUserId = await _userRepository.resolveCareRecipientUserId(
       explicitUserId: userId,
     );
@@ -54,7 +51,7 @@ class AlertsRepository {
       query = query.eq('id_usuario', resolvedUserId);
     }
 
-    final response = await _runAlertQueryWithFallbackOrder(query);
+    final response = await _runAlertQueryWithFallbackOrder(query.limit(limit));
     final alerts = List<Map<String, dynamic>>.from(
       response as List,
     ).map(_normalizeAlertMap).map(Alerta.fromJson).toList(growable: false);
@@ -219,44 +216,50 @@ class AlertsRepository {
       forceRefresh: forceRefresh,
       limit: 100,
     );
-    final doseSince = DateTime.now()
-        .subtract(const Duration(days: 7))
-        .toUtc()
-        .toIso8601String();
-    final results = await Future.wait<dynamic>([
-      SupabaseService.client
-          .from('tomas')
-          .select()
-          .eq('id_usuario', resolvedUserId)
-          .gte('fecha_programada', doseSince)
-          .order('fecha_programada', ascending: false)
-          .limit(100),
-      SupabaseService.client
-          .from('medicamentos')
-          .select()
-          .eq('id_usuario', resolvedUserId)
-          .limit(100),
-    ]);
-    final dosesResponse = results[0];
-    final medsResponse = results[1];
 
-    final medicationsById = {
-      for (final medication in List<Map<String, dynamic>>.from(
-        medsResponse as List,
-      ).map(Medicamento.fromJson))
-        medication.id: medication,
-    };
+    Iterable<Alerta> doseAlerts = const [];
+    try {
+      final doseSince = DateTime.now()
+          .subtract(const Duration(days: 7))
+          .toUtc()
+          .toIso8601String();
+      final results = await Future.wait<dynamic>([
+        SupabaseService.client
+            .from('tomas')
+            .select()
+            .eq('id_usuario', resolvedUserId)
+            .gte('fecha_programada', doseSince)
+            .order('fecha_programada', ascending: false)
+            .limit(100),
+        SupabaseService.client
+            .from('medicamentos')
+            .select()
+            .eq('id_usuario', resolvedUserId)
+            .limit(100),
+      ]);
 
-    final doseAlerts = List<Map<String, dynamic>>.from(dosesResponse as List)
-        .map(Toma.fromJson)
-        .where(
-          (dose) =>
-              dose.estado == EstadoToma.confirmada ||
-              dose.estado == EstadoToma.omitida ||
-              dose.estado == EstadoToma.expirada,
-        )
-        .map((dose) => _doseToAlert(dose, medicationsById[dose.idMedicamento]))
-        .whereType<Alerta>();
+      final medicationsById = {
+        for (final medication in List<Map<String, dynamic>>.from(
+          results[1] as List,
+        ).map(Medicamento.fromJson))
+          medication.id: medication,
+      };
+
+      doseAlerts = List<Map<String, dynamic>>.from(results[0] as List)
+          .map(Toma.fromJson)
+          .where(
+            (dose) =>
+                dose.estado == EstadoToma.confirmada ||
+                dose.estado == EstadoToma.omitida ||
+                dose.estado == EstadoToma.expirada,
+          )
+          .map(
+            (dose) => _doseToAlert(dose, medicationsById[dose.idMedicamento]),
+          )
+          .whereType<Alerta>();
+    } catch (e, st) {
+      debugPrint('[AlertsRepository] fetchHistoryTimeline dose query: $e\n$st');
+    }
 
     final timeline = [
       ...rawAlerts.where(

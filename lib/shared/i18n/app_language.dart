@@ -462,6 +462,10 @@ class AppStrings {
   String get logout => isEnglish ? 'Log out' : 'Cerrar sesión';
   String get today => isEnglish ? 'Today' : 'Hoy';
   String get yesterday => isEnglish ? 'Yesterday' : 'Ayer';
+  String get earlier => isEnglish ? 'Earlier' : 'Anterior';
+  String get noActiveAlerts => isEnglish
+      ? 'No active alerts right now'
+      : 'Sin alertas activas en este momento';
   String get back => isEnglish ? 'Back' : 'Volver';
   String get now => isEnglish ? 'Now' : 'Ahora';
   String get soon => isEnglish ? 'soon' : 'próximamente';
@@ -669,6 +673,10 @@ class AppStrings {
 
   String get testScreen => isEnglish ? 'Test screen' : 'Pantalla de pruebas';
   String get retry => isEnglish ? 'Retry' : 'Reintentar';
+  String get medicationConfirmedTitle => isEnglish ? 'Perfect' : 'Perfecto';
+  String get medicationConfirmedBody => isEnglish
+      ? 'The dose has been recorded.\nYou can continue at ease.'
+      : 'La toma ha quedado registrada.\nPuede continuar con tranquilidad.';
   String get medicationActionFailed => isEnglish
       ? 'Could not complete the action. Please try again.'
       : 'No se pudo completar la acción. Inténtelo de nuevo.';

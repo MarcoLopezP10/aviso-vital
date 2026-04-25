@@ -10,13 +10,13 @@ class LanguageToggle extends StatelessWidget {
     final strings = context.t;
     final screenWidth = MediaQuery.sizeOf(context).width;
     final compact = screenWidth < 420;
-    final containerHeight = compact ? 52.0 : 60.0;
-    final horizontalPadding = compact ? 10.0 : 14.0;
-    final iconSize = compact ? 24.0 : 28.0;
-    final gap = compact ? 10.0 : 14.0;
-    final dividerHeight = compact ? 21.0 : 25.0;
-    final buttonVerticalPadding = compact ? 8.0 : 10.0;
-    final buttonFontSize = compact ? 19.0 : 22.0;
+    final containerHeight = compact ? 36.0 : 42.0;
+    final horizontalPadding = compact ? 8.0 : 10.0;
+    final iconSize = compact ? 15.0 : 17.0;
+    final gap = compact ? 7.0 : 9.0;
+    final dividerHeight = compact ? 14.0 : 16.0;
+    final buttonVerticalPadding = compact ? 3.0 : 5.0;
+    final buttonFontSize = compact ? 12.0 : 13.0;
 
     return ValueListenableBuilder<AppLanguage>(
       valueListenable: AppLocaleController.instance.language,
@@ -29,7 +29,7 @@ class LanguageToggle extends StatelessWidget {
             padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
             decoration: BoxDecoration(
               color: const Color(0xFF121214).withValues(alpha: 0.88),
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: Colors.white.withValues(alpha: 0.09),
                 width: 1.4,
@@ -104,7 +104,7 @@ class _LanguageButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      borderRadius: BorderRadius.circular(compact ? 6 : 8),
+      borderRadius: BorderRadius.circular(compact ? 4 : 6),
       onTap: onTap,
       child: Padding(
         padding: EdgeInsets.symmetric(

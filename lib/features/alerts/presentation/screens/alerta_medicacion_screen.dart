@@ -950,7 +950,7 @@ class _ConfirmedMedicationView extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.xxl),
             Text(
-              'Perfecto',
+              context.t.medicationConfirmedTitle,
               style: AppTextStyles.h1.copyWith(
                 color: AppColors.success,
                 fontSize: 32,
@@ -958,7 +958,7 @@ class _ConfirmedMedicationView extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              'La toma ha quedado registrada.\nPuede continuar con tranquilidad.',
+              context.t.medicationConfirmedBody,
               textAlign: TextAlign.center,
               style: AppTextStyles.bodyLarge.copyWith(
                 color: AppColors.textSecondary,

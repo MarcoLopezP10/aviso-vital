@@ -150,6 +150,7 @@ class _AdminCitasScreenState extends State<AdminCitasScreen> {
     final proximas = allAppointments
         .where((c) => !c.esPasada && !c.esHoy)
         .length;
+    final upcoming = citasHoy + proximas;
     final hasBottomNav = !isAdminWideLayout(context);
     final isCompactMobile =
         MediaQuery.of(context).size.width < 430 ||
@@ -158,7 +159,7 @@ class _AdminCitasScreenState extends State<AdminCitasScreen> {
     return AdminSectionScaffold(
       title: context.t.text('Citas Médicas'),
       subtitle: context.t.registeredCount(
-        allAppointments.length,
+        upcoming,
         context.t.displayName(user.nombre),
       ),
       onBack: widget.showBackButton ? () => Navigator.maybePop(context) : null,
