@@ -116,7 +116,7 @@ class MedicationCard extends StatelessWidget {
 
                   // ── Acciones ──
                   if (showActions)
-                    _ActionsMenu(onEdit: onEdit, onDelete: onDelete)
+                    _CardActionsMenu(onEdit: onEdit, onDelete: onDelete)
                   else if (onTap != null)
                     const Icon(
                       Icons.arrow_forward_ios_rounded,
@@ -139,10 +139,10 @@ class MedicationCard extends StatelessWidget {
   };
 }
 
-class _ActionsMenu extends StatelessWidget {
+class _CardActionsMenu extends StatelessWidget {
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
-  const _ActionsMenu({this.onEdit, this.onDelete});
+  const _CardActionsMenu({this.onEdit, this.onDelete});
 
   @override
   Widget build(BuildContext context) {
@@ -337,7 +337,7 @@ class AppointmentCard extends StatelessWidget {
 
             // ── Acciones ──
             if (showActions)
-              _ActionsMenuCita(onEdit: onEdit, onDelete: onDelete)
+              _CardActionsMenu(onEdit: onEdit, onDelete: onDelete)
             else if (onTap != null)
               const Icon(
                 Icons.arrow_forward_ios_rounded,
@@ -432,85 +432,6 @@ class _DateBadge extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _ActionsMenuCita extends StatelessWidget {
-  final VoidCallback? onEdit;
-  final VoidCallback? onDelete;
-  const _ActionsMenuCita({this.onEdit, this.onDelete});
-
-  @override
-  Widget build(BuildContext context) {
-    return PopupMenuButton<String>(
-      icon: Container(
-        width: 30,
-        height: 30,
-        decoration: BoxDecoration(
-          color: AppColors.surfaceRaised.withValues(alpha: 0.66),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: AppColors.surfaceBorder.withValues(alpha: 0.7),
-          ),
-        ),
-        child: const Icon(
-          Icons.more_horiz_rounded,
-          color: AppColors.textTertiary,
-          size: 18,
-        ),
-      ),
-      padding: EdgeInsets.zero,
-      color: AppColors.surfaceRaised,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        side: const BorderSide(color: AppColors.surfaceBorder),
-      ),
-      itemBuilder: (_) => [
-        if (onEdit != null)
-          PopupMenuItem(
-            value: 'edit',
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.edit_outlined,
-                  size: 16,
-                  color: AppColors.textSecondary,
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  context.t.text('Editar'),
-                  style: AppTextStyles.body.copyWith(fontSize: 14),
-                ),
-              ],
-            ),
-          ),
-        if (onDelete != null)
-          PopupMenuItem(
-            value: 'delete',
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.delete_outline_rounded,
-                  size: 16,
-                  color: AppColors.danger,
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  context.t.text('Eliminar'),
-                  style: AppTextStyles.body.copyWith(
-                    fontSize: 14,
-                    color: AppColors.danger,
-                  ),
-                ),
-              ],
-            ),
-          ),
-      ],
-      onSelected: (v) {
-        if (v == 'edit') onEdit?.call();
-        if (v == 'delete') onDelete?.call();
-      },
     );
   }
 }

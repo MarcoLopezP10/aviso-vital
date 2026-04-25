@@ -4,6 +4,7 @@ import 'package:aviso_vital_2/app/router/app_routes.dart';
 import 'package:aviso_vital_2/core/services/pdf_export_service.dart';
 import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
+import 'package:aviso_vital_2/shared/widgets/form_widgets.dart';
 import 'package:aviso_vital_2/shared/widgets/shared_widgets.dart';
 import 'package:aviso_vital_2/shared/widgets/content_widgets.dart';
 import 'package:aviso_vital_2/data/repositories/medications_repository.dart';
@@ -620,12 +621,12 @@ class _MedicamentoFormState extends State<_MedicamentoForm> {
                         height: isCompactHeight ? AppSpacing.lg : AppSpacing.xl,
                       ),
 
-                      _FormSection(
+                      AppFormSection(
                         title: context.t.text('Datos básicos'),
                         compact: isCompactHeight,
                         child: Column(
                           children: [
-                            _FormField(
+                            AppFormField(
                               controller: _nombreCtrl,
                               label: context.t.text('Nombre'),
                               hint: context.t.text('Ej: Enalapril'),
@@ -638,7 +639,7 @@ class _MedicamentoFormState extends State<_MedicamentoForm> {
                             Row(
                               children: [
                                 Expanded(
-                                  child: _FormField(
+                                  child: AppFormField(
                                     controller: _dosisCtrl,
                                     label: context.t.text('Dosis'),
                                     hint: context.t.text('Ej: 10 mg'),
@@ -650,7 +651,7 @@ class _MedicamentoFormState extends State<_MedicamentoForm> {
                                 ),
                                 const SizedBox(width: AppSpacing.sm),
                                 Expanded(
-                                  child: _FormField(
+                                  child: AppFormField(
                                     controller: _stockCtrl,
                                     label: context.t.text('Stock'),
                                     hint: context.t.text('Unidades'),
@@ -664,7 +665,7 @@ class _MedicamentoFormState extends State<_MedicamentoForm> {
                               ],
                             ),
                             const SizedBox(height: AppSpacing.sm),
-                            _FormField(
+                            AppFormField(
                               controller: _stockMinimoCtrl,
                               label: context.t.text('Stock mínimo'),
                               hint: context.t.text('Ej: 7'),
@@ -676,7 +677,7 @@ class _MedicamentoFormState extends State<_MedicamentoForm> {
                       ),
                       const SizedBox(height: AppSpacing.lg),
 
-                      _FormSection(
+                      AppFormSection(
                         title: context.t.text('Frecuencia'),
                         compact: isCompactHeight,
                         child: Column(
@@ -697,7 +698,7 @@ class _MedicamentoFormState extends State<_MedicamentoForm> {
                             ),
                             if (_frecuenciaPatron == 'cadaDias') ...[
                               const SizedBox(height: AppSpacing.md),
-                              _FormField(
+                              AppFormField(
                                 controller: _intervaloDiasCtrl,
                                 label: context.t.text('Cada cuántos días'),
                                 hint: context.t.text('Ej: 2 (día sí, día no)'),
@@ -734,7 +735,7 @@ class _MedicamentoFormState extends State<_MedicamentoForm> {
                       ),
                       const SizedBox(height: AppSpacing.lg),
 
-                      _FormSection(
+                      AppFormSection(
                         title: context.t.text('Toma'),
                         compact: isCompactHeight,
                         child: Column(
@@ -791,7 +792,7 @@ class _MedicamentoFormState extends State<_MedicamentoForm> {
                               ),
                             ),
                             const SizedBox(height: AppSpacing.sm),
-                            _FormField(
+                            AppFormField(
                               controller: _instruccionesCtrl,
                               label: context.t.text('Instrucciones (opcional)'),
                               hint: context.t.text(
@@ -806,10 +807,10 @@ class _MedicamentoFormState extends State<_MedicamentoForm> {
                       ),
                       const SizedBox(height: AppSpacing.lg),
 
-                      _FormSection(
+                      AppFormSection(
                         title: context.t.text('Notas'),
                         compact: isCompactHeight,
-                        child: _FormField(
+                        child: AppFormField(
                           controller: _notasCtrl,
                           label: context.t.text('Notas (opcional)'),
                           hint: context.t.text(
@@ -822,7 +823,7 @@ class _MedicamentoFormState extends State<_MedicamentoForm> {
                       ),
                       const SizedBox(height: AppSpacing.lg),
 
-                      _FormSection(
+                      AppFormSection(
                         title: context.t.text('Apariencia'),
                         compact: isCompactHeight,
                         child: Column(
@@ -977,90 +978,6 @@ class _MedicamentoFormState extends State<_MedicamentoForm> {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _FormField extends StatelessWidget {
-  final TextEditingController controller;
-  final String label, hint;
-  final int maxLines;
-  final TextInputType keyboardType;
-  final String? Function(String?)? validator;
-  final bool compact;
-  final bool secondary;
-
-  const _FormField({
-    required this.controller,
-    required this.label,
-    required this.hint,
-    this.maxLines = 1,
-    this.keyboardType = TextInputType.text,
-    this.validator,
-    this.compact = false,
-    this.secondary = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: AppTextStyles.label.copyWith(
-            color: secondary ? AppColors.textTertiary : AppColors.textSecondary,
-          ),
-        ),
-        SizedBox(height: compact ? 4 : 6),
-        TextFormField(
-          controller: controller,
-          maxLines: maxLines,
-          keyboardType: keyboardType,
-          validator: validator,
-          autovalidateMode: AutovalidateMode.onUserInteraction,
-          style: AppTextStyles.body,
-          decoration: InputDecoration(
-            hintText: hint,
-            contentPadding: EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: maxLines > 1
-                  ? (compact ? 14 : 16)
-                  : (compact ? 14 : 18),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _FormSection extends StatelessWidget {
-  final String title;
-  final Widget child;
-  final bool compact;
-
-  const _FormSection({
-    required this.title,
-    required this.child,
-    this.compact = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: AppTextStyles.overline.copyWith(
-            color: AppColors.textTertiary,
-            letterSpacing: 1.0,
-          ),
-        ),
-        SizedBox(height: compact ? AppSpacing.sm : AppSpacing.md),
-        child,
-      ],
     );
   }
 }

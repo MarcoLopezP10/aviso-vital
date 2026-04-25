@@ -4,6 +4,7 @@ import 'package:aviso_vital_2/app/router/app_routes.dart';
 import 'package:aviso_vital_2/core/services/pdf_export_service.dart';
 import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
+import 'package:aviso_vital_2/shared/widgets/form_widgets.dart';
 import 'package:aviso_vital_2/shared/widgets/shared_widgets.dart';
 import 'package:aviso_vital_2/shared/widgets/content_widgets.dart';
 import 'package:aviso_vital_2/data/repositories/appointments_repository.dart';
@@ -536,12 +537,12 @@ class _CitaFormState extends State<_CitaForm> {
                   height: isCompactHeight ? AppSpacing.lg : AppSpacing.xl,
                 ),
 
-                _FormSection(
+                AppFormSection(
                   title: context.t.text('Datos de la cita'),
                   compact: isCompactHeight,
                   child: Column(
                     children: [
-                      _FormField(
+                      AppFormField(
                         controller: _especialidadCtrl,
                         label: context.t.text('Especialidad'),
                         hint: context.t.text('Ej: Cardiología'),
@@ -550,7 +551,7 @@ class _CitaFormState extends State<_CitaForm> {
                             v?.isEmpty == true ? context.t.requiredField : null,
                       ),
                       const SizedBox(height: AppSpacing.md),
-                      _FormField(
+                      AppFormField(
                         controller: _lugarCtrl,
                         label: context.t.text('Centro / Hospital'),
                         hint: context.t.text('Ej: Centro de Salud Norte'),
@@ -559,7 +560,7 @@ class _CitaFormState extends State<_CitaForm> {
                             v?.isEmpty == true ? context.t.requiredField : null,
                       ),
                       const SizedBox(height: AppSpacing.md),
-                      _FormField(
+                      AppFormField(
                         controller: _direccionCtrl,
                         label: context.t.text('Dirección (opcional)'),
                         hint: context.t.text('Ej: Calle Mayor 12, Planta 2'),
@@ -567,7 +568,7 @@ class _CitaFormState extends State<_CitaForm> {
                         secondary: true,
                       ),
                       const SizedBox(height: AppSpacing.md),
-                      _FormField(
+                      AppFormField(
                         controller: _telefonoCtrl,
                         label: context.t.text('Teléfono (opcional)'),
                         hint: context.t.text('Ej: 912345678'),
@@ -581,13 +582,13 @@ class _CitaFormState extends State<_CitaForm> {
                   height: isCompactHeight ? AppSpacing.lg : AppSpacing.xl,
                 ),
 
-                _FormSection(
+                AppFormSection(
                   title: context.t.text('Programación'),
                   compact: isCompactHeight,
                   child: Row(
                     children: [
                       Expanded(
-                        child: _PickerButton(
+                        child: AppPickerButton(
                           label: context.t.text('Fecha'),
                           value: _fecha != null
                               ? '${_fecha!.day}/${_fecha!.month}/${_fecha!.year}'
@@ -599,7 +600,7 @@ class _CitaFormState extends State<_CitaForm> {
                       ),
                       const SizedBox(width: AppSpacing.sm),
                       Expanded(
-                        child: _PickerButton(
+                        child: AppPickerButton(
                           label: context.t.text('Hora'),
                           value: _hora != null
                               ? '${_hora!.hour.toString().padLeft(2, '0')}:${_hora!.minute.toString().padLeft(2, '0')}'
@@ -616,7 +617,7 @@ class _CitaFormState extends State<_CitaForm> {
                   height: isCompactHeight ? AppSpacing.lg : AppSpacing.xl,
                 ),
 
-                _FormSection(
+                AppFormSection(
                   title: context.t.text('Recordatorios'),
                   compact: isCompactHeight,
                   child: Container(
@@ -636,7 +637,7 @@ class _CitaFormState extends State<_CitaForm> {
                     ),
                     child: Column(
                       children: [
-                        _SwitchRow(
+                        AppSwitchRow(
                           label: context.t.text('24 horas antes'),
                           subtitle: context.t.text(
                             'Aviso previo para preparar la cita',
@@ -649,7 +650,7 @@ class _CitaFormState extends State<_CitaForm> {
                           height: isCompactHeight ? 12 : 16,
                           color: AppColors.surfaceBorder.withValues(alpha: 0.7),
                         ),
-                        _SwitchRow(
+                        AppSwitchRow(
                           label: context.t.text('3 horas antes'),
                           subtitle: context.t.text(
                             'Recordatorio cercano a la salida',
@@ -666,10 +667,10 @@ class _CitaFormState extends State<_CitaForm> {
                   height: isCompactHeight ? AppSpacing.lg : AppSpacing.xl,
                 ),
 
-                _FormSection(
+                AppFormSection(
                   title: context.t.text('Notas'),
                   compact: isCompactHeight,
-                  child: _FormField(
+                  child: AppFormField(
                     controller: _notasCtrl,
                     label: context.t.text('Notas (opcional)'),
                     hint: context.t.text('Ej: Traer resultados del análisis'),
@@ -697,191 +698,4 @@ class _CitaFormState extends State<_CitaForm> {
       ),
     );
   }
-}
-
-class _FormField extends StatelessWidget {
-  final TextEditingController controller;
-  final String label, hint;
-  final int maxLines;
-  final bool compact;
-  final bool secondary;
-  final String? Function(String?)? validator;
-  const _FormField({
-    required this.controller,
-    required this.label,
-    required this.hint,
-    this.maxLines = 1,
-    this.compact = false,
-    this.secondary = false,
-    this.validator,
-  });
-
-  @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(
-        label,
-        style: AppTextStyles.label.copyWith(
-          color: secondary ? AppColors.textTertiary : AppColors.textSecondary,
-          fontSize: compact ? 12 : null,
-        ),
-      ),
-      SizedBox(height: compact ? 4 : 6),
-      TextFormField(
-        controller: controller,
-        maxLines: maxLines,
-        validator: validator,
-        autovalidateMode: AutovalidateMode.onUserInteraction,
-        style: AppTextStyles.body,
-        decoration: InputDecoration(
-          hintText: hint,
-          contentPadding: EdgeInsets.symmetric(
-            horizontal: 14,
-            vertical: maxLines > 1 ? (compact ? 14 : 16) : (compact ? 14 : 18),
-          ),
-        ),
-      ),
-    ],
-  );
-}
-
-class _FormSection extends StatelessWidget {
-  final String title;
-  final Widget child;
-  final bool compact;
-
-  const _FormSection({
-    required this.title,
-    required this.child,
-    this.compact = false,
-  });
-
-  @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(
-        title,
-        style: AppTextStyles.overline.copyWith(
-          color: AppColors.textTertiary,
-          letterSpacing: 0.8,
-        ),
-      ),
-      SizedBox(height: compact ? AppSpacing.xs : AppSpacing.sm),
-      child,
-    ],
-  );
-}
-
-class _PickerButton extends StatelessWidget {
-  final String label, value;
-  final IconData icon;
-  final bool compact;
-  final VoidCallback onTap;
-  const _PickerButton({
-    required this.label,
-    required this.value,
-    required this.icon,
-    this.compact = false,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(
-        label,
-        style: AppTextStyles.label.copyWith(
-          color: AppColors.textSecondary,
-          fontSize: compact ? 12 : null,
-        ),
-      ),
-      SizedBox(height: compact ? 4 : 6),
-      GestureDetector(
-        onTap: onTap,
-        child: Container(
-          width: double.infinity,
-          height: compact ? 50 : 54,
-          padding: EdgeInsets.symmetric(horizontal: compact ? 12 : 14),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: AppRadius.input,
-            border: Border.all(color: AppColors.surfaceBorder),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                icon,
-                color: AppColors.textTertiary,
-                size: compact ? 17 : 18,
-              ),
-              SizedBox(width: compact ? 8 : 10),
-              Expanded(
-                child: Text(
-                  value,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.body.copyWith(
-                    color: AppColors.textPrimary,
-                    fontSize: compact ? 14 : null,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    ],
-  );
-}
-
-class _SwitchRow extends StatelessWidget {
-  final String label;
-  final String? subtitle;
-  final bool value;
-  final bool compact;
-  final ValueChanged<bool> onChanged;
-  const _SwitchRow({
-    required this.label,
-    this.subtitle,
-    required this.value,
-    this.compact = false,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) => Row(
-    crossAxisAlignment: CrossAxisAlignment.center,
-    children: [
-      Expanded(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: AppTextStyles.label.copyWith(
-                color: AppColors.textPrimary,
-                fontSize: compact ? 13 : null,
-              ),
-            ),
-            if (subtitle != null) ...[
-              const SizedBox(height: 2),
-              Text(
-                subtitle!,
-                style: AppTextStyles.caption.copyWith(
-                  color: AppColors.textTertiary,
-                  fontSize: compact ? 11 : null,
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-      Transform.scale(
-        scale: compact ? 0.86 : 0.94,
-        child: Switch(value: value, onChanged: onChanged),
-      ),
-    ],
-  );
 }
