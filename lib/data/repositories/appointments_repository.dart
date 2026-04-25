@@ -121,6 +121,7 @@ class AppointmentsRepository {
 
   Future<void> delete(String id) async {
     await _requireCareRecipientUserId();
+    await SupabaseService.client.from('alertas').delete().eq('id_cita', id);
     await SupabaseService.client.from('citas').delete().eq('id', id);
     _cachedAppointments = _cachedAppointments
         .where((item) => item.id != id)

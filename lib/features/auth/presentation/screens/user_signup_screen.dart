@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:aviso_vital_2/app/router/app_routes.dart';
 import 'package:aviso_vital_2/data/models/models.dart';
 import 'package:aviso_vital_2/data/repositories/auth_repository.dart';
+import 'package:aviso_vital_2/data/repositories/user_repository.dart';
 import 'package:aviso_vital_2/shared/utils/auth_error_mapper.dart';
 import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_form_card.dart';
 import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_hero_card.dart';
 import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_scaffold.dart';
 import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_switch_link.dart';
 import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_text_field.dart';
-import 'package:aviso_vital_2/features/user_home/presentation/screens/home_usuario_screen.dart';
 import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 import 'package:aviso_vital_2/shared/utils/validators.dart';
@@ -26,6 +26,7 @@ class UserSignupScreen extends StatefulWidget {
 
 class _UserSignupScreenState extends State<UserSignupScreen> {
   static const _authRepository = AuthRepository();
+  static const _userRepository = UserRepository();
   final _formKey = GlobalKey<FormState>();
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
@@ -54,12 +55,15 @@ class _UserSignupScreenState extends State<UserSignupScreen> {
         rol: RolUsuario.mayor,
         linkCode: _linkCodeCtrl.text.trim(),
       );
+      final profile = await _userRepository.getSignedInUserProfile(
+        forceRefresh: true,
+      );
 
       if (!mounted) return;
       setState(() => _isLoading = false);
       Navigator.pushNamedAndRemoveUntil(
         context,
-        HomeUsuarioScreen.routeName,
+        _targetRoute(profile),
         (_) => false,
       );
     } catch (error) {
@@ -69,6 +73,13 @@ class _UserSignupScreenState extends State<UserSignupScreen> {
         SnackBar(content: Text(AuthErrorMapper.fromSignup(error))),
       );
     }
+  }
+
+  String _targetRoute(Usuario? profile) {
+    if (profile == null) return AppRoutes.roleSelection;
+    return profile.idAdministrador == null || profile.idAdministrador!.isEmpty
+        ? AppRoutes.codigoManual
+        : AppRoutes.homeUsuario;
   }
 
   @override

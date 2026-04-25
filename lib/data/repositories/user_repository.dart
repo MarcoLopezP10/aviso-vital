@@ -276,39 +276,63 @@ class UserRepository {
       throw StateError('Introduce un código de vinculación válido.');
     }
 
-    final response = await SupabaseService.client.rpc(
-      'link_authenticated_user_by_code',
-      params: {'link_code': normalizedCode},
-    );
+    try {
+      final response = await SupabaseService.client.rpc(
+        'link_authenticated_user_by_code',
+        params: {'link_code': normalizedCode},
+      );
 
-    final row = switch (response) {
-      Map<String, dynamic>() => response,
-      List<dynamic>() when response.isNotEmpty => Map<String, dynamic>.from(
-        response.first as Map,
-      ),
-      _ => null,
-    };
+      final row = switch (response) {
+        Map<String, dynamic>() => response,
+        List<dynamic>() when response.isNotEmpty => Map<String, dynamic>.from(
+          response.first as Map,
+        ),
+        _ => null,
+      };
 
-    if (row == null) {
-      throw StateError('No se pudo completar la vinculación del usuario.');
-    }
+      if (row == null) {
+        throw StateError('No se pudo completar la vinculación del usuario.');
+      }
 
-    final profile = _cacheUser(Usuario.fromJson(row));
-    final admin = await fetchProfileById(profile.idAdministrador ?? '');
-    if (admin != null) {
-      await _appLinkService.saveKnownAdminProfile(admin);
-      await _appLinkService.saveLink(
-        adminCode: normalizedCode,
-        adminId: admin.id,
-        userId: profile.id,
-        displayName: profile.nombre,
+      final profile = _cacheUser(Usuario.fromJson(row));
+      final admin = await fetchProfileById(profile.idAdministrador ?? '');
+      if (admin != null) {
+        await _appLinkService.saveKnownAdminProfile(admin);
+        await _appLinkService.saveLink(
+          adminCode: normalizedCode,
+          adminId: admin.id,
+          userId: profile.id,
+          displayName: profile.nombre,
+        );
+      }
+      if (profile.idAdministrador != null &&
+          profile.idAdministrador!.isNotEmpty) {
+        _cacheLinkedMayor(profile.idAdministrador!, profile);
+      }
+      return profile;
+    } on PostgrestException catch (error) {
+      if (error.code == '42501') {
+        throw StateError(
+          'La vinculación real está bloqueada por permisos de Supabase. '
+          'Ejecuta la migración SQL de enlace por código antes de probar.',
+        );
+      }
+      if (error.code == 'PGRST202' ||
+          (error.message.toLowerCase().contains('function') &&
+              error.message.toLowerCase().contains(
+                'link_authenticated_user_by_code',
+              ))) {
+        throw StateError(
+          'Falta la función SQL link_authenticated_user_by_code en Supabase. '
+          'Aplica la migración nueva y vuelve a intentarlo.',
+        );
+      }
+      rethrow;
+    } catch (_) {
+      throw StateError(
+        'No se pudo completar la vinculación automática con el administrador.',
       );
     }
-    if (profile.idAdministrador != null &&
-        profile.idAdministrador!.isNotEmpty) {
-      _cacheLinkedMayor(profile.idAdministrador!, profile);
-    }
-    return profile;
   }
 
   Future<Usuario?> findLinkedMayorForAdmin(

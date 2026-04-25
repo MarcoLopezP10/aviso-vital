@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:aviso_vital_2/core/services/app_link_service.dart';
 import 'package:aviso_vital_2/core/services/supabase_service.dart';
 import 'package:aviso_vital_2/data/models/models.dart';
@@ -64,6 +65,19 @@ class AuthRepository {
       );
     }
 
+    final normalizedLinkCode = linkCode?.trim();
+    if (rol == RolUsuario.mayor && normalizedLinkCode?.isNotEmpty == true) {
+      final admin = await userRepository.findAdminByLinkCode(
+        normalizedLinkCode!,
+        forceRefresh: true,
+      );
+      if (admin == null) {
+        throw StateError(
+          'No se encontró ningún administrador con ese código de vinculación.',
+        );
+      }
+    }
+
     final generatedName = _nameFromEmail(email);
     final response = await SupabaseService.client.auth.signUp(
       email: email,
@@ -86,8 +100,17 @@ class AuthRepository {
       );
       if (rol == RolUsuario.administrador) {
         await appLinkService.saveKnownAdminProfile(profile);
-      } else if (linkCode != null && linkCode.trim().isNotEmpty) {
-        await userRepository.linkCurrentMayorToAdminByCode(linkCode);
+      } else if (normalizedLinkCode?.isNotEmpty == true) {
+        try {
+          await userRepository.linkCurrentMayorToAdminByCode(
+            normalizedLinkCode!,
+          );
+        } catch (error, stackTrace) {
+          debugPrint(
+            'AuthRepository.signUp: automatic link failed after signup: $error',
+          );
+          debugPrintStack(stackTrace: stackTrace);
+        }
       }
     }
 

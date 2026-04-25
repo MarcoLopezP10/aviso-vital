@@ -8,6 +8,7 @@ import 'package:aviso_vital_2/data/repositories/medications_repository.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
 import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 import 'package:aviso_vital_2/shared/utils/alert_formatters.dart';
+import 'package:aviso_vital_2/shared/utils/medication_scheduler.dart';
 import 'package:aviso_vital_2/shared/widgets/shared_widgets.dart';
 
 /// Pantalla: Alerta de Medicación — flujo principal de Carmen
@@ -215,7 +216,14 @@ class _AlertaMedicacionScreenState extends State<AlertaMedicacionScreen>
       dose: dose,
       medication: med,
       currentHour: currentHour,
-      nextDoseLabel: _formatNextDose(_nextDoseDatetime(med, now), now),
+      nextDoseLabel: _formatNextDose(
+        MedicationScheduler.nextScheduledDatetime(
+          med,
+          now,
+          minimumLookaheadDays: AppDurations.medicationLookaheadDays,
+        ),
+        now,
+      ),
       userFirstName:
           (contextData.careRecipientProfile ?? contextData.viewerProfile)
               ?.nombre
@@ -224,64 +232,6 @@ class _AlertaMedicacionScreenState extends State<AlertaMedicacionScreen>
           '',
     );
   }
-
-  /// Finds the next scheduled DateTime for [medication] after [from].
-  DateTime? _nextDoseDatetime(Medicamento medication, DateTime from) {
-    final horas =
-        medication.horasToma
-            .map((h) => h.trim())
-            .where((h) => h.isNotEmpty)
-            .toList(growable: true)
-          ..sort((a, b) => _minutesForHour(a) - _minutesForHour(b));
-    if (horas.isEmpty) return null;
-
-    final fromMinutes = from.hour * 60 + from.minute;
-    final today = DateTime(from.year, from.month, from.day);
-
-    // Remaining hours today (only if today is a scheduled day)
-    if (_shouldTakeOnDay(medication, from)) {
-      for (final hour in horas) {
-        if (_minutesForHour(hour) > fromMinutes) {
-          return _dateForHour(today, hour);
-        }
-      }
-    }
-
-    // Search up to 14 days ahead
-    for (var i = 1; i <= 14; i++) {
-      final candidate = from.add(Duration(days: i));
-      if (_shouldTakeOnDay(medication, candidate)) {
-        return _dateForHour(
-          DateTime(candidate.year, candidate.month, candidate.day),
-          horas.first,
-        );
-      }
-    }
-
-    return null;
-  }
-
-  bool _shouldTakeOnDay(Medicamento medication, DateTime date) {
-    return switch (medication.frecuencia) {
-      FrecuenciaMed.diasSemana =>
-        medication.diasSemana.isEmpty
-            ? true
-            : medication.diasSemana.contains(date.weekday),
-      FrecuenciaMed.cadaDias => () {
-        if (medication.intervaloDias <= 1) return true;
-        final anchor = DateTime(
-          medication.fechaCreacion.year,
-          medication.fechaCreacion.month,
-          medication.fechaCreacion.day,
-        );
-        final target = DateTime(date.year, date.month, date.day);
-        final diff = target.difference(anchor).inDays;
-        return diff >= 0 && diff % medication.intervaloDias == 0;
-      }(),
-      _ => true,
-    };
-  }
-
   String _formatNextDose(DateTime? next, DateTime now) {
     if (next == null) return '--:--';
     final strings = AppStrings.current;
@@ -293,20 +243,6 @@ class _AlertaMedicacionScreenState extends State<AlertaMedicacionScreen>
     return strings.weekdayDayAt(next, hourStr);
   }
 
-  DateTime _dateForHour(DateTime date, String value) {
-    final parts = value.split(':');
-    final hour = int.tryParse(parts.firstOrNull ?? '') ?? 0;
-    final minute = int.tryParse(parts.length > 1 ? parts[1] : '') ?? 0;
-    return DateTime(date.year, date.month, date.day, hour, minute);
-  }
-
-  int _minutesForHour(String value) {
-    final parts = value.split(':');
-    if (parts.length != 2) return 0;
-    final hour = int.tryParse(parts[0]) ?? 0;
-    final minute = int.tryParse(parts[1]) ?? 0;
-    return (hour * 60) + minute;
-  }
 }
 
 class _MedicationAlertData {
@@ -1034,4 +970,3 @@ class _ConfirmedMedicationView extends StatelessWidget {
     );
   }
 }
-
