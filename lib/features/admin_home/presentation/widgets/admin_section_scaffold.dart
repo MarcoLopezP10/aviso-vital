@@ -52,8 +52,13 @@ class AdminSectionScaffold extends StatelessWidget {
       secondaryGlowAlignment: secondaryGlowAlignment,
       intensity: intensity,
       body: SafeArea(
-        child: Column(
-          children: [
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              maxWidth: AppBreakpoints.contentMaxWidthWide,
+            ),
+            child: Column(
+              children: [
             Padding(
               padding: EdgeInsets.all(headerPadding),
               child: Column(
@@ -69,11 +74,18 @@ class AdminSectionScaffold extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(context.t.text(title), style: titleStyle),
+                            Text(
+                              context.t.text(title),
+                              style: titleStyle,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                             const SizedBox(height: 2),
                             Text(
                               context.t.text(subtitle),
                               style: AppTextStyles.bodySmall,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ],
                         ),
@@ -100,7 +112,9 @@ class AdminSectionScaffold extends StatelessWidget {
               ),
             ),
             Expanded(child: body),
-          ],
+              ],
+            ),
+          ),
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,

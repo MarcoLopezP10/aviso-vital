@@ -90,67 +90,79 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
   }
 
   Widget _buildLoadedState({required _UserHomeViewData data}) {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final hPad = screenWidth < AppBreakpoints.mobile
+        ? AppSpacing.lg
+        : AppSpacing.xxl;
+
     return RefreshIndicator(
       onRefresh: () => _reloadViewData(forceRefresh: true),
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl),
+      child: Center(
         child: ConstrainedBox(
-          constraints: BoxConstraints(
-            minHeight:
-                MediaQuery.of(context).size.height -
-                MediaQuery.of(context).padding.top,
+          constraints: const BoxConstraints(
+            maxWidth: AppBreakpoints.contentMaxWidthNarrow,
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: AppSpacing.xl),
-
-              // ── ZONA A: Header ──────────────────────────────────────
-              UserHomeHeader(
-                greeting: data.greeting,
-                dateLabel: data.dateLabel,
-                avatarInitial: data.avatarInitial,
-                trailing: _LogoutButton(onPressed: _handleUserAreaBack),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: EdgeInsets.symmetric(horizontal: hPad),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight:
+                    MediaQuery.of(context).size.height -
+                    MediaQuery.of(context).padding.top,
               ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: AppSpacing.xl),
 
-              if (data.totalCount > 0) ...[
-                const SizedBox(height: AppSpacing.lg),
-                DailyProgressCard(
-                  confirmed: data.confirmedCount,
-                  total: data.totalCount,
-                  pending: data.pendingCount,
-                ),
-              ],
+                  // ── ZONA A: Header ──────────────────────────────────────
+                  UserHomeHeader(
+                    greeting: data.greeting,
+                    dateLabel: data.dateLabel,
+                    avatarInitial: data.avatarInitial,
+                    trailing: _LogoutButton(onPressed: _handleUserAreaBack),
+                  ),
 
-              const SizedBox(height: AppSpacing.xxl),
+                  if (data.totalCount > 0) ...[
+                    const SizedBox(height: AppSpacing.lg),
+                    DailyProgressCard(
+                      confirmed: data.confirmedCount,
+                      total: data.totalCount,
+                      pending: data.pendingCount,
+                    ),
+                  ],
 
-              // ── ZONA B: Próxima medicación ──────────────────────────
-              _SectionLabel(context.t.nextMedication),
-              const SizedBox(height: AppSpacing.sm),
-              if (data.nextMedication != null)
-                NextMedicationCard(
-                  medication: data.nextMedication!,
-                  timeLabel: data.nextMedicationTime,
-                )
-              else
-                const _EmptyMedicationCard(),
+                  const SizedBox(height: AppSpacing.xxl),
 
-              const SizedBox(height: AppSpacing.xxl),
+                  // ── ZONA B: Próxima medicación ──────────────────────────
+                  _SectionLabel(context.t.nextMedication),
+                  const SizedBox(height: AppSpacing.sm),
+                  if (data.nextMedication != null)
+                    NextMedicationCard(
+                      medication: data.nextMedication!,
+                      timeLabel: data.nextMedicationTime,
+                    )
+                  else
+                    const _EmptyMedicationCard(),
 
-              // ── ZONA C: Próxima cita (solo si existe) ───────────────
-              if (data.todayAppointment != null) ...[
-                _SectionLabel(context.t.nextAppointment),
-                const SizedBox(height: AppSpacing.sm),
-                NextAppointmentCard(appointment: data.todayAppointment),
-                const SizedBox(height: AppSpacing.xxl),
-              ],
+                  const SizedBox(height: AppSpacing.xxl),
 
-              // ── ZONA D: Botón simulador ─────────────────────────────
-              _SimulationButtonCard(onTap: _openSimulation),
+                  // ── ZONA C: Próxima cita (solo si existe) ───────────────
+                  if (data.todayAppointment != null) ...[
+                    _SectionLabel(context.t.nextAppointment),
+                    const SizedBox(height: AppSpacing.sm),
+                    NextAppointmentCard(appointment: data.todayAppointment),
+                    const SizedBox(height: AppSpacing.xxl),
+                  ],
 
-              const SizedBox(height: AppSpacing.xxl),
-            ],
+                  // ── ZONA D: Botón simulador ─────────────────────────────
+                  _SimulationButtonCard(onTap: _openSimulation),
+
+                  const SizedBox(height: AppSpacing.xxl),
+                ],
+              ),
+            ),
           ),
         ),
       ),

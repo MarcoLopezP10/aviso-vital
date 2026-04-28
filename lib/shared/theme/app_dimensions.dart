@@ -1,6 +1,35 @@
 import 'package:flutter/material.dart';
 import 'app_colors.dart';
 
+/// AppBreakpoints — fuente única de verdad para breakpoints responsive.
+///
+/// Uso: AppBreakpoints.isTablet(context) → true si ancho < 700.
+abstract class AppBreakpoints {
+  /// Móvil compacto: ≤ 480 pt (iPhone SE, Android pequeño)
+  static const double mobile = 480.0;
+
+  /// Tablet / navegador móvil: < 700 pt
+  static const double tablet = 700.0;
+
+  /// Escritorio: ≥ 1024 pt
+  static const double desktop = 1024.0;
+
+  /// Ancho máximo para contenido centrado en escritorio (pantallas usuario/auth)
+  static const double contentMaxWidthNarrow = 600.0;
+
+  /// Ancho máximo para contenido centrado en escritorio (admin)
+  static const double contentMaxWidthWide = 900.0;
+
+  static bool isMobile(BuildContext context) =>
+      MediaQuery.sizeOf(context).width < mobile;
+
+  static bool isTablet(BuildContext context) =>
+      MediaQuery.sizeOf(context).width < tablet;
+
+  static bool isDesktop(BuildContext context) =>
+      MediaQuery.sizeOf(context).width >= desktop;
+}
+
 /// AppSpacing — sistema de espaciado en múltiplos de 4
 abstract class AppSpacing {
   static const double xs = 4.0;

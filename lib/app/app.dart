@@ -37,6 +37,18 @@ class AvisoVitalApp extends StatelessWidget {
             GlobalCupertinoLocalizations.delegate,
             GlobalWidgetsLocalizations.delegate,
           ],
+          builder: (context, child) {
+            final scale = MediaQuery.of(context)
+                .textScaler
+                .scale(1.0)
+                .clamp(1.0, 1.3);
+            return MediaQuery(
+              data: MediaQuery.of(context).copyWith(
+                textScaler: TextScaler.linear(scale),
+              ),
+              child: child!,
+            );
+          },
           home: const _AppBootstrapScreen(),
           onGenerateRoute: AppRouter.onGenerateRoute,
         );

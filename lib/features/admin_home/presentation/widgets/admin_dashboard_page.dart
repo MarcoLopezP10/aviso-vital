@@ -197,14 +197,21 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                 });
                 await future;
               },
-              child: SingleChildScrollView(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    maxWidth: AppBreakpoints.contentMaxWidthWide,
+                  ),
+                  child: SingleChildScrollView(
                 padding: EdgeInsets.fromLTRB(
                   isWide ? AppSpacing.xxl : AppSpacing.xl,
                   isWide ? AppSpacing.xxl : AppSpacing.xl,
                   isWide ? AppSpacing.xxl : AppSpacing.xl,
-                  // Sin bottom nav en layout wide; con bottom nav añadir su
-                  // altura + margen suficiente para el último card
-                  isWide ? AppSpacing.xxl : kBottomNavigationBarHeight + 80,
+                  isWide
+                      ? AppSpacing.xxl
+                      : kBottomNavigationBarHeight +
+                            MediaQuery.of(context).padding.bottom +
+                            AppSpacing.xxl,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -265,6 +272,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                     ),
                     const SizedBox(height: AppSpacing.xl),
                   ],
+                ),
+              ),
                 ),
               ),
             );

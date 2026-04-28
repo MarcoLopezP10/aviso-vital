@@ -24,11 +24,37 @@ class NextMedicationCard extends StatelessWidget {
     final instructions = medication.instrucciones?.trim();
     final doseLabel = _doseLabel(medication.dosis);
 
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final w = constraints.maxWidth;
+        final nameFontSize = (w / 10).clamp(24.0, 36.0);
+        final timeFontSize = (w / 9).clamp(28.0, 40.0);
+        final minHeight = w < 340 ? 180.0 : 214.0;
+        return _buildCard(
+          context,
+          instructions: instructions,
+          doseLabel: doseLabel,
+          nameFontSize: nameFontSize,
+          timeFontSize: timeFontSize,
+          minHeight: minHeight,
+        );
+      },
+    );
+  }
+
+  Widget _buildCard(
+    BuildContext context, {
+    required String? instructions,
+    required String doseLabel,
+    required double nameFontSize,
+    required double timeFontSize,
+    required double minHeight,
+  }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: double.infinity,
-        constraints: const BoxConstraints(minHeight: 214),
+        constraints: BoxConstraints(minHeight: minHeight),
         padding: const EdgeInsets.fromLTRB(22, 20, 22, 20),
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -114,7 +140,7 @@ class NextMedicationCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: AppTextStyles.userMedName.copyWith(
                           color: AppColors.textPrimary,
-                          fontSize: 36,
+                          fontSize: nameFontSize,
                           fontWeight: FontWeight.w800,
                           height: 1.02,
                           letterSpacing: 0,
@@ -153,7 +179,7 @@ class NextMedicationCard extends StatelessWidget {
                         timeLabel,
                         style: AppTextStyles.display1.copyWith(
                           color: AppColors.amber,
-                          fontSize: 40,
+                          fontSize: timeFontSize,
                           fontWeight: FontWeight.w800,
                           height: 0.98,
                           letterSpacing: 0,
