@@ -6,7 +6,6 @@ import 'package:aviso_vital_2/data/repositories/user_repository.dart';
 import 'package:aviso_vital_2/shared/utils/auth_error_mapper.dart';
 import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_form_card.dart';
 import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_hero_card.dart';
-import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_password_reset_dialog.dart';
 import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_scaffold.dart';
 import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_switch_link.dart';
 import 'package:aviso_vital_2/features/auth/presentation/widgets/auth_text_field.dart';
@@ -76,14 +75,6 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
     }
   }
 
-  Future<void> _openPasswordReset() {
-    return showAuthPasswordResetDialog(
-      context,
-      authRepository: _authRepository,
-      initialEmail: _emailCtrl.text,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final strings = context.t;
@@ -150,23 +141,6 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
                       if (v.length < 6) return strings.minSixChars;
                       return null;
                     },
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: _openPasswordReset,
-                      style: TextButton.styleFrom(
-                        minimumSize: const Size(48, 42),
-                        padding: const EdgeInsets.symmetric(horizontal: 6),
-                      ),
-                      child: Text(
-                        strings.forgotPassword,
-                        style: AppTextStyles.label.copyWith(
-                          color: AppColors.amberLight,
-                        ),
-                      ),
-                    ),
                   ),
                 ],
               ),

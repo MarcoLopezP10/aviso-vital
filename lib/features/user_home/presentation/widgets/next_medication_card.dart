@@ -80,10 +80,23 @@ class NextMedicationCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                PillVisual(
-                  color: medication.colorPastilla,
-                  shape: _toFormShape(medication.formaPastilla),
-                  size: 42,
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(999),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.45),
+                        blurRadius: 10,
+                        spreadRadius: 1,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: PillVisual(
+                    color: medication.colorPastilla,
+                    shape: _toFormShape(medication.formaPastilla),
+                    size: 42,
+                  ),
                 ),
               ],
             ),

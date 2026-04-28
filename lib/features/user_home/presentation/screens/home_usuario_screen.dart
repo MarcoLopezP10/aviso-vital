@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:aviso_vital_2/app/router/app_route_args.dart';
 import 'package:aviso_vital_2/app/router/app_routes.dart';
 import 'package:aviso_vital_2/core/services/care_plan_context_service.dart';
 import 'package:aviso_vital_2/core/services/realtime_service.dart';
@@ -9,8 +8,6 @@ import 'package:aviso_vital_2/data/models/models.dart';
 import 'package:aviso_vital_2/data/repositories/auth_repository.dart';
 import 'package:aviso_vital_2/data/repositories/appointments_repository.dart';
 import 'package:aviso_vital_2/data/repositories/medications_repository.dart';
-import 'package:aviso_vital_2/features/alerts/presentation/screens/alerta_cita_screen.dart';
-import 'package:aviso_vital_2/features/alerts/presentation/screens/alerta_medicacion_screen.dart';
 import 'package:aviso_vital_2/features/user_home/presentation/widgets/daily_progress_card.dart';
 import 'package:aviso_vital_2/features/user_home/presentation/widgets/next_appointment_card.dart';
 import 'package:aviso_vital_2/features/user_home/presentation/widgets/next_medication_card.dart';
@@ -135,7 +132,6 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
                 NextMedicationCard(
                   medication: data.nextMedication!,
                   timeLabel: data.nextMedicationTime,
-                  onTap: _openMedicationAlert,
                 )
               else
                 const _EmptyMedicationCard(),
@@ -146,10 +142,7 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
               if (data.todayAppointment != null) ...[
                 _SectionLabel(context.t.nextAppointment),
                 const SizedBox(height: AppSpacing.sm),
-                NextAppointmentCard(
-                  appointment: data.todayAppointment,
-                  onTap: () => _openAppointmentAlert(data.todayAppointment!.id),
-                ),
+                NextAppointmentCard(appointment: data.todayAppointment),
                 const SizedBox(height: AppSpacing.xxl),
               ],
 
@@ -195,22 +188,6 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
       setState(() => _viewDataFuture = future);
     }
     return future;
-  }
-
-  Future<void> _openMedicationAlert() async {
-    await Navigator.pushNamed(context, AlertaMedicacionScreen.routeName);
-    if (!mounted) return;
-    await _reloadViewData(forceRefresh: true);
-  }
-
-  Future<void> _openAppointmentAlert(String appointmentId) async {
-    await Navigator.pushNamed(
-      context,
-      AlertaCitaScreen.routeName,
-      arguments: AlertaCitaRouteArgs(appointmentId: appointmentId),
-    );
-    if (!mounted) return;
-    await _reloadViewData(forceRefresh: true);
   }
 
   Future<void> _openSimulation() async {

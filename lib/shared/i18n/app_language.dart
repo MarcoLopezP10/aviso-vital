@@ -333,12 +333,12 @@ class AppStrings {
   String get dailySupport => isEnglish ? 'Daily support' : 'Apoyo diario';
   String get selectProfile =>
       isEnglish ? 'Select your profile' : 'Seleccione su perfil';
-  String get userRoleTitle => isEnglish ? 'I am a user' : 'Soy usuario';
+  String get userRoleTitle => isEnglish ? 'User' : 'Usuario';
   String get userRoleSubtitle => isEnglish
       ? 'I receive reminders and alerts'
       : 'Recibo recordatorios y avisos';
   String get adminRoleTitle =>
-      isEnglish ? 'I am an administrator' : 'Soy administrador';
+      isEnglish ? 'Administrator' : 'Administrador';
   String get adminRoleSubtitle => isEnglish
       ? 'I manage medication and appointments'
       : 'Gestiono medicación y citas';
@@ -416,8 +416,8 @@ class AppStrings {
       ? 'Enter the administrator code'
       : 'Introduzca el código del administrador';
   String get adminCodeLength => isEnglish
-      ? 'Use 6 characters or the full 8-character code with AV'
-      : 'Use 6 caracteres o el código completo de 8 con AV';
+      ? 'Enter the 6-character code (e.g. AV-1234)'
+      : 'Introduce el código de 6 caracteres (ej. AV-1234)';
   String get createUserAccount =>
       isEnglish ? 'Create user account' : 'Crear cuenta de usuario';
   String get accountCreated => isEnglish

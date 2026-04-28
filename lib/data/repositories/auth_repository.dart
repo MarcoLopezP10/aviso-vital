@@ -66,17 +66,6 @@ class AuthRepository {
     }
 
     final normalizedLinkCode = linkCode?.trim();
-    if (rol == RolUsuario.mayor && normalizedLinkCode?.isNotEmpty == true) {
-      final admin = await userRepository.findAdminByLinkCode(
-        normalizedLinkCode!,
-        forceRefresh: true,
-      );
-      if (admin == null) {
-        throw StateError(
-          'No se encontró ningún administrador con ese código de vinculación.',
-        );
-      }
-    }
 
     final generatedName = _nameFromEmail(email);
     final response = await SupabaseService.client.auth.signUp(

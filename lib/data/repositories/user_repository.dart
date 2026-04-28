@@ -583,14 +583,13 @@ class UserRepository {
 
   Future<String> _generateUniqueLinkCode() async {
     const prefix = 'AV';
-    // Unambiguous alphanumeric charset (no 0/O, 1/I/L confusion)
-    const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
     final random = Random.secure();
 
-    for (var attempt = 0; attempt < 8; attempt++) {
+    for (var attempt = 0; attempt < 10; attempt++) {
+      // Format: AV + 4 digits → displayed as AV-XXXX (e.g. AV-3847)
       final suffix = List.generate(
-        6,
-        (_) => chars[random.nextInt(chars.length)],
+        4,
+        (_) => random.nextInt(10).toString(),
       ).join();
       final code = '$prefix$suffix';
       final match = await SupabaseService.client
@@ -601,8 +600,8 @@ class UserRepository {
       if (match == null) return code;
     }
 
-    // Last resort: microsecond timestamp in base-36
-    return '$prefix${DateTime.now().microsecondsSinceEpoch.toRadixString(36).toUpperCase().padLeft(8, '0').substring(0, 8)}';
+    // Last resort: timestamp-based 4-digit suffix
+    return '$prefix${(DateTime.now().millisecondsSinceEpoch % 10000).toString().padLeft(4, '0')}';
   }
 
   Future<Usuario?> _findKnownAdminLocally(String normalizedCode) async {

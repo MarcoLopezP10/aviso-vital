@@ -372,7 +372,7 @@ class _MedicationAlertView extends StatelessWidget {
                         SizedBox(height: veryCompact ? 10 : 14),
                         _GlowHeaderIcon(
                           pulseAnim: pulseAnim,
-                          color: AppColors.amberLight,
+                          color: med.colorPastilla,
                           shape: formShapeFor(med.formaPastilla),
                           compact: true,
                         ),
@@ -496,8 +496,8 @@ class _GlowHeaderIcon extends StatelessWidget {
           borderRadius: BorderRadius.circular(999),
           gradient: RadialGradient(
             colors: [
-              AppColors.amber.withValues(alpha: 0.12),
-              AppColors.amber.withValues(alpha: 0.05),
+              color.withValues(alpha: 0.12),
+              color.withValues(alpha: 0.05),
               Colors.transparent,
             ],
             stops: const [0, 0.35, 1],

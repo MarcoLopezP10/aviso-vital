@@ -369,10 +369,10 @@ class _MedicamentoFormState extends State<_MedicamentoForm> {
   final _notasCtrl = TextEditingController();
   final _intervaloDiasCtrl = TextEditingController(text: '2');
   int _tomasAlDia = 1;
-  List<String> _horasToma = const ['09:00'];
+  List<String> _horasToma = ['09:00'];
   // Frequency pattern — 'daily' | 'cadaDias' | 'diasSemana'
   String _frecuenciaPatron = 'daily';
-  List<int> _diasSemana = const [];
+  List<int> _diasSemana = [];
   bool _isLoading = false;
 
   @override
