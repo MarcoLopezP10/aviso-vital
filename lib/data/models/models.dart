@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 
 // ════════════════════════════════════════════════════════════════════
 // MODELOS DE DATOS — Aviso Vital
@@ -302,13 +303,22 @@ class Medicamento {
       horasToma.where((item) => item.trim().isNotEmpty).length;
   String get resumenTomas {
     final count = tomasAlDia;
-    final countLabel = count == 1 ? '1 toma' : '$count tomas';
+    final en = AppLocaleController.instance.current == AppLanguage.en;
+    final doseLabel = en
+        ? (count == 1 ? '1 dose' : '$count doses')
+        : (count == 1 ? '1 toma' : '$count tomas');
     return switch (frecuencia) {
-      FrecuenciaMed.cadaDias => '$countLabel cada $intervaloDias días',
+      FrecuenciaMed.cadaDias => en
+          ? '$doseLabel every $intervaloDias days'
+          : '$doseLabel cada $intervaloDias días',
       FrecuenciaMed.diasSemana => diasSemana.isEmpty
-          ? '$countLabel diarias'
-          : '$countLabel · ${diasSemana.length} días/sem',
-      _ => count == 1 ? '1 toma al dia' : '$count tomas al dia',
+          ? (en ? '$doseLabel daily' : '$doseLabel diarias')
+          : (en
+              ? '$doseLabel · ${diasSemana.length} days/week'
+              : '$doseLabel · ${diasSemana.length} días/sem'),
+      _ => en
+          ? (count == 1 ? '1 dose per day' : '$count doses per day')
+          : (count == 1 ? '1 toma al día' : '$count tomas al día'),
     };
   }
 

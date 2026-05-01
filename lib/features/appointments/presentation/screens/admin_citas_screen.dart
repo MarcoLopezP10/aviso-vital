@@ -145,7 +145,6 @@ class _AdminCitasScreenState extends State<AdminCitasScreen> {
   Widget build(BuildContext context) {
     final lista = _citasFiltradas;
     final allAppointments = _citas;
-    final user = _userRepository.getCurrentUser();
     final citasHoy = allAppointments.where((c) => c.esHoy).length;
     final proximas = allAppointments
         .where((c) => !c.esPasada && !c.esHoy)
@@ -158,10 +157,7 @@ class _AdminCitasScreenState extends State<AdminCitasScreen> {
 
     return AdminSectionScaffold(
       title: context.t.text('Citas Médicas'),
-      subtitle: context.t.registeredCount(
-        upcoming,
-        context.t.displayName(user.nombre),
-      ),
+      subtitle: context.t.upcomingAppointmentsCount(upcoming),
       onBack: widget.showBackButton ? () => Navigator.maybePop(context) : null,
       compactHeader: true,
       headerTrailing: _isExporting

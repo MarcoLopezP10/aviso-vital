@@ -115,6 +115,7 @@ class AppStrings {
     'Correcto': 'Correct',
     'Cita hoy': 'Appointment today',
     'Sin citas': 'No appointments',
+    'CUIDANDO A': 'CARING FOR',
     'Administrador inicial': 'Initial administrator',
     'Citas Médicas': 'Medical appointments',
     'Exportar PDF': 'Export PDF',

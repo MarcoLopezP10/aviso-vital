@@ -1053,7 +1053,10 @@ class _GoogleAuthView extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               if (compactHeader)
-                                Column(
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
                                     Container(
                                       width: 68,
@@ -1100,7 +1103,8 @@ class _GoogleAuthView extends StatelessWidget {
                                       ),
                                     ),
                                   ],
-                                )
+                                ),
+                              )
                               else
                                 Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,

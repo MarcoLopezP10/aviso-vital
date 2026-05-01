@@ -134,16 +134,19 @@ class NextMedicationCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        medication.nombre,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTextStyles.userMedName.copyWith(
-                          color: AppColors.textPrimary,
-                          fontSize: nameFontSize,
-                          fontWeight: FontWeight.w800,
-                          height: 1.02,
-                          letterSpacing: 0,
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          medication.nombre,
+                          maxLines: 1,
+                          style: AppTextStyles.userMedName.copyWith(
+                            color: AppColors.textPrimary,
+                            fontSize: nameFontSize,
+                            fontWeight: FontWeight.w800,
+                            height: 1.02,
+                            letterSpacing: 0,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 6),

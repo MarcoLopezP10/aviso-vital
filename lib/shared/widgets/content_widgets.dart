@@ -553,7 +553,7 @@ class TimelineEventItem extends StatelessWidget {
   (Color, IconData) _iconForAlerta(Alerta a) => switch (a.estado) {
     EstadoAlerta.confirmada => (AppColors.success, Icons.check_circle_outline),
     EstadoAlerta.omitida => (AppColors.danger, Icons.cancel_outlined),
-    EstadoAlerta.expirada => (AppColors.danger, Icons.timer_off_outlined),
+    EstadoAlerta.expirada => (AppColors.textTertiary, Icons.timer_off_outlined),
     EstadoAlerta.vista =>
       a.tipo == TipoAlerta.stockBajo
           ? (AppColors.warning, Icons.warning_amber_outlined)

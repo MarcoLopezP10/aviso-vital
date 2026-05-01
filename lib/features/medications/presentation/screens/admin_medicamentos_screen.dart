@@ -150,16 +150,12 @@ class _AdminMedicamentosScreenState extends State<AdminMedicamentosScreen> {
     final lista = _medicamentosFiltrados;
     final allMedications = _medicamentos;
     final stockBajoCount = allMedications.where((med) => med.stockBajo).length;
-    final user = _userRepository.getCurrentUser();
     final hasBottomNav = !isAdminWideLayout(context);
     final pendingToday = _medicationsRepository.getPendingTodayCount();
 
     return AdminSectionScaffold(
       title: context.t.text('Medicamentos'),
-      subtitle: context.t.activeCount(
-        allMedications.length,
-        context.t.displayName(user.nombre),
-      ),
+      subtitle: context.t.activeMedications(allMedications.length),
       compactHeader: true,
       onBack: widget.showBackButton ? () => Navigator.maybePop(context) : null,
       headerTrailing: _isExporting

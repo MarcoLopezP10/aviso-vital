@@ -9,6 +9,7 @@ class RoleSelectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         const AvisoVitalLogo(size: 84, animate: true, showGlow: true),
         const SizedBox(height: AppSpacing.lg),

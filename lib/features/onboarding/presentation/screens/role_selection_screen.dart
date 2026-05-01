@@ -51,12 +51,13 @@ class RoleSelectionScreen extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 const SizedBox(height: AppSpacing.lg),
-                                const RoleSelectionHeader(),
+                                const Center(child: RoleSelectionHeader()),
                                 const SizedBox(height: AppSpacing.xl),
-                                const RoleSelectionIntro(),
+                                const Center(child: RoleSelectionIntro()),
                                 const Spacer(),
                                 Text(
                                   strings.selectProfile,
+                                  textAlign: TextAlign.center,
                                   style: AppTextStyles.label.copyWith(
                                     color: AppColors.textTertiary,
                                     letterSpacing: 0.3,

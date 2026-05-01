@@ -1,6 +1,6 @@
 # Aviso Vital
 
-Aplicación móvil desarrollada con Flutter orientada a mejorar el seguimiento de medicación y citas médicas en personas mayores, con una experiencia dual para cuidador o familiar administrador y para usuario mayor. El proyecto combina gestión clínica básica, recordatorios, simulación visual del móvil del usuario y soporte tanto para modo local con datos mock como para backend real con Supabase.
+Aplicación Flutter orientada a mejorar el seguimiento de medicación y citas médicas en personas mayores, con una experiencia dual para cuidador o familiar administrador y para usuario mayor. El proyecto combina gestión clínica básica, recordatorios, simulación visual del móvil del usuario, exportación de informes en PDF y soporte tanto para modo local con datos mock como para backend real con Supabase.
 
 ## Descripción del proyecto
 
@@ -9,9 +9,11 @@ Aviso Vital nace como una app centrada en accesibilidad, claridad visual y tranq
 La aplicación está construida con una arquitectura ligera y mantenible basada en:
 
 - Flutter + Material 3 en modo oscuro.
-- Repositorios para acceso a datos.
+- Repositorios para acceso a datos con caché multinivel.
 - Servicios para contexto de usuario, enlace entre perfiles y simulación en tiempo real.
 - Modelos de dominio desacoplados de la UI.
+- Sistema de internacionalización ES/EN integrado.
+- Diseño responsive para móvil, tablet y escritorio (Vercel Web).
 - Compatibilidad con backend real en Supabase y fallback local con `MockData`.
 
 ## Objetivos funcionales
@@ -19,6 +21,7 @@ La aplicación está construida con una arquitectura ligera y mantenible basada 
 - Registrar y visualizar medicación activa.
 - Programar tomas diarias y controlar su estado.
 - Gestionar citas médicas con recordatorios anticipados.
+- Exportar informes en PDF de medicamentos y citas.
 - Mostrar al cuidador una visión administrativa de la actividad.
 - Mostrar al usuario mayor una interfaz simplificada y accesible.
 - Simular en tiempo real cómo se verían las notificaciones en el móvil de la persona mayor.
@@ -32,10 +35,11 @@ La app está dividida en dos experiencias:
 El administrador puede:
 
 - iniciar sesión o crear cuenta;
-- registrar medicamentos;
-- editar dosis, frecuencia, horas e instrucciones;
+- registrar medicamentos con dosis, frecuencia, color y forma de pastilla;
+- editar dosis, horas e instrucciones;
 - registrar citas médicas;
 - revisar alertas y actividad reciente;
+- exportar informes de medicamentos y citas en PDF;
 - acceder a una simulación del móvil del usuario mayor.
 
 ### 2. Experiencia usuario mayor
@@ -43,7 +47,7 @@ El administrador puede:
 El usuario mayor puede:
 
 - vincularse con un administrador mediante código;
-- ver su próxima medicación;
+- ver su próxima medicación con nombre y hora en gran tamaño;
 - ver su próxima cita médica;
 - consultar el progreso del día;
 - abrir alertas de medicación y citas;
@@ -52,51 +56,55 @@ El usuario mayor puede:
 
 ## Trabajo realizado
 
-Este proyecto ya no es un esqueleto de Flutter: se ha convertido en una aplicación funcional con una capa de dominio clara, rutas definidas, integración con Supabase, soporte local y una UI refinada para el escenario principal.
-
-### Implementación funcional ya desarrollada
+### Implementación funcional
 
 - sistema de selección de rol entre administrador y usuario mayor;
 - autenticación y bootstrap de sesión;
 - vinculación local con administrador mediante código;
-- panel principal para administrador;
+- panel principal para administrador con stats y actividad reciente;
 - gestión de medicamentos;
 - gestión de citas;
 - historial y alertas recientes;
 - home simplificado para usuario mayor;
 - pantallas de detalle para alerta de medicación y alerta de cita;
 - simulación en tiempo real del móvil del usuario;
+- exportación de informes en PDF (medicamentos y citas);
 - fallback de datos con `MockData` cuando no hay backend o sesión;
-- estilo visual dark premium con tema compartido.
+- estilo visual dark premium con tema compartido;
+- internacionalización completa ES/EN;
+- diseño responsive para web, tablet y escritorio.
 
-### Refactorización reciente destacada
+### Refactorización y mejoras recientes
 
-En esta fase se ha hecho una mejora importante del sistema de simulación, del home de usuario y del despliegue web:
+#### Diseño responsive para Vercel Web
 
-- rediseño dark de las tarjetas de notificación del lock screen simulado;
-- uso del logo real de Aviso Vital en la cabecera de las notificaciones;
-- mejora de contraste, jerarquía visual y legibilidad para personas mayores;
-- notificación de medicación centrada en nombre del medicamento y hora, sin dosis en el título;
-- notificación de cita centrada en especialidad, hora y centro/hospital;
-- centro u hospital mostrado con icono de ubicación en la notificación de cita;
-- hora de medicación y cita reforzada visualmente para lectura rápida;
-- texto adaptable en las notificaciones para reducir cortes bruscos cuando el espacio es limitado;
-- duración visible de recordatorios de cita no finales ajustada a `15 minutos`;
-- mantenimiento de la regla de negocio de recordatorios: no aparecen antes de su hora programada;
-- formateo consistente de dosis, por ejemplo `50 mg`;
-- home de usuario mayor rediseñado para priorizar medicamento y hora de próxima toma;
-- botón y tarjetas del home de usuario suavizados para reducir ruido visual;
-- soporte para múltiples notificaciones visibles en la simulación con scroll interno;
-- corrección del comportamiento tras confirmar alertas:
-  - medicación confirmada: desaparece;
-  - cita confirmada de `24h` o `3h`: desaparece;
-  - cita gestionada de `30 min`: se colapsa y permanece hasta la hora real de la cita;
-- conexión de la simulación a Supabase Realtime;
-- refresco forzado sin caché al recibir cambios de tomas, citas, alertas o medicamentos;
-- polling de respaldo cada `30 segundos` para mantener la simulación sincronizada;
-- mejora responsive del móvil simulado para evitar desbordes en pantallas pequeñas;
-- preparación para despliegue en Vercel con build web y rewrites de SPA;
-- actualización de metadata web/PWA para que aparezca como `Aviso Vital`.
+- nuevo `AppBreakpoints` centralizado en `app_dimensions.dart` como fuente única de verdad para breakpoints (`mobile: 480`, `tablet: 700`, `desktop: 1024`);
+- home de usuario mayor: contenido centrado con `maxWidth: 600` y padding horizontal adaptativo;
+- tarjeta de próxima medicación (`NextMedicationCard`): tipografía adaptativa con `LayoutBuilder` — nombre de medicamento de 24 a 36 pt, hora de 28 a 40 pt según ancho disponible; `minHeight` adaptativo para pantallas muy estrechas;
+- pantallas de administrador: contenido centrado con `maxWidth: 900` en `AdminSectionScaffold` y `AdminDashboardPage`;
+- cabeceras de admin con protección `overflow: ellipsis` en título y subtítulo;
+- `MaterialApp` con `TextScaler` clampeado a `[1.0, 1.3]` para proteger el layout con configuraciones de texto grande del sistema;
+- `web/manifest.json`: orientación cambiada a `"any"` para soportar rotación en tablet y escritorio;
+- padding inferior dinámico en el dashboard de admin que incluye `MediaQuery.padding.bottom`.
+
+#### Correcciones en exportación PDF
+
+- `_citaCard`: reemplazado `pw.Table` (que implementa `SpanningWidget` y causaba rectángulos vacíos al final de página) por `pw.Row` + `pw.Expanded`;
+- hora de cita: formato pastilla con `borderRadius: 8`, tipografía 18 pt, eliminada la etiqueta `Hora` redundante;
+- todas las tomas medidas como ítems independientes en `MultiPage.build` para evitar el error `Widget won't fit — height Infinity`;
+- calendario: `pw.Spacer()` reemplazado por `pw.SizedBox` y grid de semanas con altura fija;
+- resumen de adherencia: strip de stats con `pw.Table` y `FlexColumnWidth` en lugar de `pw.Expanded` anidado.
+
+#### Mejoras de UI y texto
+
+- selección de rol: etiquetas simplificadas a `Usuario` y `Administrador` (eliminado el prefijo `Soy`);
+- login de usuario: eliminado el botón `¿Olvidaste tu contraseña?` (solo disponible en el login de administrador);
+- simulación: rediseño dark de tarjetas de lock screen con logo real de Aviso Vital, nombre de medicamento y hora reforzados visualmente.
+
+#### Seguridad y configuración
+
+- `env/dev.json` añadido al `.gitignore` — las credenciales de Supabase nunca se suben al repositorio;
+- el archivo debe existir localmente pero nunca en el historial de git.
 
 ## Arquitectura técnica
 
@@ -108,7 +116,7 @@ La arquitectura del proyecto es deliberadamente sencilla y clara. No se ha intro
 
 Contiene el arranque de la aplicación y el enrutado:
 
-- `lib/app/app.dart`: configura `MaterialApp`, tema global y bootstrap inicial.
+- `lib/app/app.dart`: configura `MaterialApp`, tema global, `TextScaler` clampeado y bootstrap inicial.
 - `lib/app/router/app_router.dart`: resuelve las rutas con `onGenerateRoute`.
 - `lib/app/router/app_routes.dart`: define los nombres de ruta.
 - `lib/app/router/app_transitions.dart`: centraliza transiciones de navegación.
@@ -122,6 +130,7 @@ Servicios transversales:
 - `app_link_service.dart`: persistencia local de la vinculación con administrador mediante `SharedPreferences`.
 - `realtime_service.dart`: suscripción a cambios en Supabase Realtime para `tomas`, `citas`, `alertas` y `medicamentos`.
 - `realtime_simulation_service.dart`: motor que construye el snapshot de notificaciones visibles para la simulación.
+- `pdf_export_service.dart`: generación de informes PDF de medicamentos y citas con descarga nativa en web.
 
 #### 3. `data/models/`
 
@@ -173,11 +182,12 @@ La UI está organizada por áreas funcionales:
 
 Recursos reutilizables:
 
-- tema global;
-- dimensiones, radios, sombras y espaciados;
-- widgets compartidos;
-- fondo premium;
-- utilidades de formateo.
+- `theme/app_colors.dart`: sistema de color completo en modo oscuro.
+- `theme/app_dimensions.dart`: `AppBreakpoints`, `AppSpacing`, `AppRadius`, `AppDurations`, `AppShadows`.
+- `theme/app_text_styles.dart`: jerarquía tipográfica centralizada.
+- `i18n/app_language.dart`: internacionalización ES/EN con `AppStrings` y `AppLocaleController`.
+- `widgets/`: widgets compartidos reutilizables.
+- `utils/`: validadores, mapeadores de error y utilidades de formateo.
 
 ## Estructura del proyecto
 
@@ -202,6 +212,7 @@ lib/
 │   ├── onboarding/
 │   └── user_home/
 ├── shared/
+│   ├── i18n/
 │   ├── theme/
 │   ├── utils/
 │   └── widgets/
@@ -296,90 +307,27 @@ Si Supabase no está configurado:
 - la simulación y varios flujos principales siguen funcionando;
 - esto permite demos, desarrollo de UI y pruebas de interacción sin backend.
 
-Este comportamiento híbrido ha sido útil durante el desarrollo para avanzar en diseño, lógica y experiencia sin bloquearse por dependencias externas.
-
 ## Esquema backend esperado
-
-Aunque la app puede funcionar en local con mocks, el modelo está preparado para una persistencia real en Supabase. A nivel conceptual, las tablas principales esperadas son las siguientes:
 
 ### `usuarios`
 
-Campos relevantes:
-
-- `id`
-- `nombre`
-- `email`
-- `rol`
-- `id_administrador`
-- `codigo_vinculacion`
-- `created_at`
-- `notificaciones_activas`
-- `ultima_sincronizacion`
+Campos relevantes: `id`, `nombre`, `email`, `rol`, `id_administrador`, `codigo_vinculacion`, `created_at`, `notificaciones_activas`, `ultima_sincronizacion`.
 
 ### `medicamentos`
 
-Campos relevantes:
-
-- `id`
-- `id_usuario`
-- `nombre`
-- `dosis`
-- `frecuencia`
-- `horas_toma`
-- `stock_actual`
-- `stock_minimo`
-- `color_pastilla`
-- `forma_pastilla`
-- `instrucciones`
-- `notas`
-- `activo`
-- `created_at`
-- `updated_at`
+Campos relevantes: `id`, `id_usuario`, `nombre`, `dosis`, `frecuencia`, `horas_toma`, `stock_actual`, `stock_minimo`, `color_pastilla`, `forma_pastilla`, `instrucciones`, `notas`, `activo`, `created_at`, `updated_at`.
 
 ### `tomas`
 
-Campos relevantes:
-
-- `id`
-- `id_usuario`
-- `id_medicamento`
-- `fecha_programada`
-- `fecha_realizada`
-- `estado`
-- `notas`
-- `created_at`
+Campos relevantes: `id`, `id_usuario`, `id_medicamento`, `fecha_programada`, `fecha_realizada`, `estado`, `notas`, `created_at`.
 
 ### `citas`
 
-Campos relevantes:
-
-- `id`
-- `id_usuario`
-- `especialidad`
-- `lugar`
-- `direccion`
-- `telefono`
-- `fecha`
-- `hora`
-- `estado`
-- `recordatorio_24h`
-- `recordatorio_3h`
-- `notas`
-- `created_at`
+Campos relevantes: `id`, `id_usuario`, `especialidad`, `lugar`, `direccion`, `telefono`, `fecha`, `hora`, `estado`, `recordatorio_24h`, `recordatorio_3h`, `notas`, `created_at`.
 
 ### `alertas`
 
-Campos relevantes:
-
-- `id`
-- `id_usuario`
-- `tipo`
-- `titulo`
-- `mensaje` o `descripcion`
-- `fecha_alerta` o `fecha_hora`
-- `leida` o `estado`
-- `id_medicamento`
-- `id_cita`
+Campos relevantes: `id`, `id_usuario`, `tipo`, `titulo`, `mensaje`, `fecha_hora`, `estado`, `id_medicamento`, `id_cita`.
 
 ### Consideraciones de persistencia
 
@@ -392,172 +340,78 @@ Campos relevantes:
 
 La simulación es una de las piezas más distintivas del proyecto. Su objetivo es representar en pantalla cómo vería una persona mayor las notificaciones activas en su teléfono en un momento real.
 
-### Servicio principal
-
-El motor está en:
-
-- `lib/core/services/realtime_simulation_service.dart`
-
-Este servicio:
+El motor está en `lib/core/services/realtime_simulation_service.dart` y:
 
 - resuelve el contexto del usuario;
-- carga medicamentos, tomas, citas y alertas, con opción de forzar refresco para evitar caché vieja;
+- carga medicamentos, tomas, citas y alertas con opción de forzar refresco;
 - expira tomas atrasadas si han superado la ventana de respuesta;
 - construye una lista de `LiveNotificationItem`;
 - devuelve un `LiveSimulationSnapshot` con las notificaciones activas y próximas.
 
-La pantalla de simulación (`simulacion_alertas_screen.dart`) se conecta además a `RealtimeService`, por lo que escucha cambios remotos en:
-
-- `tomas`;
-- `citas`;
-- `alertas`;
-- `medicamentos`.
-
-Cuando llega un evento realtime, la simulación refresca el snapshot con `forceRefresh: true`. También mantiene un refresco de respaldo cada `30 segundos`.
+La pantalla de simulación (`simulacion_alertas_screen.dart`) se conecta además a `RealtimeService` para escuchar cambios remotos en `tomas`, `citas`, `alertas` y `medicamentos`. También mantiene un refresco de respaldo cada 30 segundos.
 
 ### Tipos de notificación soportados
 
 - notificación de medicación;
 - notificación de cita médica.
 
-### Reglas de negocio actuales
+### Reglas de negocio
 
 #### Medicación
 
-- una toma pendiente o pospuesta entra en la simulación;
-- la notificación aparece desde la hora programada, no antes;
-- si se confirma, desaparece;
-- si se pospone, reaparece más tarde;
-- si no se responde dentro de la ventana prevista, puede expirar;
-- la ventana de expiración de una toma es de `15 minutos`.
+- toma pendiente o pospuesta entra en la simulación desde la hora programada;
+- al confirmar desaparece; al posponer reaparece más tarde;
+- ventana de expiración: 15 minutos.
 
 #### Citas
 
-La app soporta recordatorios derivados a:
-
-- `24h` antes;
-- `3h` antes;
-- `30 min` antes.
-
-Comportamiento esperado:
-
-- la notificación aparece desde la hora programada del recordatorio, no antes;
-- la alerta de `24h` aparece cuando toca y desaparece al confirmarse;
-- la alerta de `3h` aparece cuando toca y desaparece al confirmarse;
-- la alerta de `30 min` aparece cuando toca y, al gestionarse, se mantiene colapsada hasta la hora real de la cita;
-- los recordatorios de cita no finales permanecen visibles durante `15 minutos` si no se gestionan.
-
-No se aplica una ventana de `±2 horas`: al ser una app de recordatorios, las notificaciones no se adelantan a la hora real que corresponde.
-
-### Aspectos técnicos relevantes de la simulación
-
-- no depende exclusivamente de que la fila de alerta exista ya en base de datos;
-- puede derivar recordatorios directamente desde las citas;
-- soporta múltiples notificaciones simultáneas;
-- la pantalla del móvil simulado tiene scroll interno;
-- el marco del móvil se adapta al ancho disponible para funcionar mejor en pantallas pequeñas;
-- las tarjetas usan claves estables para evitar errores de duplicidad en Flutter;
-- incorpora manejo de error y reintento para no quedarse cargando indefinidamente;
-- el cálculo del recordatorio de `24h` se hace preservando la hora local del día anterior para evitar errores en cambios de horario.
-
-### Diseño actual de las notificaciones simuladas
-
-Las tarjetas de lock screen están optimizadas para lectura rápida:
-
-- cabecera con logo real de Aviso Vital;
-- nombre de medicamento o especialidad en grande;
-- hora destacada con alto contraste;
-- medicación: muestra `Expira HH:MM` de forma discreta;
-- cita: muestra el centro/hospital con icono de ubicación;
-- acción inferior clara: `Ver recordatorio` o `Ver cita`;
-- textos con ajuste automático de tamaño cuando el ancho es limitado.
+- recordatorios a 24h, 3h y 30 min;
+- las alertas de 24h y 3h desaparecen al confirmarse;
+- la alerta de 30 min, al gestionarse, se mantiene colapsada hasta la hora real de la cita;
+- recordatorios no finales permanecen visibles 15 minutos si no se gestionan.
 
 ## Diseño visual y accesibilidad
 
-La app sigue una línea visual oscura, sobria y cálida. El objetivo no es solo estético, sino funcional: mejorar concentración, contraste y legibilidad para una audiencia sensible a pantallas recargadas.
+La app sigue una línea visual oscura, sobria y cálida optimizada para personas mayores.
 
-### Principios visuales aplicados
+### Principios visuales
 
 - modo oscuro coherente en toda la app;
-- superficies con bordes suaves y contraste suficiente;
-- acento ámbar para medicación;
-- acento naranja para citas;
-- componentes de gran claridad táctil;
-- jerarquía tipográfica clara;
-- fondos con glow suave para transmitir calma y cuidado.
+- acento ámbar para medicación y naranja para citas;
+- jerarquía tipográfica clara con tamaños grandes en vistas críticas;
+- fondos con glow suave para transmitir calma y cuidado;
+- componentes con gran claridad táctil (mínimo 48×48 px);
+- contraste WCAG AA+ en todos los textos.
 
 ### Accesibilidad aplicada
 
-- tamaños mínimos de tipografía reforzados en vistas críticas;
-- áreas táctiles amplias;
-- contraste alto sobre fondos oscuros;
+- `TextScaler` clampeado a `[1.0, 1.3]` en `MaterialApp` para respetar preferencias del usuario sin romper el layout;
+- áreas táctiles amplias en todos los botones interactivos;
 - textos y CTAs simplificados;
-- reducción de ruido visual en pantallas de alerta;
-- hora de medicación y cita reforzada visualmente para personas mayores;
-- tarjetas de inicio de usuario pensadas para lectura rápida sin interacción frecuente.
+- hora de medicación y cita reforzada visualmente para lectura rápida;
+- `Semantics` con `label` y `tooltip` en acciones clave.
 
 ## Flujos principales de navegación
 
 ### Onboarding y acceso
 
-- selección de rol;
-- login administrador;
+- selección de rol (`Usuario` / `Administrador`);
+- login administrador (con opción de recuperar contraseña);
 - creación de cuenta;
 - login usuario;
 - vinculación mediante código manual o flujo de conexión.
 
 ### Home de administrador
 
-Desde el panel del administrador se accede a:
-
-- dashboard;
-- medicamentos;
-- citas;
-- alertas;
-- actividad reciente.
+Dashboard con stats de adherencia, medicamentos con stock bajo y cita del día. Desde aquí se accede a medicamentos, citas, alertas y actividad reciente.
 
 ### Home de usuario mayor
 
-El home del usuario mayor muestra:
-
-- saludo contextual;
-- progreso diario;
-- próxima medicación con nombre y hora en gran tamaño;
-- próxima cita médica;
-- acceso directo a la simulación en tiempo real;
-- acciones rápidas.
-
-## Pantallas relevantes
-
-### `alerta_medicacion_screen.dart`
-
-Pantalla centrada en una toma concreta. Su diseño prioriza:
-
-- lectura inmediata;
-- confirmación simple;
-- CTA principal fijo en la parte inferior;
-- opción de posponer;
-- respuesta visual clara tras confirmar.
-
-### `alerta_cita_screen.dart`
-
-Pantalla de detalle de una cita desde un recordatorio. Permite gestionar el aviso y actualiza el comportamiento de la simulación según el tipo de recordatorio recibido.
-
-### `simulacion_alertas_screen.dart`
-
-Vista de simulación del lock screen del móvil:
-
-- muestra tarjetas dark de notificación;
-- unifica el lenguaje visual entre medicación y citas;
-- permite ver varias alertas a la vez;
-- refresca periódicamente el estado visible;
-- escucha cambios en tiempo real desde Supabase;
-- fuerza refresco de datos cuando llegan cambios remotos;
-- mantiene responsive el marco del móvil para escritorio y móvil.
+Muestra saludo contextual, progreso diario, próxima medicación con nombre y hora en gran tamaño adaptativo, próxima cita médica y acceso directo a la simulación.
 
 ## Rutas principales
 
-La navegación se centraliza en `AppRouter`. Algunas rutas clave son:
+La navegación se centraliza en `AppRouter`. Rutas clave:
 
 - `/home-admin`
 - `/home-usuario`
@@ -572,16 +426,22 @@ La navegación se centraliza en `AppRouter`. Algunas rutas clave son:
 
 ### Requisitos
 
-- Flutter SDK compatible con `sdk: ^3.11.1`
+- Flutter SDK `^3.11.1`
 - Dart incluido con Flutter
 - Xcode si se compila para iOS
-- cuenta y proyecto de Supabase para modo backend
+- Cuenta y proyecto de Supabase para modo backend
 
 ### Dependencias principales
 
-- `flutter`
-- `supabase_flutter`
-- `shared_preferences`
+| Paquete | Versión | Uso |
+|---------|---------|-----|
+| `supabase_flutter` | ^2.0.0 | Backend y autenticación |
+| `flutter_secure_storage` | ^9.2.2 | Almacenamiento seguro |
+| `shared_preferences` | ^2.5.3 | Preferencias locales |
+| `pdf` | ^3.10.0 | Generación de PDFs |
+| `printing` | ^5.12.0 | Impresión y descarga |
+| `flutter_svg` | ^2.0.0 | Logo e iconos SVG |
+| `universal_html` | ^2.3.0 | Descarga de PDF en web |
 
 ### Variables de entorno
 
@@ -590,20 +450,13 @@ La app espera:
 - `SUPABASE_URL`
 - `SUPABASE_ANON_KEY`
 
-Puede ejecutarse con un archivo como:
+Crea el archivo `env/dev.json` localmente (está en `.gitignore`, nunca se sube al repositorio):
 
 ```json
 {
   "SUPABASE_URL": "https://TU-PROYECTO.supabase.co",
   "SUPABASE_ANON_KEY": "TU_ANON_KEY"
 }
-```
-
-Ejemplo de arranque:
-
-```bash
-flutter pub get
-flutter run --dart-define-from-file=env/dev.json
 ```
 
 Si no se proporcionan variables válidas, la app entra en modo local y utiliza datos de ejemplo.
@@ -616,17 +469,17 @@ Archivos relevantes:
 
 - `vercel.json`: configura el build, la carpeta de salida y el rewrite de SPA hacia `index.html`.
 - `scripts/vercel-build.sh`: instala o reutiliza Flutter, ejecuta `flutter pub get` y compila web.
-- `web/index.html`: metadata web actualizada para `Aviso Vital`.
-- `web/manifest.json`: nombre, descripción, colores y orientación PWA ajustados.
+- `web/index.html`: metadata web actualizada para Aviso Vital.
+- `web/manifest.json`: nombre, descripción, colores y orientación PWA (`"orientation": "any"`).
 
 ### Variables necesarias en Vercel
 
-En Vercel deben configurarse estas variables de entorno:
+En **Vercel → Settings → Environment Variables** deben configurarse:
 
 - `SUPABASE_URL`
 - `SUPABASE_ANON_KEY`
 
-Flutter Web lee estas variables en tiempo de build mediante `--dart-define`, por eso el script de Vercel las pasa explícitamente al compilar:
+Flutter Web las lee en tiempo de build mediante `--dart-define`, tal como hace el script de Vercel:
 
 ```bash
 flutter build web --release \
@@ -636,15 +489,7 @@ flutter build web --release \
 
 ### Rewrites de SPA
 
-`vercel.json` envía todas las rutas a `index.html` para que rutas internas como `/home-usuario`, `/simulacion-alertas` o `/alerta-cita` funcionen al abrir o recargar directamente desde el navegador.
-
-### Nota sobre Git
-
-Si `vercel.json` o `scripts/vercel-build.sh` no aparecen en `git status` por reglas locales de exclusión, se pueden añadir al commit con:
-
-```bash
-git add -f vercel.json scripts/vercel-build.sh
-```
+`vercel.json` envía todas las rutas a `index.html` para que rutas internas como `/home-usuario` o `/simulacion-alertas` funcionen al abrir o recargar directamente desde el navegador.
 
 ## Comandos útiles
 
@@ -654,10 +499,16 @@ git add -f vercel.json scripts/vercel-build.sh
 flutter pub get
 ```
 
-### Ejecutar la app
+### Ejecutar la app (con Supabase)
 
 ```bash
 flutter run --dart-define-from-file=env/dev.json
+```
+
+### Ejecutar en Chrome
+
+```bash
+flutter run -d chrome --dart-define-from-file=env/dev.json
 ```
 
 ### Analizar código
@@ -675,12 +526,6 @@ flutter test
 ### Compilar web localmente
 
 ```bash
-flutter build web --release
-```
-
-Con Supabase:
-
-```bash
 flutter build web --release \
   --dart-define=SUPABASE_URL="https://TU-PROYECTO.supabase.co" \
   --dart-define=SUPABASE_ANON_KEY="TU_ANON_KEY"
@@ -692,21 +537,11 @@ flutter build web --release \
 dart format lib test
 ```
 
-### Verificación usada tras los últimos cambios
+### Estado actual del análisis
 
-```bash
-flutter analyze
-flutter test
-flutter build web --release
 ```
-
-Estado actual:
-
-- `flutter analyze`: OK
-- `flutter test`: OK
-- `flutter build web --release`: OK
-
-El build web puede mostrar una advertencia de dry-run WebAssembly por `universal_html` y `dart:html`; no bloquea el build JavaScript normal generado en `build/web`.
+flutter analyze → No issues found ✅
+```
 
 ## Decisiones técnicas relevantes
 
@@ -716,7 +551,7 @@ No se ha forzado el uso de `Provider`, `Bloc` o arquitecturas más complejas. Pa
 
 ### 2. Soporte híbrido real/mock
 
-Gran parte del valor del proyecto está en que puede seguir funcionando sin backend totalmente operativo. Esto permite iterar rápidamente sobre UX, flujos y demostraciones.
+La app puede seguir funcionando sin backend totalmente operativo. Esto permite iterar rápidamente sobre UX, flujos y demostraciones.
 
 ### 3. Modelo de dominio desacoplado
 
@@ -724,19 +559,11 @@ Los modelos están preparados para mapear tanto desde datos mock como desde Supa
 
 ### 4. Simulación derivada del dominio
 
-La simulación no se limita a pintar una lista estática; interpreta estados reales de tomas, citas y alertas para representar el comportamiento esperado de la app.
+La simulación no pinta una lista estática; interpreta estados reales de tomas, citas y alertas para representar el comportamiento esperado de la app.
 
-## Calidad y mantenimiento
+### 5. Responsive sin romper lógica
 
-El proyecto está preparado para seguir creciendo gracias a:
-
-- organización por features;
-- reutilización de widgets compartidos;
-- tema centralizado;
-- modelos consistentes;
-- repositorios con API estable;
-- utilidades de formateo reutilizables;
-- reglas visuales homogéneas entre pantallas.
+Todo el diseño responsive se implementa únicamente en la capa de presentación mediante `AppBreakpoints`, `ConstrainedBox` con `maxWidth` y `LayoutBuilder`. La lógica de negocio y los repositorios no se han modificado.
 
 ## Mejoras futuras recomendadas
 
@@ -745,10 +572,9 @@ El proyecto está preparado para seguir creciendo gracias a:
 - incorporar estado reactivo más centralizado si el proyecto sigue creciendo;
 - añadir notificaciones push reales;
 - completar trazabilidad histórica de citas gestionadas;
-- incorporar perfiles y permisos más finos entre cuidador y familiar.
+- incorporar perfiles y permisos más finos entre cuidador y familiar;
+- error tracking centralizado (por ejemplo, Sentry).
 
 ## Resumen
 
-Aviso Vital es una app Flutter enfocada en cuidado, adherencia y comunicación clara para personas mayores. El proyecto ya incorpora una base sólida de arquitectura, UI, navegación y lógica de negocio, y destaca especialmente por su simulación en tiempo real del móvil del usuario, el tratamiento accesible de alertas y la convivencia entre modo local y backend real.
-
-La base actual es suficientemente sólida para continuar evolucionando tanto como prototipo académico de alta calidad como producto funcional en crecimiento.
+Aviso Vital es una app Flutter enfocada en cuidado, adherencia y comunicación clara para personas mayores. Combina una base técnica sólida (arquitectura por features, repositorios con caché, backend Supabase, PDF export, i18n completa y diseño responsive) con una experiencia visual cuidada y accesible optimizada para su audiencia. Destaca especialmente por la simulación en tiempo real del móvil del usuario y el tratamiento accesible de alertas de medicación y citas.

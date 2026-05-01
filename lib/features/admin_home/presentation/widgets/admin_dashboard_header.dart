@@ -106,7 +106,7 @@ class AdminDashboardHeader extends StatelessWidget {
           ),
           _HeaderActionButton(
             icon: Icons.phone_android_outlined,
-            tooltip: context.t.text('Llamar al móvil'),
+            tooltip: context.t.text('Estado dispositivo'),
             onTap: () =>
                 Navigator.pushNamed(context, EstadoDispositivoScreen.routeName),
           ),

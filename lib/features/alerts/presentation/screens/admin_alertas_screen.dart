@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:aviso_vital_2/app/router/app_routes.dart';
 import 'package:aviso_vital_2/data/models/models.dart';
 import 'package:aviso_vital_2/data/repositories/alerts_repository.dart';
-import 'package:aviso_vital_2/data/repositories/user_repository.dart';
 import 'package:aviso_vital_2/features/admin_home/presentation/widgets/admin_section_scaffold.dart';
 import 'package:aviso_vital_2/shared/i18n/app_language.dart';
 import 'package:aviso_vital_2/shared/theme/app_theme.dart';
@@ -23,7 +22,6 @@ class AdminAlertasScreen extends StatefulWidget {
 class _AdminAlertasScreenState extends State<AdminAlertasScreen>
     with SingleTickerProviderStateMixin {
   static const _alertsRepository = AlertsRepository();
-  static const _userRepository = UserRepository();
   late final TabController _tabCtrl;
   late Future<_AlertsScreenData> _screenDataFuture;
 
@@ -54,7 +52,6 @@ class _AdminAlertasScreenState extends State<AdminAlertasScreen>
 
   @override
   Widget build(BuildContext context) {
-    final user = _userRepository.getCurrentUser();
     return FutureBuilder<_AlertsScreenData>(
       future: _screenDataFuture,
       builder: (context, snapshot) {
@@ -65,7 +62,7 @@ class _AdminAlertasScreenState extends State<AdminAlertasScreen>
         if (snapshot.hasError) {
           return AdminSectionScaffold(
             title: context.t.text('Historial de alertas'),
-            subtitle: context.t.displayName(user.nombre),
+            subtitle: context.t.text('Actividad reciente'),
             onBack: widget.showBackButton
                 ? () => Navigator.maybePop(context)
                 : null,
@@ -102,7 +99,7 @@ class _AdminAlertasScreenState extends State<AdminAlertasScreen>
 
         return AdminSectionScaffold(
           title: context.t.text('Historial de alertas'),
-          subtitle: context.t.displayName(user.nombre),
+          subtitle: context.t.text('Actividad reciente'),
           onBack: widget.showBackButton
               ? () => Navigator.maybePop(context)
               : null,
