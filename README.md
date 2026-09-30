@@ -1,6 +1,47 @@
-# Aviso Vital
+<div align="center">
 
-Aplicación Flutter orientada a mejorar el seguimiento de medicación y citas médicas en personas mayores, con una experiencia dual para cuidador o familiar administrador y para usuario mayor. El proyecto combina gestión clínica básica, recordatorios, simulación visual del móvil del usuario, exportación de informes en PDF y soporte tanto para modo local con datos mock como para backend real con Supabase.
+# 🏥 Aviso Vital
+
+**Helping elderly patients stay on top of their health — one reminder at a time.**
+
+[![Live Demo](https://img.shields.io/badge/🌐_Live_Demo-aviso--vital.vercel.app-00C853?style=for-the-badge)](https://aviso-vital.vercel.app)
+![Dart](https://img.shields.io/badge/Dart-0175C2?style=for-the-badge&logo=dart&logoColor=white)
+![Flutter](https://img.shields.io/badge/Flutter-02569B?style=for-the-badge&logo=flutter&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-3FCF8E?style=for-the-badge&logo=supabase&logoColor=white)
+![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)
+
+*Final Degree Project (TFG) · CUNEF University · B.Sc. Computer Engineering*
+
+</div>
+
+---
+
+## 📋 Overview
+
+Aviso Vital is a **full-stack accessible web application** designed to solve **medication adherence problems in elderly patients**. It provides a dual experience — a **caregiver/admin panel** for managing medications and appointments, and a **simplified elder view** with large fonts, high contrast, voice alerts, and a real-time notification simulator showing exactly what the patient sees on their phone.
+
+> 🎯 **Problem:** Medication non-adherence in the elderly leads to hospitalizations, health complications, and reduced quality of life. Existing apps are too complex for this demographic.
+>
+> 💡 **Solution:** An accessibility-first app designed *with* elderly users, not just *for* them — featuring usability testing with 5+ real participants.
+
+### ✨ Highlights
+
+| | |
+|---|---|
+| 💊 **Medication Manager** | Schedule, track and manage daily medications with customizable reminders and pill visualization |
+| 📅 **Appointment Tracker** | Medical appointments with 24h / 3h / 30min cascading reminders |
+| 👨‍👩‍👧 **Family Dashboard** | Real-time remote monitoring for caregivers — adherence stats, low stock alerts, today's activity |
+| 📱 **Live Notification Simulator** | See exactly what the elderly user would see on their phone — in real time |
+| 📄 **PDF Export** | Generate medication and appointment reports for doctors or family |
+| 🌐 **Bilingual** | Full ES/EN internationalization |
+| ♿ **WCAG AA+ Accessible** | Large touch targets (48×48px min), clamped TextScaler, high-contrast dark UI |
+
+
+### 🚀 Try It Live
+
+👉 **[aviso-vital.vercel.app](https://aviso-vital.vercel.app)**
+
+---
 
 ## Descripción del proyecto
 
@@ -578,3 +619,28 @@ Todo el diseño responsive se implementa únicamente en la capa de presentación
 ## Resumen
 
 Aviso Vital es una app Flutter enfocada en cuidado, adherencia y comunicación clara para personas mayores. Combina una base técnica sólida (arquitectura por features, repositorios con caché, backend Supabase, PDF export, i18n completa y diseño responsive) con una experiencia visual cuidada y accesible optimizada para su audiencia. Destaca especialmente por la simulación en tiempo real del móvil del usuario y el tratamiento accesible de alertas de medicación y citas.
+
+---
+
+<div align="center">
+
+## 📄 Academic Context
+
+| | |
+|---|---|
+| **Project** | Final Degree Project (Trabajo de Fin de Grado) |
+| **University** | CUNEF University, Madrid |
+| **Degree** | B.Sc. Computer Engineering |
+| **Period** | September 2025 – June 2026 |
+| **Author** | Marco Lopez Prieto |
+
+---
+
+## 📫 Contact
+
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/marco-lopez-prieto-320810384/)
+[![Email](https://img.shields.io/badge/Email-EA4335?style=for-the-badge&logo=gmail&logoColor=white)](mailto:marco.lopez@student.ie.edu)
+[![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/MarcoLopezP10)
+
+</div>
+nebulaONE logoPowered by cloudforce
